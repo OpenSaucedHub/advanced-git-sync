@@ -49,7 +49,7 @@ jobs:
           fetch-depth: 0
 
       - name: Sync with GitLab
-        uses: OpenSaucedHub/git-sync-action@v1.1.1
+        uses: OpenSaucedHub/git-sync-action@v1.1.2
         with:
           config_path: .github/sync-config.yml # optional, defaults to .github/sync-config.yml
           gitlab_token: ${{ secrets.GITLAB_TOKEN }} # optional, unless you want to sync to GitLab
@@ -57,6 +57,85 @@ jobs:
 ```
 
 2. Create a `.github/sync-config.yml` file with your sync configuration:
+
+```yaml
+#sync-config.yml
+# When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub TO GitLab
+gitlab:
+  enabled: true
+  username: # Optional, defaults to GitHub repo owner
+
+# When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab TO GitHub
+github:
+  enabled: true
+```
+
+> [!WARNING]
+>
+> - If no config is provided, everything defaults to _`true`_, `autoMerge` is _`false`_, `Labels`
+>   are set as specified in the default config and `repo` name and `username` default to GitHub
+>   repository _`owner/repo`_. [See Accepted Configuration](#accepted-configuration)
+> - In case of a partial config (missing fields), the defaults are used. (you MUST strictly set
+>   elements to false if you don't want them to sync).
+>   [See Accepted Configuration](#accepted-configuration)
+
+3. Set up required secrets in your GitHub repository:
+
+- `GITLAB_TOKEN`: A GitLab personal access token with API access
+- `GH_TOKEN`: A GitHub personal access token (optional, defaults to `GITHUB_TOKEN`)
+
+## Configuration Options
+
+### GitLab Configuration (`gitlab`)
+
+| Option     | Description                   | Required | Default           |
+| ---------- | ----------------------------- | -------- | ----------------- |
+| `enabled`  | Enable GitLab synchronization | No       | true              |
+| `url`      | GitLab instance URL           | No       | gitlab.com        |
+| `username` | GitLab username               | No       | GitHub repo owner |
+| `repo`     | GitLab repository name        | No       | GitHub repo name  |
+
+### GitHub Configuration (`github`)
+
+| Option     | Description                   | Required | Default        |
+| ---------- | ----------------------------- | -------- | -------------- |
+| `enabled`  | Enable GitHub synchronization | No       | true           |
+| `username` | GitHub username               | No       | GitHub context |
+| `repo`     | GitHub repository name        | No       | GitHub context |
+
+### Sync Configuration
+
+#### Branches
+
+| Option      | Description             | Required | Default |
+| ----------- | ----------------------- | -------- | ------- |
+| `enabled`   | Enable branch sync      | No       | true    |
+| `protected` | Sync protected branches | No       | true    |
+| `pattern`   | Branch name pattern     | No       | "\*"    |
+
+#### Pull Requests
+
+| Option      | Description                 | Required | Default                   |
+| ----------- | --------------------------- | -------- | ------------------------- |
+| `enabled`   | Enable PR sync              | No       | true                      |
+| `autoMerge` | Auto-merge synced PRs       | No       | false                     |
+| `labels`    | Labels to add to synced PRs | No       | synced-from-github/gitlab |
+
+#### Issues
+
+| Option         | Description                    | Required | Default                   |
+| -------------- | ------------------------------ | -------- | ------------------------- |
+| `enabled`      | Enable issue sync              | No       | true                      |
+| `syncComments` | Sync issue comments            | No       | false                     |
+| `labels`       | Labels to add to synced issues | No       | synced-from-github/gitlab |
+
+#### Releases and Tags
+
+| Option    | Description             | Required | Default |
+| --------- | ----------------------- | -------- | ------- |
+| `enabled` | Enable release/tag sync | No       | true    |
+
+## Accepted Configuration
 
 ```yaml
 #sync-config.yml
@@ -116,70 +195,6 @@ github:
       enabled: true # automatically enabled if releases = true
 ```
 
-> [!WARNING]
->
-> 1. If no config is provided, everything defaults to true, `autoMerge` is false, Labels are set as
->    specified and Repo name and username default to GitHub repository context.
-> 2. In case of a partial config (missing fields) will use defaults (you must set elements to false
->    if you don't want them to sync)
-> 3. Set up required secrets in your GitHub repository:
-
-- `GITLAB_TOKEN`: A GitLab personal access token with API access
-- `GH_TOKEN`: A GitHub personal access token (optional, defaults to `GITHUB_TOKEN`)
-
-## Configuration Options
-
-### GitLab Configuration (`gitlab`)
-
-| Option     | Description                   | Required | Default           |
-| ---------- | ----------------------------- | -------- | ----------------- |
-| `enabled`  | Enable GitLab synchronization | Yes      | -                 |
-| `url`      | GitLab instance URL           | No       | gitlab.com        |
-| `token`    | GitLab personal access token  | Yes      | -                 |
-| `username` | GitLab username               | No       | GitHub repo owner |
-| `repo`     | GitLab repository name        | No       | GitHub repo name  |
-
-### GitHub Configuration (`github`)
-
-| Option     | Description                   | Required | Default        |
-| ---------- | ----------------------------- | -------- | -------------- |
-| `enabled`  | Enable GitHub synchronization | Yes      | -              |
-| `token`    | GitHub personal access token  | Yes      | `GITHUB_TOKEN` |
-| `username` | GitHub username               | No       | GitHub context |
-| `repo`     | GitHub repository name        | No       | GitHub context |
-
-### Sync Configuration (`gl-sync` and `gh-sync`)
-
-#### Branches
-
-| Option      | Description             | Required | Default |
-| ----------- | ----------------------- | -------- | ------- |
-| `enabled`   | Enable branch sync      | Yes      | -       |
-| `protected` | Sync protected branches | No       | false   |
-| `pattern`   | Branch name pattern     | No       | "\*"    |
-
-#### Pull Requests
-
-| Option      | Description                 | Required | Default |
-| ----------- | --------------------------- | -------- | ------- |
-| `enabled`   | Enable PR sync              | Yes      | -       |
-| `autoMerge` | Auto-merge synced PRs       | No       | false   |
-| `labels`    | Labels to add to synced PRs | No       | []      |
-
-#### Issues
-
-| Option         | Description                    | Required | Default |
-| -------------- | ------------------------------ | -------- | ------- |
-| `enabled`      | Enable issue sync              | Yes      | -       |
-| `syncComments` | Sync issue comments            | No       | false   |
-| `labels`       | Labels to add to synced issues | No       | []      |
-
-#### Releases and Tags
-
-| Option    | Description             | Required | Default |
-| --------- | ----------------------- | -------- | ------- |
-| `enabled` | Enable release/tag sync | Yes      | -       |
-
 ## Token Permissions
 
 ### GitLab Token
@@ -196,46 +211,6 @@ The GitHub token needs the following permissions:
 
 - `repo` - Full repository access
 - `workflow` - Workflow access
-
-## Examples
-
-### Basic Configuration
-
-Minimal configuration to sync everything:
-
-```yaml
-gitlab:
-  enabled: true
-  token: ${{ secrets.GITLAB_TOKEN }}
-
-gl-sync:
-  branches:
-    enabled: true
-  pullRequests:
-    enabled: true
-  issues:
-    enabled: true
-  releases:
-    enabled: true
-  tags:
-    enabled: true
-
-github:
-  enabled: true
-  token: ${{ secrets.GH_TOKEN }}
-
-gh-sync:
-  branches:
-    enabled: true
-  pullRequests:
-    enabled: true
-  issues:
-    enabled: true
-  releases:
-    enabled: true
-  tags:
-    enabled: true
-```
 
 ## Contributing 🤝
 
