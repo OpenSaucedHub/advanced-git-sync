@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 0
 
       - name: Sync with GitLab
-        uses: OpenSaucedHub/github-gitlab-sync@v1.0.0
+        uses: OpenSaucedHub/git-sync-action@v1.1.0
         with:
           config_path: .github/sync-config.yml
 ```
@@ -228,9 +228,9 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 an issue first to discuss what you would like to change.
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
 5. Open a Pull Request
 
 ## License 📄
@@ -256,7 +256,7 @@ For support, please:
 ## Acknowledgments 🙏
 
 - Inspired by [Sync to GitLab](https://github.com/marketplace/actions/sync-to-gitlab) action, just
-  felt awful having to sync PR/MS, branches and issues manually.
+  felt awful having to sync PRs/MRs, branches, releases and issues manually.
 - Built with [TypeScript](https://www.typescriptlang.org/) and [Bun](https://bun.sh/)
 - Uses the official [GitLab API](https://docs.gitlab.com/ee/api/) and
   [GitHub Actions](https://docs.github.com/en/actions) toolkit

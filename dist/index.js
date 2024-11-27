@@ -55422,6 +55422,20 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.syncBranches = syncBranches;
 const core = __importStar(__nccwpck_require__(7484));
+/**
+ * Synchronizes branches between source and target Git providers (GitHub/GitLab).
+ * This function compares branches between source and target repositories and identifies
+ * branches that exist in source but not in target.
+ *
+ * @param source - The source client instance (GitHub or GitLab) to sync branches from
+ * @param target - The target client instance (GitHub or GitLab) to sync branches to
+ *
+ * @returns Promise resolving to an array of branches that need to be synchronized.
+ * Returns empty array if synchronization fails.
+ *
+ * @throws Will not throw errors directly, but logs error messages using core.error
+ *
+ */
 async function syncBranches(source, target) {
     try {
         const sourceBranches = await source.syncBranches();

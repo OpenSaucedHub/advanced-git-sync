@@ -4,7 +4,34 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 5
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore(dev)"
+    reviewers:
+      - "iamvikshan"
+    ignore:
+      - dependency-type: "devDependencies"
+        update-types: ["version-update:semver-patch"]
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    labels:
+      - "gh-actions"
+    commit-message:
+      prefix: "chore"
+    reviewers:
+      - "iamvikshan"

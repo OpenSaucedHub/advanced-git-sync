@@ -1,31 +1,73 @@
 name: "Advanced Git Sync"
 description: "Synchronize GitHub repository with GitLab including branches, PRs, and issues"
 author: "vikshan"
-
 inputs:
   config_path:
     description: "Path to the sync configuration file"
     required: false
     default: ".github/sync-config.yml"
-
 runs:
   using: "composite"
   steps:
+    - name: Backup Original Project Dependencies
+      shell: bash
+      run: |
+        # Backup existing package.json and bun.lockb if they exist
+        if [ -f package.json ]; then
+          cp package.json package.json.original-backup
+        fi
+        if [ -f bun.lockb ]; then
+          cp bun.lockb bun.lockb.original-backup
+        fi
+
     - name: Setup Bun
       uses: oven-sh/setup-bun@v2
       with:
         bun-version: latest
 
-    - name: Install dependencies
+    - name: Create Minimal Dependencies Package
       shell: bash
       run: |
+        # Create a minimal package.json with only required dependencies
+        echo '{
+          "dependencies": {
+            "@actions/core": "^1.11.1",
+            "@actions/github": "^6.0.0",
+            "@gitbeaker/rest": "^41.3.0",
+            "@octokit/rest": "^21.0.2",
+            "js-yaml": "^4.1.0",
+            "zod": "^3.23.8"
+          }
+        }' > package.json
+
+    - name: Install Action Dependencies
+      shell: bash
+      run: |
+        # Install only action-specific dependencies
         bun install
 
-    - name: Build and run
+    - name: Run Git Sync
+      shell: bash
+      run: bun run ${{ github.action_path }}/dist/index.js
+
+    - name: Restore Original Project Dependencies
       shell: bash
       run: |
-        bun build ./src/index.ts --outfile=dist/index.js
-        bun run dist/index.js
+        # Restore original package.json if backup exists
+        if [ -f package.json.original-backup ]; then
+          mv package.json.original-backup package.json
+        else
+          # If no original exists, remove action's package.json
+          rm package.json
+        fi
+
+        # Restore original bun.lockb if backup exists
+        if [ -f bun.lockb.original-backup ]; then
+          mv bun.lockb.original-backup bun.lockb
+        else
+          # If no original exists, remove action's bun.lockb
+          rm -f bun.lockb
+        fi
 
 branding:
   icon: "git-branch"
