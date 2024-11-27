@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 0
 
       - name: Sync with GitLab
-        uses: OpenSaucedHub/git-sync-action@v1.1.0
+        uses: OpenSaucedHub/git-sync-action@v1.1.1
         with:
           config_path: .github/sync-config.yml
 ```
