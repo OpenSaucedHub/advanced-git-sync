@@ -1,57 +1,63 @@
-# Git Sync Action 🔄
+# GitHub GitLab Sync Action
 
-A powerful GitHub Action that provides advanced synchronization between GitHub and GitLab
-repositories, including two-way sync for branches, pull requests/merge requests, and issues.
+A powerful GitHub Action that provides bi-directional synchronization between GitHub and GitLab
+repositories. This action helps maintain consistency across platforms by syncing branches, pull
+requests, issues, releases, and tags.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/OpenSaucedHub/.github/blob/main/.github/LICENSE.md)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
+## Features
 
-## Features ✨
+- 🔄 **Bi-directional Synchronization**: Sync from GitHub to GitLab and vice versa
+- 🌳 **Branch Synchronization**: Keep branches in sync across platforms
+- 🔀 **Pull Request/Merge Request Sync**: Synchronize pull requests with corresponding merge
+  requests
+- 📝 **Issue Tracking**: Keep issues and their comments in sync
+- 🏷️ **Release Management**: Sync releases and tags across platforms
+- ⚙️ **Configurable**: Extensive configuration options for fine-grained control
+- 🔒 **Protected Resources**: Support for protected branches and resources
+- 🏷️ **Label Management**: Automatic labeling of synced resources
 
-- 🌳 **Branch Synchronization**: Automatically sync branches between GitHub and GitLab
-- 🔄 **Pull Request/Merge Request Sync**: Keep PRs and MRs in sync across platforms
-- 📝 **Issue Synchronization**: Mirror issues between repositories
-- ⚙️ **Flexible Configuration**: Customize sync behavior via YAML configuration
-- 🔒 **Secure**: Uses token-based authentication for secure operations
-- 🎯 **Selective Sync**: Configure which elements to sync using patterns and filters
+## Setup
 
-## Usage 🚀
-
-1. Add the action to your workflow:
+1. Create a `.github/workflows/sync.yml` file in your repository:
 
 ```yaml
-name: Sync to GitLab
+name: Sync with GitLab
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
-    types: [opened, closed, synchronized]
+    types: [opened, closed, reopened]
   issues:
-    types: [opened, closed, edited]
+    types: [opened, closed, reopened]
+  release:
+    types: [published]
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Sync to GitLab
-        uses: OpenSaucedHub/git-sync-action@v1.0.0
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
         with:
-          gitlab_url: ${{ secrets.GITLAB_URL }}
-          gitlab_token: ${{ secrets.GITLAB_TOKEN }}
-          gitlab_username: ${{ secrets.GITLAB_USERNAME }}
-          config_path: .github/git-sync.yml # Optional
+          fetch-depth: 0
+
+      - name: Sync with GitLab
+        uses: OpenSaucedHub/github-gitlab-sync@v1.0.0
+        with:
+          config_path: .github/sync-config.yml
 ```
 
-2. Create a configuration file (`.github/git-sync.yml`):
+2. Create a `.github/sync-config.yml` file with your sync configuration:
 
 ```yaml
 gitlab:
-  url: ${GITLAB_URL}
-  token: ${GITLAB_TOKEN}
-  username: ${GITLAB_USERNAME}
+  enabled: true
+  url: 'gitlab.com' # Optional, defaults to gitlab.com
+  token: ${{ secrets.GITLAB_TOKEN }}
+  username: # Optional, defaults to GitHub repo owner
+  repo: # Optional, defaults to GitHub repo name
 
-sync:
+gl-sync:
   branches:
     enabled: true
     protected: true
@@ -66,84 +72,155 @@ sync:
     enabled: true
     syncComments: true
     labels: ['synced-from-github']
+
+  releases:
+    enabled: true
+
+  tags:
+    enabled: true # atomaticall enabled if releases = true
+
+github:
+  enabled: true
+  token: ${{ secrets.GH_TOKEN }}
+  username: # Optional, defaults to GitHub username
+  repo: # Optional, defaults to GitHub repo name
+
+gh-sync:
+  branches:
+    enabled: true
+    protected: true
+    pattern: '*'
+
+  pullRequests:
+    enabled: true
+    autoMerge: false
+    labels: ['synced-from-gitlab']
+
+  issues:
+    enabled: true
+    syncComments: true
+    labels: ['synced-from-gitlab']
+
+  releases:
+    enabled: true
+
+  tags:
+    enabled: true # atomaticall enabled if releases = true
 ```
 
-## Configuration Options 🛠️
+3. Set up required secrets in your GitHub repository:
+   - `GITLAB_TOKEN`: A GitLab personal access token with API access
+   - `GH_TOKEN`: A GitHub personal access token (optional, defaults to `GITHUB_TOKEN`)
 
-### GitLab Settings
+## Configuration Options
 
-| Option     | Description                  | Required |
-| ---------- | ---------------------------- | -------- |
-| `url`      | GitLab instance URL          | Yes      |
-| `token`    | GitLab Personal Access Token | Yes      |
-| `username` | GitLab username              | Yes      |
+### GitLab Configuration (`gitlab`)
 
-### Sync Settings
+| Option     | Description                   | Required | Default           |
+| ---------- | ----------------------------- | -------- | ----------------- |
+| `enabled`  | Enable GitLab synchronization | Yes      | -                 |
+| `url`      | GitLab instance URL           | No       | gitlab.com        |
+| `token`    | GitLab personal access token  | Yes      | -                 |
+| `username` | GitLab username               | No       | GitHub repo owner |
+| `repo`     | GitLab repository name        | No       | GitHub repo name  |
+
+### GitHub Configuration (`github`)
+
+| Option     | Description                   | Required | Default        |
+| ---------- | ----------------------------- | -------- | -------------- |
+| `enabled`  | Enable GitHub synchronization | Yes      | -              |
+| `token`    | GitHub personal access token  | Yes      | `GITHUB_TOKEN` |
+| `username` | GitHub username               | No       | GitHub context |
+| `repo`     | GitHub repository name        | No       | GitHub context |
+
+### Sync Configuration (`gl-sync` and `gh-sync`)
 
 #### Branches
 
-```yaml
-branches:
-  enabled: true # Enable/disable branch syncing
-  protected: true # Sync protected branches
-  pattern: '*' # Branch name pattern to sync
-```
+| Option      | Description             | Required | Default |
+| ----------- | ----------------------- | -------- | ------- |
+| `enabled`   | Enable branch sync      | Yes      | -       |
+| `protected` | Sync protected branches | No       | false   |
+| `pattern`   | Branch name pattern     | No       | "\*"    |
 
 #### Pull Requests
 
-```yaml
-pullRequests:
-  enabled: true # Enable/disable PR syncing
-  autoMerge: false # Auto-merge synchronized PRs
-  labels: ['synced'] # Labels to add to synced PRs
-```
+| Option      | Description                 | Required | Default |
+| ----------- | --------------------------- | -------- | ------- |
+| `enabled`   | Enable PR sync              | Yes      | -       |
+| `autoMerge` | Auto-merge synced PRs       | No       | false   |
+| `labels`    | Labels to add to synced PRs | No       | []      |
 
 #### Issues
 
+| Option         | Description                    | Required | Default |
+| -------------- | ------------------------------ | -------- | ------- |
+| `enabled`      | Enable issue sync              | Yes      | -       |
+| `syncComments` | Sync issue comments            | No       | false   |
+| `labels`       | Labels to add to synced issues | No       | []      |
+
+#### Releases and Tags
+
+| Option    | Description             | Required | Default |
+| --------- | ----------------------- | -------- | ------- |
+| `enabled` | Enable release/tag sync | Yes      | -       |
+
+## Token Permissions
+
+### GitLab Token
+
+The GitLab token needs the following permissions:
+
+- `api` - Full API access
+- `read_repository` - Read repository
+- `write_repository` - Write repository
+
+### GitHub Token
+
+The GitHub token needs the following permissions:
+
+- `repo` - Full repository access
+- `workflow` - Workflow access
+
+## Examples
+
+### Basic Configuration
+
+Minimal configuration to sync everything:
+
 ```yaml
-issues:
-  enabled: true # Enable/disable issue syncing
-  syncComments: true # Sync issue comments
-  labels: ['synced'] # Labels to add to synced issues
+gitlab:
+  enabled: true
+  token: ${{ secrets.GITLAB_TOKEN }}
+
+gl-sync:
+  branches:
+    enabled: true
+  pullRequests:
+    enabled: true
+  issues:
+    enabled: true
+  releases:
+    enabled: true
+  tags:
+    enabled: true
+
+github:
+  enabled: true
+  token: ${{ secrets.GH_TOKEN }}
+
+gh-sync:
+  branches:
+    enabled: true
+  pullRequests:
+    enabled: true
+  issues:
+    enabled: true
+  releases:
+    enabled: true
+  tags:
+    enabled: true
 ```
-
-## Development 🔧
-
-### Prerequisites
-
-- Bun v1.1.37 or higher. If you do not use bun for your projects, try it and thank me later.
-
-```bash
-curl -fsSL https://bun.sh/install | bash
-```
-
-### Setup
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/OpenSaucedHub/git-sync-action.git
-cd git-sync-action
-```
-
-2. Install dependencies:
-
-```bash
-bun install
-```
-
-3. Build the project:
-
-```bash
-bun run build
-```
-
-### Available Scripts
-
-- `bun run build`: Build the TypeScript project
-- `bun run test`: Run tests // TODO
-- `bun run lint`: Lint the codebase
-- `bun run f`: Format code using Prettier
 
 ## Contributing 🤝
 

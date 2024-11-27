@@ -3,19 +3,10 @@ description: "Synchronize GitHub repository with GitLab including branches, PRs,
 author: "vikshan"
 
 inputs:
-  gitlab_url:
-    description: "GitLab instance URL"
-    required: true
-  gitlab_token:
-    description: "GitLab Personal Access Token"
-    required: true
-  gitlab_username:
-    description: "GitLab username"
-    required: true
   config_path:
     description: "Path to the sync configuration file"
     required: false
-    default: ".github/git-sync.yml"
+    default: ".github/sync-config.yml"
 
 runs:
   using: "composite"

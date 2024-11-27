@@ -1,0 +1,56 @@
+gitlab:
+  enabled: true
+  url: "gitlab.com"
+  token: ${{ secrets.GITLAB_TOKEN }}
+  username:
+  repo:
+
+gl-sync:
+  branches:
+    enabled: true
+    protected: true
+    pattern: "*"
+
+  pullRequests:
+    enabled: true
+    autoMerge: false
+    labels: ["synced-from-github"]
+
+  issues:
+    enabled: true
+    syncComments: true
+    labels: ["synced-from-github"]
+
+  releases:
+    enabled: true
+
+  tags:
+    enabled: true
+
+github:
+  enabled: true
+  token: ${{ secrets.GH_TOKEN }}
+  username:
+  repo:
+
+gh-sync:
+  branches:
+    enabled: true
+    protected: true
+    pattern: "*"
+
+  pullRequests:
+    enabled: true
+    autoMerge: false
+    labels: ["synced-from-gitlab"]
+
+  issues:
+    enabled: true
+    syncComments: true
+    labels: ["synced-from-gitlab"]
+
+  releases:
+    enabled: true
+
+  tags:
+    enabled: true
