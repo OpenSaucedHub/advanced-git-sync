@@ -54912,23 +54912,23 @@ const zod_1 = __nccwpck_require__(4809);
 const defaults_1 = __nccwpck_require__(2835);
 async function loadConfig() {
     const configPath = core.getInput('config_path', { required: false }) ||
-        '.github/sync-config.yml';
+        '.github/sync-confi.yml';
     try {
         // If config file doesn't exist, use default configuration
         if (!fs.existsSync(configPath)) {
-            core.info('No configuration file found. Using default configuration.');
+            core.info('ECONFIG: No configuration file found. Using default configuration.');
             return (0, defaults_1.getDefaultConfig)();
         }
         const configContent = fs.readFileSync(configPath, 'utf8');
         // If config file is empty or just whitespace
         if (!configContent.trim()) {
-            core.info('Empty configuration file. Using default configuration.');
+            core.info('ECONFIG: Empty configuration file. Using default configuration.');
             return (0, defaults_1.getDefaultConfig)();
         }
         const parsedConfig = yaml.load(configContent);
         // If parsed config is null or empty
         if (!parsedConfig || Object.keys(parsedConfig).length === 0) {
-            core.info('Empty or invalid configuration. Using default configuration.');
+            core.info('ECONFIG: Empty or invalid configuration. Using default configuration.');
             return (0, defaults_1.getDefaultConfig)();
         }
         // First, do a basic schema validation
@@ -54942,35 +54942,50 @@ async function loadConfig() {
             const errorMessages = error.errors
                 .map(err => `${err.path.join('.')}: ${err.message}`)
                 .join('\n');
-            // Optionally, fall back to default config if validation fails
-            core.warning(`Config validation failed:\n${errorMessages}. Using default configuration.`);
+            // fall back to default config if validation fails
+            core.warning(`EZOD: Config validation failed:\n${errorMessages}. Using default configuration.`);
             return (0, defaults_1.getDefaultConfig)();
         }
         if (error instanceof Error) {
-            core.warning(`Failed to load config: ${error.message}. Using default configuration.`);
+            core.warning(`ECONFIG: Failed to load config: ${error.message}. Using default configuration.`);
             return (0, defaults_1.getDefaultConfig)();
         }
         // Fallback to default config for any unexpected errors
-        core.warning('Unexpected error loading config. Using default configuration.');
+        core.warning('ECONFIG: Unexpected error loading config. Using default configuration.');
         return (0, defaults_1.getDefaultConfig)();
     }
 }
 function validateTokens(config) {
+    // Log token sources and lengths
+    core.info('Token Configuration Diagnostic:');
+    // GitLab Token Logging and Retrieval
+    const gitlabTokenFromInput = core.getInput('gitlab_token', {
+        required: false
+    });
+    const gitlabTokenFromEnv = process.env.GITLAB_TOKEN;
+    core.info(`GitLab Token from 'with': ${gitlabTokenFromInput ? gitlabTokenFromInput.length + ' chars' : 'Not provided'}`);
+    core.info(`GitLab Token from 'env': ${gitlabTokenFromEnv ? gitlabTokenFromEnv.length + ' chars' : 'Not provided'}`);
+    // GitHub Token Logging and Retrieval
+    const githubTokenFromInput = core.getInput('github_token', {
+        required: false
+    });
+    const githubTokenFromEnv = process.env.GH_TOKEN;
+    core.info(`GitHub Token from 'with': ${githubTokenFromInput ? githubTokenFromInput.length + ' chars' : 'Not provided'}`);
+    core.info(`GitHub Token from 'env': ${githubTokenFromEnv ? githubTokenFromEnv.length + ' chars' : 'Not provided'}`);
     // If both GitLab and GitHub are enabled, tokens are mandatory
     if (config.gitlab.enabled && config.github.enabled) {
-        // Validate GitLab token
-        const gitlabToken = core.getInput('gitlab_token', { required: false });
+        // Prioritize input tokens, then fall back to env tokens
+        const gitlabToken = gitlabTokenFromInput || gitlabTokenFromEnv || process.env.GITHUB_TOKEN;
+        const githubToken = githubTokenFromInput || githubTokenFromEnv;
         if (!gitlabToken) {
-            throw new Error('GitLab token is required when syncing between GitLab and GitHub');
+            throw new Error('EENV: GitLab token is required when syncing between GitLab and GitHub');
         }
-        // Validate GitHub token
-        const githubToken = core.getInput('github_token') || process.env.GITHUB_TOKEN;
         if (!githubToken) {
-            throw new Error('GitHub token is required when syncing between GitLab and GitHub');
+            throw new Error('EENV: GitHub token is required when syncing between GitLab and GitHub');
         }
         // Warn about potential permission issues with default token
         if (githubToken === process.env.GITHUB_TOKEN) {
-            core.warning('Using default GitHub token. Ensure workflow permissions are correctly set up for full access.');
+            core.warning('EENV: Using default GitHub token. Ensure workflow permissions are correctly set up for full access.');
         }
         return {
             ...config,
@@ -54986,7 +55001,7 @@ function validateTokens(config) {
     }
     // Validate GitLab configuration
     if (config.gitlab.enabled) {
-        const gitlabToken = core.getInput('gitlab_token', { required: false });
+        const gitlabToken = gitlabTokenFromInput || gitlabTokenFromEnv;
         // Only add token if provided
         return {
             ...config,
@@ -54998,8 +55013,7 @@ function validateTokens(config) {
     }
     // Validate GitHub configuration
     if (config.github.enabled) {
-        // Prefer input token, fall back to default GITHUB_TOKEN
-        const githubToken = core.getInput('github_token') || process.env.GITHUB_TOKEN;
+        const githubToken = githubTokenFromInput || githubTokenFromEnv;
         if (!githubToken) {
             core.warning('No GitHub token provided. Sync operations may have limited permissions.');
         }
@@ -55851,6 +55865,7 @@ __exportStar(__nccwpck_require__(7004), exports);
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ConfigSchema = exports.GithubConfigSchema = exports.GitlabConfigSchema = exports.SyncConfigSchema = exports.IssueConfigSchema = exports.PRConfigSchema = exports.BranchConfigSchema = void 0;
+// src/types/types.ts
 const zod_1 = __nccwpck_require__(4809);
 exports.BranchConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),

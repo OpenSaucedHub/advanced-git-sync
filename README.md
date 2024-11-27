@@ -84,57 +84,6 @@ github:
 - `GITLAB_TOKEN`: A GitLab personal access token with API access
 - `GH_TOKEN`: A GitHub personal access token (optional, defaults to `GITHUB_TOKEN`)
 
-## Configuration Options
-
-### GitLab Configuration (`gitlab`)
-
-| Option     | Description                   | Required | Default           |
-| ---------- | ----------------------------- | -------- | ----------------- |
-| `enabled`  | Enable GitLab synchronization | No       | true              |
-| `url`      | GitLab instance URL           | No       | gitlab.com        |
-| `username` | GitLab username               | No       | GitHub repo owner |
-| `repo`     | GitLab repository name        | No       | GitHub repo name  |
-
-### GitHub Configuration (`github`)
-
-| Option     | Description                   | Required | Default        |
-| ---------- | ----------------------------- | -------- | -------------- |
-| `enabled`  | Enable GitHub synchronization | No       | true           |
-| `username` | GitHub username               | No       | GitHub context |
-| `repo`     | GitHub repository name        | No       | GitHub context |
-
-### Sync Configuration
-
-#### Branches
-
-| Option      | Description             | Required | Default |
-| ----------- | ----------------------- | -------- | ------- |
-| `enabled`   | Enable branch sync      | No       | true    |
-| `protected` | Sync protected branches | No       | true    |
-| `pattern`   | Branch name pattern     | No       | "\*"    |
-
-#### Pull Requests
-
-| Option      | Description                 | Required | Default                   |
-| ----------- | --------------------------- | -------- | ------------------------- |
-| `enabled`   | Enable PR sync              | No       | true                      |
-| `autoMerge` | Auto-merge synced PRs       | No       | false                     |
-| `labels`    | Labels to add to synced PRs | No       | synced-from-github/gitlab |
-
-#### Issues
-
-| Option         | Description                    | Required | Default                   |
-| -------------- | ------------------------------ | -------- | ------------------------- |
-| `enabled`      | Enable issue sync              | No       | true                      |
-| `syncComments` | Sync issue comments            | No       | false                     |
-| `labels`       | Labels to add to synced issues | No       | synced-from-github/gitlab |
-
-#### Releases and Tags
-
-| Option    | Description             | Required | Default |
-| --------- | ----------------------- | -------- | ------- |
-| `enabled` | Enable release/tag sync | No       | true    |
-
 ## Accepted Configuration
 
 ```yaml
@@ -194,6 +143,57 @@ github:
     tags:
       enabled: true # automatically enabled if releases = true
 ```
+
+## Configuration Options
+
+### GitLab Configuration (`gitlab`)
+
+| Option     | Description                   | Required | Default           |
+| ---------- | ----------------------------- | -------- | ----------------- |
+| `enabled`  | Enable GitLab synchronization | No       | true              |
+| `url`      | GitLab instance URL           | No       | gitlab.com        |
+| `username` | GitLab username               | No       | GitHub repo owner |
+| `repo`     | GitLab repository name        | No       | GitHub repo name  |
+
+### GitHub Configuration (`github`)
+
+| Option     | Description                   | Required | Default        |
+| ---------- | ----------------------------- | -------- | -------------- |
+| `enabled`  | Enable GitHub synchronization | No       | true           |
+| `username` | GitHub username               | No       | GitHub context |
+| `repo`     | GitHub repository name        | No       | GitHub context |
+
+### Sync Configuration
+
+#### Branches
+
+| Option      | Description             | Required | Default |
+| ----------- | ----------------------- | -------- | ------- |
+| `enabled`   | Enable branch sync      | No       | true    |
+| `protected` | Sync protected branches | No       | true    |
+| `pattern`   | Branch name pattern     | No       | "\*"    |
+
+#### Pull Requests
+
+| Option      | Description                 | Required | Default                   |
+| ----------- | --------------------------- | -------- | ------------------------- |
+| `enabled`   | Enable PR sync              | No       | true                      |
+| `autoMerge` | Auto-merge synced PRs       | No       | false                     |
+| `labels`    | Labels to add to synced PRs | No       | synced-from-github/gitlab |
+
+#### Issues
+
+| Option         | Description                    | Required | Default                   |
+| -------------- | ------------------------------ | -------- | ------------------------- |
+| `enabled`      | Enable issue sync              | No       | true                      |
+| `syncComments` | Sync issue comments            | No       | false                     |
+| `labels`       | Labels to add to synced issues | No       | synced-from-github/gitlab |
+
+#### Releases and Tags
+
+| Option    | Description             | Required | Default |
+| --------- | ----------------------- | -------- | ------- |
+| `enabled` | Enable release/tag sync | No       | true    |
 
 ## Token Permissions
 
