@@ -1,3 +1,5 @@
+// src/gitlab.ts
+
 import * as core from '@actions/core'
 import { Gitlab } from '@gitbeaker/rest'
 import { Config } from './types'
@@ -30,7 +32,7 @@ export class GitLabClient {
   }
 
   async syncBranches(): Promise<Branch[]> {
-    if (!this.config['gl-sync'].branches.enabled) return []
+    if (!this.config.github.sync?.branches.enabled) return []
 
     try {
       const branches = await this.gitlab.Branches.all(this.projectPath)
@@ -48,7 +50,7 @@ export class GitLabClient {
   }
 
   async syncPullRequests(): Promise<PullRequest[]> {
-    if (!this.config['gl-sync'].pullRequests.enabled) return []
+    if (!this.config.github.sync?.pullRequests.enabled) return []
 
     try {
       const mrs = await this.gitlab.MergeRequests.all({
@@ -63,7 +65,7 @@ export class GitLabClient {
         targetBranch: mr.target_branch,
         labels: [
           ...(mr.labels || []),
-          ...this.config['gl-sync'].pullRequests.labels
+          ...(this.config.github.sync?.pullRequests.labels || [])
         ]
       }))
     } catch (error) {
@@ -75,7 +77,7 @@ export class GitLabClient {
   }
 
   async syncIssues(): Promise<Issue[]> {
-    if (!this.config['gl-sync'].issues.enabled) return []
+    if (!this.config.github.sync?.issues.enabled) return []
 
     try {
       const issues = await this.gitlab.Issues.all({
@@ -87,7 +89,7 @@ export class GitLabClient {
         body: issue.description || '',
         labels: [
           ...(issue.labels || []),
-          ...this.config['gl-sync'].issues.labels
+          ...(this.config.github.sync?.issues.labels ?? [])
         ],
         number: issue.iid,
         state: issue.state === 'opened' ? 'open' : 'closed'
@@ -101,7 +103,7 @@ export class GitLabClient {
   }
 
   async getIssueComments(issueNumber: number): Promise<Comment[]> {
-    if (!this.config['gl-sync'].issues.syncComments) return []
+    if (!this.config.github.sync?.issues.syncComments) return []
 
     try {
       const notes = await this.gitlab.IssueNotes.all(
@@ -122,7 +124,7 @@ export class GitLabClient {
   }
 
   async syncReleases(): Promise<Release[]> {
-    if (!this.config['gl-sync'].releases.enabled) return []
+    if (!this.config.github.sync?.releases.enabled) return []
 
     try {
       const releases = await this.gitlab.ProjectReleases.all(this.projectPath)
@@ -142,7 +144,7 @@ export class GitLabClient {
   }
 
   async syncTags(): Promise<string[]> {
-    if (!this.config['gl-sync'].tags.enabled) return []
+    if (!this.config.github.sync?.tags.enabled) return []
 
     try {
       const tags = await this.gitlab.Tags.all(this.projectPath)

@@ -54867,6 +54867,7 @@ exports.NEVER = parseUtil_1.INVALID;
 
 "use strict";
 
+// src/config.ts
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -54902,24 +54903,119 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.loadConfig = loadConfig;
+exports.getConfig = getConfig;
 const core = __importStar(__nccwpck_require__(7484));
 const fs = __importStar(__nccwpck_require__(9896));
 const yaml = __importStar(__nccwpck_require__(4281));
 const types_1 = __nccwpck_require__(1569);
+const zod_1 = __nccwpck_require__(4809);
+const defaults_1 = __nccwpck_require__(2835);
 async function loadConfig() {
     const configPath = core.getInput('config_path', { required: false }) ||
         '.github/sync-config.yml';
     try {
+        // If config file doesn't exist, use default configuration
+        if (!fs.existsSync(configPath)) {
+            core.info('No configuration file found. Using default configuration.');
+            return (0, defaults_1.getDefaultConfig)();
+        }
         const configContent = fs.readFileSync(configPath, 'utf8');
+        // If config file is empty or just whitespace
+        if (!configContent.trim()) {
+            core.info('Empty configuration file. Using default configuration.');
+            return (0, defaults_1.getDefaultConfig)();
+        }
         const parsedConfig = yaml.load(configContent);
-        return types_1.ConfigSchema.parse(parsedConfig);
+        // If parsed config is null or empty
+        if (!parsedConfig || Object.keys(parsedConfig).length === 0) {
+            core.info('Empty or invalid configuration. Using default configuration.');
+            return (0, defaults_1.getDefaultConfig)();
+        }
+        // First, do a basic schema validation
+        const config = types_1.ConfigSchema.parse(parsedConfig);
+        // Additional validation for tokens
+        return validateTokens(config);
     }
     catch (error) {
-        if (error instanceof Error) {
-            throw new Error(`Failed to load config: ${error.message}`);
+        if (error instanceof zod_1.ZodError) {
+            // Handle Zod validation errors
+            const errorMessages = error.errors
+                .map(err => `${err.path.join('.')}: ${err.message}`)
+                .join('\n');
+            // Optionally, fall back to default config if validation fails
+            core.warning(`Config validation failed:\n${errorMessages}. Using default configuration.`);
+            return (0, defaults_1.getDefaultConfig)();
         }
-        throw error;
+        if (error instanceof Error) {
+            core.warning(`Failed to load config: ${error.message}. Using default configuration.`);
+            return (0, defaults_1.getDefaultConfig)();
+        }
+        // Fallback to default config for any unexpected errors
+        core.warning('Unexpected error loading config. Using default configuration.');
+        return (0, defaults_1.getDefaultConfig)();
     }
+}
+function validateTokens(config) {
+    // If both GitLab and GitHub are enabled, tokens are mandatory
+    if (config.gitlab.enabled && config.github.enabled) {
+        // Validate GitLab token
+        const gitlabToken = core.getInput('gitlab_token', { required: false });
+        if (!gitlabToken) {
+            throw new Error('GitLab token is required when syncing between GitLab and GitHub');
+        }
+        // Validate GitHub token
+        const githubToken = core.getInput('github_token') || process.env.GITHUB_TOKEN;
+        if (!githubToken) {
+            throw new Error('GitHub token is required when syncing between GitLab and GitHub');
+        }
+        // Warn about potential permission issues with default token
+        if (githubToken === process.env.GITHUB_TOKEN) {
+            core.warning('Using default GitHub token. Ensure workflow permissions are correctly set up for full access.');
+        }
+        return {
+            ...config,
+            gitlab: {
+                ...config.gitlab,
+                token: gitlabToken
+            },
+            github: {
+                ...config.github,
+                token: githubToken
+            }
+        };
+    }
+    // Validate GitLab configuration
+    if (config.gitlab.enabled) {
+        const gitlabToken = core.getInput('gitlab_token', { required: false });
+        // Only add token if provided
+        return {
+            ...config,
+            gitlab: {
+                ...config.gitlab,
+                ...(gitlabToken && { token: gitlabToken })
+            }
+        };
+    }
+    // Validate GitHub configuration
+    if (config.github.enabled) {
+        // Prefer input token, fall back to default GITHUB_TOKEN
+        const githubToken = core.getInput('github_token') || process.env.GITHUB_TOKEN;
+        if (!githubToken) {
+            core.warning('No GitHub token provided. Sync operations may have limited permissions.');
+        }
+        // Add the token to the config at runtime
+        return {
+            ...config,
+            github: {
+                ...config.github,
+                token: githubToken
+            }
+        };
+    }
+    return config;
+}
+async function getConfig() {
+    return await loadConfig();
 }
 
 
@@ -54965,6 +55061,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitHubClient = void 0;
+// src/github.ts
 const github = __importStar(__nccwpck_require__(3228));
 const core = __importStar(__nccwpck_require__(7484));
 const repository_1 = __nccwpck_require__(6629);
@@ -54974,16 +55071,19 @@ class GitHubClient {
     repo;
     constructor(config) {
         this.config = config;
+        if (!config.github.token) {
+            throw new Error('GitHub token is required');
+        }
         this.octokit = github.getOctokit(config.github.token);
         this.repo = (0, repository_1.getGitHubRepo)(config);
     }
     async syncBranches() {
-        if (!this.config['gh-sync'].branches.enabled)
+        if (!this.config.gitlab.sync?.branches.enabled)
             return [];
         try {
             const { data: branches } = await this.octokit.rest.repos.listBranches({
                 ...this.repo,
-                protected: this.config['gh-sync'].branches.protected
+                protected: this.config.gitlab.sync?.branches.protected
             });
             return branches.map(branch => ({
                 name: branch.name,
@@ -54997,7 +55097,7 @@ class GitHubClient {
         }
     }
     async syncPullRequests() {
-        if (!this.config['gh-sync'].pullRequests.enabled)
+        if (!this.config.gitlab.sync?.pullRequests.enabled)
             return [];
         try {
             const { data: prs } = await this.octokit.rest.pulls.list({
@@ -55009,7 +55109,7 @@ class GitHubClient {
                 description: pr.body || '',
                 sourceBranch: pr.head.ref,
                 targetBranch: pr.base.ref,
-                labels: this.config['gh-sync'].pullRequests.labels
+                labels: this.config.gitlab.sync?.pullRequests.labels ?? []
             }));
         }
         catch (error) {
@@ -55018,7 +55118,7 @@ class GitHubClient {
         }
     }
     async syncIssues() {
-        if (!this.config['gh-sync'].issues.enabled)
+        if (!this.config.gitlab.sync?.issues.enabled)
             return [];
         try {
             const { data: issues } = await this.octokit.rest.issues.list({
@@ -55030,7 +55130,7 @@ class GitHubClient {
                 body: issue.body || '',
                 labels: [
                     ...issue.labels,
-                    ...this.config['gh-sync'].issues.labels
+                    ...(this.config.gitlab.sync?.issues.labels ?? [])
                 ],
                 number: issue.number,
                 state: issue.state
@@ -55042,7 +55142,7 @@ class GitHubClient {
         }
     }
     async getIssueComments(issueNumber) {
-        if (!this.config['gh-sync'].issues.syncComments)
+        if (!this.config.gitlab.sync?.issues.syncComments)
             return [];
         try {
             const { data: comments } = await this.octokit.rest.issues.listComments({
@@ -55061,7 +55161,7 @@ class GitHubClient {
         }
     }
     async syncReleases() {
-        if (!this.config['gh-sync'].releases.enabled)
+        if (!this.config.gitlab.sync?.releases.enabled)
             return [];
         try {
             const { data: releases } = await this.octokit.rest.repos.listReleases({
@@ -55081,7 +55181,7 @@ class GitHubClient {
         }
     }
     async syncTags() {
-        if (!this.config['gh-sync'].tags.enabled)
+        if (!this.config.gitlab.sync?.tags.enabled)
             return [];
         try {
             const { data: tags } = await this.octokit.rest.repos.listTags({
@@ -55105,6 +55205,7 @@ exports.GitHubClient = GitHubClient;
 
 "use strict";
 
+// src/gitlab.ts
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -55159,7 +55260,7 @@ class GitLabClient {
         return `${this.repo.owner}/${this.repo.repo}`;
     }
     async syncBranches() {
-        if (!this.config['gl-sync'].branches.enabled)
+        if (!this.config.github.sync?.branches.enabled)
             return [];
         try {
             const branches = await this.gitlab.Branches.all(this.projectPath);
@@ -55175,7 +55276,7 @@ class GitLabClient {
         }
     }
     async syncPullRequests() {
-        if (!this.config['gl-sync'].pullRequests.enabled)
+        if (!this.config.github.sync?.pullRequests.enabled)
             return [];
         try {
             const mrs = await this.gitlab.MergeRequests.all({
@@ -55189,7 +55290,7 @@ class GitLabClient {
                 targetBranch: mr.target_branch,
                 labels: [
                     ...(mr.labels || []),
-                    ...this.config['gl-sync'].pullRequests.labels
+                    ...(this.config.github.sync?.pullRequests.labels || [])
                 ]
             }));
         }
@@ -55199,7 +55300,7 @@ class GitLabClient {
         }
     }
     async syncIssues() {
-        if (!this.config['gl-sync'].issues.enabled)
+        if (!this.config.github.sync?.issues.enabled)
             return [];
         try {
             const issues = await this.gitlab.Issues.all({
@@ -55210,7 +55311,7 @@ class GitLabClient {
                 body: issue.description || '',
                 labels: [
                     ...(issue.labels || []),
-                    ...this.config['gl-sync'].issues.labels
+                    ...(this.config.github.sync?.issues.labels ?? [])
                 ],
                 number: issue.iid,
                 state: issue.state === 'opened' ? 'open' : 'closed'
@@ -55222,7 +55323,7 @@ class GitLabClient {
         }
     }
     async getIssueComments(issueNumber) {
-        if (!this.config['gl-sync'].issues.syncComments)
+        if (!this.config.github.sync?.issues.syncComments)
             return [];
         try {
             const notes = await this.gitlab.IssueNotes.all(this.projectPath, issueNumber);
@@ -55238,7 +55339,7 @@ class GitLabClient {
         }
     }
     async syncReleases() {
-        if (!this.config['gl-sync'].releases.enabled)
+        if (!this.config.github.sync?.releases.enabled)
             return [];
         try {
             const releases = await this.gitlab.ProjectReleases.all(this.projectPath);
@@ -55256,7 +55357,7 @@ class GitLabClient {
         }
     }
     async syncTags() {
-        if (!this.config['gl-sync'].tags.enabled)
+        if (!this.config.github.sync?.tags.enabled)
             return [];
         try {
             const tags = await this.gitlab.Tags.all(this.projectPath);
@@ -55323,42 +55424,42 @@ const releases_1 = __nccwpck_require__(2017);
 const tags_1 = __nccwpck_require__(5362);
 async function run() {
     try {
-        const config = await (0, config_1.loadConfig)();
+        const config = await (0, config_1.getConfig)();
         core.info('Configuration loaded successfully');
         const githubClient = new github_1.GitHubClient(config);
         const gitlabClient = new gitlab_1.GitLabClient(config);
         if (config.github.enabled && config.gitlab.enabled) {
             core.info('Starting bi-directional sync between GitHub and GitLab');
             // GitHub to GitLab sync
-            if (config['gl-sync'].branches.enabled) {
+            if (config.github.sync?.branches.enabled) {
                 await (0, branches_1.syncBranches)(githubClient, gitlabClient);
             }
-            if (config['gl-sync'].pullRequests.enabled) {
+            if (config.github.sync?.pullRequests.enabled) {
                 await (0, pr_sync_1.syncPullRequests)(githubClient, gitlabClient);
             }
-            if (config['gl-sync'].issues.enabled) {
+            if (config.github.sync?.issues.enabled) {
                 await (0, issues_1.syncIssues)(githubClient, gitlabClient);
             }
-            if (config['gl-sync'].releases.enabled) {
+            if (config.github.sync?.releases.enabled) {
                 await (0, releases_1.syncReleases)(githubClient, gitlabClient);
             }
-            if (config['gl-sync'].tags.enabled) {
+            if (config.github.sync?.tags.enabled) {
                 await (0, tags_1.syncTags)(githubClient, gitlabClient);
             }
             // GitLab to GitHub sync
-            if (config['gh-sync'].branches.enabled) {
+            if (config.gitlab.sync?.branches.enabled) {
                 await (0, branches_1.syncBranches)(gitlabClient, githubClient);
             }
-            if (config['gh-sync'].pullRequests.enabled) {
+            if (config.gitlab.sync?.pullRequests.enabled) {
                 await (0, pr_sync_1.syncPullRequests)(gitlabClient, githubClient);
             }
-            if (config['gh-sync'].issues.enabled) {
+            if (config.gitlab.sync?.issues.enabled) {
                 await (0, issues_1.syncIssues)(gitlabClient, githubClient);
             }
-            if (config['gh-sync'].releases.enabled) {
+            if (config.gitlab.sync?.releases.enabled) {
                 await (0, releases_1.syncReleases)(gitlabClient, githubClient);
             }
-            if (config['gh-sync'].tags.enabled) {
+            if (config.gitlab.sync?.tags.enabled) {
                 await (0, tags_1.syncTags)(gitlabClient, githubClient);
             }
             core.info('Sync completed successfully');
@@ -55422,20 +55523,6 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.syncBranches = syncBranches;
 const core = __importStar(__nccwpck_require__(7484));
-/**
- * Synchronizes branches between source and target Git providers (GitHub/GitLab).
- * This function compares branches between source and target repositories and identifies
- * branches that exist in source but not in target.
- *
- * @param source - The source client instance (GitHub or GitLab) to sync branches from
- * @param target - The target client instance (GitHub or GitLab) to sync branches to
- *
- * @returns Promise resolving to an array of branches that need to be synchronized.
- * Returns empty array if synchronization fails.
- *
- * @throws Will not throw errors directly, but logs error messages using core.error
- *
- */
 async function syncBranches(source, target) {
     try {
         const sourceBranches = await source.syncBranches();
@@ -55790,22 +55877,89 @@ exports.SyncConfigSchema = zod_1.z.object({
 exports.GitlabConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
     url: zod_1.z.string().optional(),
-    token: zod_1.z.string(),
+    token: zod_1.z.string().optional(),
     username: zod_1.z.string().optional(),
-    repo: zod_1.z.string().optional()
+    repo: zod_1.z.string().optional(),
+    sync: exports.SyncConfigSchema.optional()
 });
 exports.GithubConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
-    token: zod_1.z.string(),
+    token: zod_1.z.string().optional(),
     username: zod_1.z.string().optional(),
-    repo: zod_1.z.string().optional()
+    repo: zod_1.z.string().optional(),
+    sync: exports.SyncConfigSchema.optional()
 });
 exports.ConfigSchema = zod_1.z.object({
     gitlab: exports.GitlabConfigSchema,
-    github: exports.GithubConfigSchema,
-    'gl-sync': exports.SyncConfigSchema,
-    'gh-sync': exports.SyncConfigSchema
+    github: exports.GithubConfigSchema
 });
+
+
+/***/ }),
+
+/***/ 2835:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getDefaultConfig = getDefaultConfig;
+function getDefaultConfig() {
+    return {
+        github: {
+            enabled: true,
+            sync: {
+                branches: {
+                    enabled: true,
+                    protected: true,
+                    pattern: '*'
+                },
+                pullRequests: {
+                    enabled: true,
+                    autoMerge: false,
+                    labels: ['synced-from-gitlab']
+                },
+                issues: {
+                    enabled: true,
+                    syncComments: true,
+                    labels: ['synced-from-gitlab']
+                },
+                releases: {
+                    enabled: true
+                },
+                tags: {
+                    enabled: true
+                }
+            }
+        },
+        gitlab: {
+            enabled: true,
+            sync: {
+                branches: {
+                    enabled: true,
+                    protected: true,
+                    pattern: '*'
+                },
+                pullRequests: {
+                    enabled: true,
+                    autoMerge: false,
+                    labels: ['synced-from-github']
+                },
+                issues: {
+                    enabled: true,
+                    syncComments: true,
+                    labels: ['synced-from-github']
+                },
+                releases: {
+                    enabled: true
+                },
+                tags: {
+                    enabled: true
+                }
+            }
+        }
+    };
+}
 
 
 /***/ }),
@@ -55851,6 +56005,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getGitHubRepo = getGitHubRepo;
 exports.getGitLabRepo = getGitLabRepo;
+// src/utils/repository.ts
 const github = __importStar(__nccwpck_require__(3228));
 function getGitHubRepo(config) {
     const context = github.context;

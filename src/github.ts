@@ -1,3 +1,4 @@
+// src/github.ts
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 import { Config } from './types'
@@ -18,17 +19,22 @@ export class GitHubClient {
 
   constructor(config: Config) {
     this.config = config
-    this.octokit = github.getOctokit(config.github.token)
+
+    if (!config.github.token) {
+      throw new Error('GitHub token is required')
+    }
+
+    this.octokit = github.getOctokit(config.github.token!)
     this.repo = getGitHubRepo(config)
   }
 
   async syncBranches(): Promise<Branch[]> {
-    if (!this.config['gh-sync'].branches.enabled) return []
+    if (!this.config.gitlab.sync?.branches.enabled) return []
 
     try {
       const { data: branches } = await this.octokit.rest.repos.listBranches({
         ...this.repo,
-        protected: this.config['gh-sync'].branches.protected
+        protected: this.config.gitlab.sync?.branches.protected
       })
 
       return branches.map(branch => ({
@@ -45,7 +51,7 @@ export class GitHubClient {
   }
 
   async syncPullRequests(): Promise<PullRequest[]> {
-    if (!this.config['gh-sync'].pullRequests.enabled) return []
+    if (!this.config.gitlab.sync?.pullRequests.enabled) return []
 
     try {
       const { data: prs } = await this.octokit.rest.pulls.list({
@@ -58,7 +64,7 @@ export class GitHubClient {
         description: pr.body || '',
         sourceBranch: pr.head.ref,
         targetBranch: pr.base.ref,
-        labels: this.config['gh-sync'].pullRequests.labels
+        labels: this.config.gitlab.sync?.pullRequests.labels ?? []
       }))
     } catch (error) {
       core.warning(
@@ -69,7 +75,7 @@ export class GitHubClient {
   }
 
   async syncIssues(): Promise<Issue[]> {
-    if (!this.config['gh-sync'].issues.enabled) return []
+    if (!this.config.gitlab.sync?.issues.enabled) return []
 
     try {
       const { data: issues } = await this.octokit.rest.issues.list({
@@ -82,7 +88,7 @@ export class GitHubClient {
         body: issue.body || '',
         labels: [
           ...(issue.labels as string[]),
-          ...this.config['gh-sync'].issues.labels
+          ...(this.config.gitlab.sync?.issues.labels ?? [])
         ],
         number: issue.number,
         state: issue.state as 'open' | 'closed'
@@ -96,7 +102,7 @@ export class GitHubClient {
   }
 
   async getIssueComments(issueNumber: number): Promise<Comment[]> {
-    if (!this.config['gh-sync'].issues.syncComments) return []
+    if (!this.config.gitlab.sync?.issues.syncComments) return []
 
     try {
       const { data: comments } = await this.octokit.rest.issues.listComments({
@@ -118,7 +124,7 @@ export class GitHubClient {
   }
 
   async syncReleases(): Promise<Release[]> {
-    if (!this.config['gh-sync'].releases.enabled) return []
+    if (!this.config.gitlab.sync?.releases.enabled) return []
 
     try {
       const { data: releases } = await this.octokit.rest.repos.listReleases({
@@ -141,7 +147,7 @@ export class GitHubClient {
   }
 
   async syncTags(): Promise<string[]> {
-    if (!this.config['gh-sync'].tags.enabled) return []
+    if (!this.config.gitlab.sync?.tags.enabled) return []
 
     try {
       const { data: tags } = await this.octokit.rest.repos.listTags({

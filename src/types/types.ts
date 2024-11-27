@@ -29,23 +29,23 @@ export const SyncConfigSchema = z.object({
 export const GitlabConfigSchema = z.object({
   enabled: z.boolean(),
   url: z.string().optional(),
-  token: z.string(),
+  token: z.string().optional(),
   username: z.string().optional(),
-  repo: z.string().optional()
+  repo: z.string().optional(),
+  sync: SyncConfigSchema.optional()
 })
 
 export const GithubConfigSchema = z.object({
   enabled: z.boolean(),
-  token: z.string(),
+  token: z.string().optional(),
   username: z.string().optional(),
-  repo: z.string().optional()
+  repo: z.string().optional(),
+  sync: SyncConfigSchema.optional()
 })
 
 export const ConfigSchema = z.object({
   gitlab: GitlabConfigSchema,
-  github: GithubConfigSchema,
-  'gl-sync': SyncConfigSchema,
-  'gh-sync': SyncConfigSchema
+  github: GithubConfigSchema
 })
 
 export type BranchConfig = z.infer<typeof BranchConfigSchema>

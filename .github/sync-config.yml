@@ -1,56 +1,55 @@
+#expected-config.yml
+# When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub TO GitLab
 gitlab:
   enabled: true
-  url: "gitlab.com"
-  token: ${{ secrets.GITLAB_TOKEN }}
-  username:
-  repo:
+  url: "gitlab.com" # Optional, defaults to gitlab.com
+  username: # Optional, defaults to GitHub repo owner
+  repo: # Optional, defaults to GitHub repo name
+  sync:
+    branches:
+      enabled: true
+      protected: true
+      pattern: "*"
 
-gl-sync:
-  branches:
-    enabled: true
-    protected: true
-    pattern: "*"
+    pullRequests:
+      enabled: true
+      autoMerge: false
+      labels: ["synced-from-github"]
 
-  pullRequests:
-    enabled: true
-    autoMerge: false
-    labels: ["synced-from-github"]
+    issues:
+      enabled: true
+      syncComments: true
+      labels: ["synced-from-github"]
 
-  issues:
-    enabled: true
-    syncComments: true
-    labels: ["synced-from-github"]
+    releases:
+      enabled: true
 
-  releases:
-    enabled: true
+    tags:
+      enabled: true # automatically enabled if releases = true
 
-  tags:
-    enabled: true
-
+# When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab TO GitHub
 github:
   enabled: true
-  token: ${{ secrets.GH_TOKEN }}
-  username:
-  repo:
+  username: # Optional, defaults to GitHub username
+  repo: # Optional, defaults to GitHub repo name
+  sync:
+    branches:
+      enabled: true
+      protected: true
+      pattern: "*"
 
-gh-sync:
-  branches:
-    enabled: true
-    protected: true
-    pattern: "*"
+    pullRequests:
+      enabled: true
+      autoMerge: false
+      labels: ["synced-from-gitlab"]
 
-  pullRequests:
-    enabled: true
-    autoMerge: false
-    labels: ["synced-from-gitlab"]
+    issues:
+      enabled: true
+      syncComments: true
+      labels: ["synced-from-gitlab"]
 
-  issues:
-    enabled: true
-    syncComments: true
-    labels: ["synced-from-gitlab"]
+    releases:
+      enabled: true
 
-  releases:
-    enabled: true
-
-  tags:
-    enabled: true
+    tags:
+      enabled: true # automatically enabled if releases = true

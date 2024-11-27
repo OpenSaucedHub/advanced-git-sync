@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { loadConfig } from './config'
+import { getConfig } from './config'
 import { GitHubClient } from './github'
 import { GitLabClient } from './gitlab'
 import { syncBranches } from './sync/branches'
@@ -10,7 +10,7 @@ import { syncTags } from './sync/tags'
 
 async function run(): Promise<void> {
   try {
-    const config = await loadConfig()
+    const config = await getConfig()
     core.info('Configuration loaded successfully')
 
     const githubClient = new GitHubClient(config)
@@ -20,36 +20,36 @@ async function run(): Promise<void> {
       core.info('Starting bi-directional sync between GitHub and GitLab')
 
       // GitHub to GitLab sync
-      if (config['gl-sync'].branches.enabled) {
+      if (config.github.sync?.branches.enabled) {
         await syncBranches(githubClient, gitlabClient)
       }
-      if (config['gl-sync'].pullRequests.enabled) {
+      if (config.github.sync?.pullRequests.enabled) {
         await syncPullRequests(githubClient, gitlabClient)
       }
-      if (config['gl-sync'].issues.enabled) {
+      if (config.github.sync?.issues.enabled) {
         await syncIssues(githubClient, gitlabClient)
       }
-      if (config['gl-sync'].releases.enabled) {
+      if (config.github.sync?.releases.enabled) {
         await syncReleases(githubClient, gitlabClient)
       }
-      if (config['gl-sync'].tags.enabled) {
+      if (config.github.sync?.tags.enabled) {
         await syncTags(githubClient, gitlabClient)
       }
 
       // GitLab to GitHub sync
-      if (config['gh-sync'].branches.enabled) {
+      if (config.gitlab.sync?.branches.enabled) {
         await syncBranches(gitlabClient, githubClient)
       }
-      if (config['gh-sync'].pullRequests.enabled) {
+      if (config.gitlab.sync?.pullRequests.enabled) {
         await syncPullRequests(gitlabClient, githubClient)
       }
-      if (config['gh-sync'].issues.enabled) {
+      if (config.gitlab.sync?.issues.enabled) {
         await syncIssues(gitlabClient, githubClient)
       }
-      if (config['gh-sync'].releases.enabled) {
+      if (config.gitlab.sync?.releases.enabled) {
         await syncReleases(gitlabClient, githubClient)
       }
-      if (config['gh-sync'].tags.enabled) {
+      if (config.gitlab.sync?.tags.enabled) {
         await syncTags(gitlabClient, githubClient)
       }
 

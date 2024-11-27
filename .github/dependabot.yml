@@ -16,9 +16,6 @@ updates:
       prefix-development: "chore(dev)"
     reviewers:
       - "iamvikshan"
-    ignore:
-      - dependency-type: "devDependencies"
-        update-types: ["version-update:semver-patch"]
 
   - package-ecosystem: "github-actions"
     directory: "/"

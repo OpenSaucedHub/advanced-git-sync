@@ -2,16 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.1.1](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.0...v1.1.1) (2024-11-27)
-
-
 
 ## [1.1.1](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.0...v1.1.1) (2024-11-27)
 
 ### Bug Fixes
 
-* Enhance Dependabot configuration and update README for clarity; backup and restore original dependencies in action ([b9db11d](https://github.com/OpenSaucedHub/git-sync-action/commit/b9db11dfca21135a080a5a889ab48c7919c2a65b))
+- Enhance Dependabot configuration and update README for clarity; backup and restore original
+  dependencies in action
+  ([b9db11d](https://github.com/OpenSaucedHub/git-sync-action/commit/b9db11dfca21135a080a5a889ab48c7919c2a65b))
 
 # [v1.1.0](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.0.0...v1.1.0) (2024-11-27)
 

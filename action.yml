@@ -1,11 +1,23 @@
+#action.yaml
+
 name: "Advanced Git Sync"
 description: "Synchronize GitHub repository with GitLab including branches, PRs, and issues"
 author: "vikshan"
 inputs:
+  github_token:
+    description: "GitHub token for authentication"
+    required: false
+    default: ${{ github.token }}
+
+  gitlab_token:
+    description: "GitLab token for authentication"
+    required: false
+
   config_path:
     description: "Path to the sync configuration file"
     required: false
     default: ".github/sync-config.yml"
+
 runs:
   using: "composite"
   steps:

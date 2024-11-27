@@ -21,7 +21,7 @@ requests, issues, releases, and tags.
 1. Create a `.github/workflows/sync.yml` file in your repository:
 
 ```yaml
-name: Sync with GitLab
+name: Sync to GitLab
 on:
   push:
     branches: [main]
@@ -31,86 +31,101 @@ on:
     types: [opened, closed, reopened]
   release:
     types: [published]
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Sync with GitLab
         uses: OpenSaucedHub/git-sync-action@v1.1.1
         with:
-          config_path: .github/sync-config.yml
+          config_path: .github/sync-config.yml # optional, defaults to .github/sync-config.yml
+          gitlab_token: ${{ secrets.GITLAB_TOKEN }} # optional, unless you want to sync to GitLab
+          github_token: ${{ secrets.GH_TOKEN }} # Optional, defaults to GITHUB_TOKEN
 ```
 
 2. Create a `.github/sync-config.yml` file with your sync configuration:
 
 ```yaml
+#sync-config.yml
+# When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub TO GitLab
 gitlab:
   enabled: true
   url: 'gitlab.com' # Optional, defaults to gitlab.com
-  token: ${{ secrets.GITLAB_TOKEN }}
   username: # Optional, defaults to GitHub repo owner
   repo: # Optional, defaults to GitHub repo name
+  sync:
+    branches:
+      enabled: true
+      protected: true
+      pattern: '*'
 
-gl-sync:
-  branches:
-    enabled: true
-    protected: true
-    pattern: '*'
+    pullRequests:
+      enabled: true
+      autoMerge: false
+      labels: ['synced-from-github']
 
-  pullRequests:
-    enabled: true
-    autoMerge: false
-    labels: ['synced-from-github']
+    issues:
+      enabled: true
+      syncComments: true
+      labels: ['synced-from-github']
 
-  issues:
-    enabled: true
-    syncComments: true
-    labels: ['synced-from-github']
+    releases:
+      enabled: true
 
-  releases:
-    enabled: true
+    tags:
+      enabled: true # automatically enabled if releases = true
 
-  tags:
-    enabled: true # atomaticall enabled if releases = true
-
+# When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab TO GitHub
 github:
   enabled: true
-  token: ${{ secrets.GH_TOKEN }}
   username: # Optional, defaults to GitHub username
   repo: # Optional, defaults to GitHub repo name
+  sync:
+    branches:
+      enabled: true
+      protected: true
+      pattern: '*'
 
-gh-sync:
-  branches:
-    enabled: true
-    protected: true
-    pattern: '*'
+    pullRequests:
+      enabled: true
+      autoMerge: false
+      labels: ['synced-from-gitlab']
 
-  pullRequests:
-    enabled: true
-    autoMerge: false
-    labels: ['synced-from-gitlab']
+    issues:
+      enabled: true
+      syncComments: true
+      labels: ['synced-from-gitlab']
 
-  issues:
-    enabled: true
-    syncComments: true
-    labels: ['synced-from-gitlab']
+    releases:
+      enabled: true
 
-  releases:
-    enabled: true
-
-  tags:
-    enabled: true # atomaticall enabled if releases = true
+    tags:
+      enabled: true # automatically enabled if releases = true
 ```
 
-3. Set up required secrets in your GitHub repository:
-   - `GITLAB_TOKEN`: A GitLab personal access token with API access
-   - `GH_TOKEN`: A GitHub personal access token (optional, defaults to `GITHUB_TOKEN`)
+> [!WARNING]
+>
+> 1. If no config is provided, everything defaults to true, `autoMerge` is false, Labels are set as
+>    specified and Repo name and username default to GitHub repository context.
+> 2. In case of a partial config (missing fields) will use defaults (you must set elements to false
+>    if you don't want them to sync)
+> 3. Set up required secrets in your GitHub repository:
+
+- `GITLAB_TOKEN`: A GitLab personal access token with API access
+- `GH_TOKEN`: A GitHub personal access token (optional, defaults to `GITHUB_TOKEN`)
 
 ## Configuration Options
 
