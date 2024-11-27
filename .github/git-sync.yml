@@ -1,0 +1,20 @@
+gitlab:
+  url: ${GITLAB_URL}
+  token: ${GITLAB_TOKEN}
+  username: ${GITLAB_USERNAME}
+
+sync:
+  branches:
+    enabled: true
+    protected: true
+    pattern: "*"
+
+  pullRequests:
+    enabled: true
+    autoMerge: false
+    labels: ["synced-from-github"]
+
+  issues:
+    enabled: true
+    syncComments: true
+    labels: ["synced-from-github"]
