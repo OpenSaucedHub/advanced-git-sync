@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.1.3](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.2...v1.1.3) (2024-11-28)
+
+
+
+## [1.1.3](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.2...v1.1.3) (2024-11-28)
+
+### Bug Fixes
+
+* Update action input names to uppercase; remove unused files and improve configuration handling ([bc77a9d](https://github.com/OpenSaucedHub/git-sync-action/commit/bc77a9dcc1dc2c91a37ce271cc73ce1b406b6a68))
+
 # [v1.1.2](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.1...v1.1.2) (2024-11-28)
 
 ## [1.1.2](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.1...v1.1.2) (2024-11-28)
