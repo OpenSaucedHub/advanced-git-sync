@@ -49,7 +49,7 @@ jobs:
           fetch-depth: 0
 
       - name: Sync with GitLab
-        uses: OpenSaucedHub/git-sync-action@v1.1.3
+        uses: OpenSaucedHub/git-sync-action@v1.1.4
         with:
           CONFIG_PATH: .github/sync-config.yml # optional, defaults to .github/sync-config.yml
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }} # optional, unless you want to sync to GitLab

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.1.4](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.3...v1.1.4) (2024-11-28)
+
+
+
+## [1.1.4](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.3...v1.1.4) (2024-11-28)
+
+### Bug Fixes
+
+* Refactor configuration handling; introduce validation for GitHub and GitLab tokens, and update type exports ([53d0a41](https://github.com/OpenSaucedHub/git-sync-action/commit/53d0a417879c88e23f3bce4d36718ddcad4e8cf1))
+
 # [v1.1.3](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.2...v1.1.3) (2024-11-28)
 
 ## [1.1.3](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.2...v1.1.3) (2024-11-28)
