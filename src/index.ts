@@ -1,52 +1,70 @@
-import {
-  getInput,
-  debug,
-  setFailed,
-  setOutput,
-  setSecret,
-  exportVariable,
-  info
-} from '@actions/core'
+// index.ts is the entry point of the action. It loads the configuration, initializes the GitHub and GitLab clients, and starts the sync process.
+import * as core from '@actions/core'
+import { getConfig } from './config'
+import { GitHubClient } from './github'
+import { GitLabClient } from './gitlab'
+import { syncBranches } from './sync/branches'
+import { syncPullRequests } from './sync/pr-sync'
+import { syncIssues } from './sync/issues'
+import { syncReleases } from './sync/releases'
+import { syncTags } from './sync/tags'
 
-const run = async () => {
+async function run(): Promise<void> {
   try {
-    // Get the config_path input
-    const configPath = getInput('config_path', { required: false })
-    debug(`Debug: config_path input: ${configPath}`)
-    info(`Config path: ${configPath}`)
+    const config = await getConfig()
+    core.info('Configuration loaded successfully')
 
-    // Set the config_path as an output
-    setOutput('config_path', configPath)
+    const githubClient = new GitHubClient(config)
+    const gitlabClient = new GitLabClient(config)
 
-    // Get the gitlab_token input
-    const gitlabToken = getInput('gitlab_token', { required: false })
-    debug(`Debug: gitlab_token input: ${gitlabToken}`)
-    if (gitlabToken) {
-      setSecret(gitlabToken)
-      info(`GitLab token length: ${gitlabToken.length}`)
-      exportVariable('GITLAB_TOKEN', gitlabToken)
-    }
+    if (config.github.enabled && config.gitlab.enabled) {
+      core.info('Starting bi-directional sync between GitHub and GitLab')
 
-    // Get the github_token input
-    const githubToken = getInput('github_token', { required: false })
-    debug(`Debug: github_token input: ${githubToken}`)
-    if (githubToken) {
-      setSecret(githubToken)
-      info(`GitHub token length: ${githubToken.length}`)
-      exportVariable('GH_TOKEN', githubToken)
+      // GitHub to GitLab sync
+      if (config.github.sync?.branches.enabled) {
+        await syncBranches(githubClient, gitlabClient)
+      }
+      if (config.github.sync?.pullRequests.enabled) {
+        await syncPullRequests(githubClient, gitlabClient)
+      }
+      if (config.github.sync?.issues.enabled) {
+        await syncIssues(githubClient, gitlabClient)
+      }
+      if (config.github.sync?.releases.enabled) {
+        await syncReleases(githubClient, gitlabClient)
+      }
+      if (config.github.sync?.tags.enabled) {
+        await syncTags(githubClient, gitlabClient)
+      }
+
+      // GitLab to GitHub sync
+      if (config.gitlab.sync?.branches.enabled) {
+        await syncBranches(gitlabClient, githubClient)
+      }
+      if (config.gitlab.sync?.pullRequests.enabled) {
+        await syncPullRequests(gitlabClient, githubClient)
+      }
+      if (config.gitlab.sync?.issues.enabled) {
+        await syncIssues(gitlabClient, githubClient)
+      }
+      if (config.gitlab.sync?.releases.enabled) {
+        await syncReleases(gitlabClient, githubClient)
+      }
+      if (config.gitlab.sync?.tags.enabled) {
+        await syncTags(gitlabClient, githubClient)
+      }
+
+      core.info('Sync completed successfully')
+    } else {
+      core.warning('Either GitHub or GitLab sync is disabled in configuration')
     }
   } catch (error) {
     if (error instanceof Error) {
-      setFailed(error.message)
+      core.setFailed(error.message)
     } else {
-      setFailed(String(error))
+      core.setFailed('An unexpected error occurred')
     }
   }
 }
 
 run()
-  .then(() => {})
-  .catch(error => {
-    console.error('ERROR', error)
-    setFailed(error.message)
-  })

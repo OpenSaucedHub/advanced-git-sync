@@ -51,9 +51,9 @@ jobs:
       - name: Sync with GitLab
         uses: OpenSaucedHub/git-sync-action@v1.1.2
         with:
-          config_path: .github/sync-config.yml # optional, defaults to .github/sync-config.yml
-          gitlab_token: ${{ secrets.GITLAB_TOKEN }} # optional, unless you want to sync to GitLab
-          github_token: ${{ secrets.GH_TOKEN }} # Optional, defaults to GITHUB_TOKEN
+          CONFIG_PATH: .github/sync-config.yml # optional, defaults to .github/sync-config.yml
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }} # optional, unless you want to sync to GitLab
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }} # Optional, defaults to GITHUB_TOKEN
 ```
 
 2. Create a `.github/sync-config.yml` file with your sync configuration:

@@ -4,16 +4,16 @@ name: "Advanced Git Sync"
 description: "Synchronize GitHub repository with GitLab including branches, PRs, and issues"
 author: "vikshan"
 inputs:
-  github_token:
+  GITHUB_TOKEN:
     description: "GitHub token for authentication"
     required: false
     default: ${{ github.token }}
 
-  gitlab_token:
+  GITLAB_TOKEN:
     description: "GitLab token for authentication"
     required: false
 
-  config_path:
+  CONFIG_PATH:
     description: "Path to the sync configuration file"
     required: false
     default: ".github/sync-config.yml"
