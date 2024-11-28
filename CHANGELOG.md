@@ -11,6 +11,18 @@ All notable changes to this project will be documented in this file.
 - Implement default configuration and enhance sync functionality for GitHub and GitLab, fix
   authentication errors
   ([957b79b](https://github.com/OpenSaucedHub/git-sync-action/commit/957b79b4a4ed9274b9f4aff002c4cc660cbb8dfe))
+- Update configuration options in README and improve error logging in config loading
+  ([75c63d2](https://github.com/OpenSaucedHub/git-sync-action/commit/75c63d2a9f034dd9414af77ca93f46bdd04f2086))
+
+# [v1.1.2](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.1...v1.1.2) (2024-11-27)
+
+## [1.1.2](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.1...v1.1.2) (2024-11-27)
+
+### Bug Fixes
+
+- Implement default configuration and enhance sync functionality for GitHub and GitLab, fix
+  authentication errors
+  ([957b79b](https://github.com/OpenSaucedHub/git-sync-action/commit/957b79b4a4ed9274b9f4aff002c4cc660cbb8dfe))
 
 # [v1.1.1](https://github.com/OpenSaucedHub/git-sync-action/compare/v1.1.0...v1.1.1) (2024-11-27)
 

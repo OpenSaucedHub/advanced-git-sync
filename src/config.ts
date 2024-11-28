@@ -8,15 +8,17 @@ import { ZodError } from 'zod'
 import { getDefaultConfig } from './utils/defaults'
 
 export async function loadConfig(): Promise<Config> {
-  const configPath =
-    core.getInput('config_path', { required: false }) ||
-    '.github/sync-confi.yml'
+  const config_path = core.getInput('config_path', { required: false })
+  if (!config_path) {
+    core.warning('WFLOW: No config_path provided, using default path')
+  }
+  const configPath = config_path || '.github/sync-conf.yml' // ! DO NOT CHANGE: deliberately not using sync-config.yml to check whether the user input is correctly imported.
 
   try {
     // If config file doesn't exist, use default configuration
     if (!fs.existsSync(configPath)) {
       core.info(
-        'ECONFIG: No configuration file found. Using default configuration.'
+        'CONFIG: No configuration file found. Using default configuration.'
       )
       return getDefaultConfig()
     }
@@ -26,7 +28,7 @@ export async function loadConfig(): Promise<Config> {
     // If config file is empty or just whitespace
     if (!configContent.trim()) {
       core.info(
-        'ECONFIG: Empty configuration file. Using default configuration.'
+        'CONFIG: Empty configuration file. Using default configuration.'
       )
       return getDefaultConfig()
     }
@@ -36,7 +38,7 @@ export async function loadConfig(): Promise<Config> {
     // If parsed config is null or empty
     if (!parsedConfig || Object.keys(parsedConfig).length === 0) {
       core.info(
-        'ECONFIG: Empty or invalid configuration. Using default configuration.'
+        'CONFIG: Empty or invalid configuration. Using default configuration.'
       )
       return getDefaultConfig()
     }
@@ -55,79 +57,51 @@ export async function loadConfig(): Promise<Config> {
 
       // fall back to default config if validation fails
       core.warning(
-        `EZOD: Config validation failed:\n${errorMessages}. Using default configuration.`
+        `ZOD: Config validation failed:\n${errorMessages}. Using default configuration.`
       )
       return getDefaultConfig()
     }
 
     if (error instanceof Error) {
       core.warning(
-        `ECONFIG: Failed to load config: ${error.message}. Using default configuration.`
+        `CONFIG: Failed to load config: ${error.message}. Using default configuration.`
       )
       return getDefaultConfig()
     }
 
     // Fallback to default config for any unexpected errors
     core.warning(
-      'ECONFIG: Unexpected error loading config. Using default configuration.'
+      'CONFIG: Unexpected error loading config. Using default configuration.'
     )
     return getDefaultConfig()
   }
 }
 
 function validateTokens(config: Config): Config {
-  // Log token sources and lengths
-  core.info('Token Configuration Diagnostic:')
-
-  // GitLab Token Logging and Retrieval
-  const gitlabTokenFromInput = core.getInput('gitlab_token', {
-    required: false
-  })
-  const gitlabTokenFromEnv = process.env.GITLAB_TOKEN
-
-  core.info(
-    `GitLab Token from 'with': ${gitlabTokenFromInput ? gitlabTokenFromInput.length + ' chars' : 'Not provided'}`
-  )
-  core.info(
-    `GitLab Token from 'env': ${gitlabTokenFromEnv ? gitlabTokenFromEnv.length + ' chars' : 'Not provided'}`
-  )
-
-  // GitHub Token Logging and Retrieval
-  const githubTokenFromInput = core.getInput('github_token', {
-    required: false
-  })
-  const githubTokenFromEnv = process.env.GH_TOKEN
-
-  core.info(
-    `GitHub Token from 'with': ${githubTokenFromInput ? githubTokenFromInput.length + ' chars' : 'Not provided'}`
-  )
-  core.info(
-    `GitHub Token from 'env': ${githubTokenFromEnv ? githubTokenFromEnv.length + ' chars' : 'Not provided'}`
-  )
-
   // If both GitLab and GitHub are enabled, tokens are mandatory
   if (config.gitlab.enabled && config.github.enabled) {
-    // Prioritize input tokens, then fall back to env tokens
-    const gitlabToken =
-      gitlabTokenFromInput || gitlabTokenFromEnv || process.env.GITHUB_TOKEN
-    const githubToken = githubTokenFromInput || githubTokenFromEnv
-
+    // Validate GitLab token
+    const gitlabToken = core.getInput('gitlab_token', { required: false })
     if (!gitlabToken) {
       throw new Error(
-        'EENV: GitLab token is required when syncing between GitLab and GitHub'
+        'WFLOW: GitLab token is required when syncing between GitLab and GitHub'
       )
     }
 
+    // Validate GitHub token
+    const githubToken =
+      core.getInput('github_token') || process.env.GITHUB_TOKEN
+
     if (!githubToken) {
       throw new Error(
-        'EENV: GitHub token is required when syncing between GitLab and GitHub'
+        'WFLOW: GitHub token is required when syncing between GitLab and GitHub'
       )
     }
 
     // Warn about potential permission issues with default token
     if (githubToken === process.env.GITHUB_TOKEN) {
       core.warning(
-        'EENV: Using default GitHub token. Ensure workflow permissions are correctly set up for full access.'
+        'WFLOW: Using default GitHub token. Ensure workflow permissions are correctly set up for full access.'
       )
     }
 
@@ -146,7 +120,7 @@ function validateTokens(config: Config): Config {
 
   // Validate GitLab configuration
   if (config.gitlab.enabled) {
-    const gitlabToken = gitlabTokenFromInput || gitlabTokenFromEnv
+    const gitlabToken = core.getInput('gitlab_token', { required: false })
 
     // Only add token if provided
     return {
@@ -160,11 +134,13 @@ function validateTokens(config: Config): Config {
 
   // Validate GitHub configuration
   if (config.github.enabled) {
-    const githubToken = githubTokenFromInput || githubTokenFromEnv
+    // Prefer input token, fall back to default GITHUB_TOKEN
+    const githubToken =
+      core.getInput('github_token') || process.env.GITHUB_TOKEN
 
     if (!githubToken) {
       core.warning(
-        'No GitHub token provided. Sync operations may have limited permissions.'
+        'WFLOW: No GitHub token provided. Sync operations may have limited permissions.'
       )
     }
 
