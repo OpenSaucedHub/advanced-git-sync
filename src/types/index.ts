@@ -1,2 +1,3 @@
-export * from './types'
+// src/types/index.ts
+export * from './config'
 export * from './common'

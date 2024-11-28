@@ -1,5 +1,3 @@
-#action.yaml
-
 name: "Advanced Git Sync"
 description: "Synchronize GitHub repository with GitLab including branches, PRs, and issues"
 author: "vikshan"
@@ -60,6 +58,10 @@ runs:
 
     - name: Run Git Sync
       shell: bash
+      env:
+        INPUT_GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+        INPUT_GITLAB_TOKEN: ${{ inputs.GITLAB_TOKEN }}
+        INPUT_CONFIG_PATH: ${{ inputs.CONFIG_PATH }}
       run: bun run ${{ github.action_path }}/dist/index.js
 
     - name: Restore Original Project Dependencies

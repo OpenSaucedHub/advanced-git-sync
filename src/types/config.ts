@@ -1,4 +1,4 @@
-// src/types/types.ts
+// src/types/config.ts
 import { z } from 'zod'
 
 export const BranchConfigSchema = z.object({

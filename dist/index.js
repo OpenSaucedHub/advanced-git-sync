@@ -2136,7 +2136,7 @@ var import_universal_user_agent = __nccwpck_require__(9071);
 var import_before_after_hook = __nccwpck_require__(6256);
 var import_request = __nccwpck_require__(9755);
 var import_graphql = __nccwpck_require__(9699);
-var import_auth_token = __nccwpck_require__(3844);
+var import_auth_token = __nccwpck_require__(1463);
 
 // pkg/dist-src/version.js
 var VERSION = "5.2.0";
@@ -2272,7 +2272,7 @@ var Octokit = class {
 
 /***/ }),
 
-/***/ 3844:
+/***/ 1463:
 /***/ ((module) => {
 
 "use strict";
@@ -15307,7 +15307,7 @@ legacyRestEndpointMethods.VERSION = VERSION;
 
 var GetIntrinsic = __nccwpck_require__(470);
 
-var callBind = __nccwpck_require__(1463);
+var callBind = __nccwpck_require__(3844);
 
 var $indexOf = callBind(GetIntrinsic('String.prototype.indexOf'));
 
@@ -15322,7 +15322,7 @@ module.exports = function callBoundIntrinsic(name, allowMissing) {
 
 /***/ }),
 
-/***/ 1463:
+/***/ 3844:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
@@ -54908,6 +54908,7 @@ const yaml = __importStar(__nccwpck_require__(4281));
 const types_1 = __nccwpck_require__(1569);
 const zod_1 = __nccwpck_require__(4809);
 const defaults_1 = __nccwpck_require__(2835);
+const validator_1 = __nccwpck_require__(7255);
 // Utility function to safely log configuration details
 function logConfigDetails(config, hideTokens = true) {
     // Create a deep copy to avoid mutating the original config
@@ -54927,11 +54928,21 @@ function logConfigDetails(config, hideTokens = true) {
   GitHub Enabled: ${safeConfig.github?.enabled || false}
   Sync Options: ${JSON.stringify(safeConfig.sync || {}, null, 2)}`);
 }
+// Helper function to get input that works with both core.getInput and process.env
+function getActionInput(name, required = false) {
+    // Try getting from environment first (composite actions)
+    const envValue = process.env[`INPUT_${name.toUpperCase()}`];
+    if (envValue !== undefined) {
+        return envValue;
+    }
+    // Fallback to core.getInput (node actions)
+    return core.getInput(name, { required });
+}
 async function getConfig() {
     // Log the start of config loading
     core.startGroup('Configuration Loading');
     try {
-        const CONFIG_PATH = core.getInput('CONFIG_PATH', { required: false });
+        const CONFIG_PATH = getActionInput('CONFIG_PATH', false);
         // Log configuration path
         if (CONFIG_PATH) {
             core.info(`CONFIG: Using custom configuration file: ${CONFIG_PATH}`);
@@ -54970,6 +54981,18 @@ async function getConfig() {
         const config = types_1.ConfigSchema.parse(parsedConfig);
         // Validate and augment tokens
         const validatedConfig = await validateConfig(config);
+        // Immediately validate tokens and mark the action as failed if invalid
+        try {
+            await (0, validator_1.validateTokens)(validatedConfig);
+        }
+        catch (tokenValidationError) {
+            const errorMessage = tokenValidationError instanceof Error
+                ? tokenValidationError.message
+                : 'EVALID: Token validation failed';
+            core.setFailed(errorMessage);
+            // Throw to prevent further execution
+            throw tokenValidationError;
+        }
         // Log configuration details (with tokens hidden)
         logConfigDetails(validatedConfig);
         core.endGroup();
@@ -55007,7 +55030,7 @@ async function validateConfig(config) {
         // If both GitLab and GitHub are enabled, tokens are mandatory
         if (config.gitlab.enabled && config.github.enabled) {
             // Validate GitLab token
-            const gitlabToken = core.getInput('GITLAB_TOKEN', { required: false });
+            const gitlabToken = getActionInput('GITLAB_TOKEN', false);
             if (!gitlabToken) {
                 core.warning('WFLOW: GitLab token is required when syncing between GitLab and GitHub');
                 throw new Error('WFLOW: GitLab token is required when syncing between GitLab and GitHub');
@@ -55017,15 +55040,20 @@ async function validateConfig(config) {
             // Export GitLab token to environment
             core.exportVariable('GITLAB_TOKEN', gitlabToken);
             // Validate GitHub token
-            const githubToken = core.getInput('GITHUB_TOKEN') || process.env.GITHUB_TOKEN;
-            if (!githubToken) {
+            const githubToken = getActionInput('GITHUB_TOKEN') || process.env.GITHUB_TOKEN;
+            if (!getActionInput('GITHUB_TOKEN') && process.env.GITHUB_TOKEN) {
+                core.warning('WFLOW: Using default GITHUB_TOKEN. This may have limited permissions. Consider providing a custom token with explicit repository access.');
+            }
+            else if (!githubToken) {
                 core.warning('WFLOW: GitHub token is required when syncing between GitLab and GitHub');
                 throw new Error('WFLOW: GitHub token is required when syncing between GitLab and GitHub');
             }
             // Securely set the GitHub token as a secret
-            core.setSecret(githubToken);
-            // Export GitHub token to environment
-            core.exportVariable('GITHUB_TOKEN', githubToken);
+            if (githubToken) {
+                core.setSecret(githubToken);
+                // Export GitHub token to environment
+                core.exportVariable('GITHUB_TOKEN', githubToken);
+            }
             core.endGroup();
             return {
                 ...config,
@@ -55041,7 +55069,7 @@ async function validateConfig(config) {
         }
         // Validate GitLab configuration
         if (config.gitlab.enabled) {
-            const gitlabToken = core.getInput('GITLAB_TOKEN', { required: false });
+            const gitlabToken = getActionInput('GITLAB_TOKEN', false);
             // Only add token if provided
             if (gitlabToken) {
                 // Securely set the GitLab token as a secret
@@ -55061,7 +55089,11 @@ async function validateConfig(config) {
         // Validate GitHub configuration
         if (config.github.enabled) {
             // Prefer input token, fall back to default GITHUB_TOKEN
-            const githubToken = core.getInput('GITHUB_TOKEN') || process.env.GITHUB_TOKEN;
+            const githubToken = getActionInput('GITHUB_TOKEN') || process.env.GITHUB_TOKEN;
+            if (!getActionInput('GITHUB_TOKEN') && process.env.GITHUB_TOKEN) {
+                core.warning('WFLOW: Using default GITHUB_TOKEN. This may have limited permissions. ' +
+                    'Consider providing a custom token with explicit repository access.');
+            }
             if (!githubToken) {
                 core.warning('WFLOW: No GitHub token provided. Sync operations may have limited permissions.');
             }
@@ -55891,40 +55923,14 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 /***/ }),
 
-/***/ 1569:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-__exportStar(__nccwpck_require__(7940), exports);
-__exportStar(__nccwpck_require__(7004), exports);
-
-
-/***/ }),
-
-/***/ 7940:
+/***/ 7899:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ConfigSchema = exports.GithubConfigSchema = exports.GitlabConfigSchema = exports.SyncConfigSchema = exports.IssueConfigSchema = exports.PRConfigSchema = exports.BranchConfigSchema = void 0;
-// src/types/types.ts
+// src/types/config.ts
 const zod_1 = __nccwpck_require__(4809);
 exports.BranchConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
@@ -55967,6 +55973,33 @@ exports.ConfigSchema = zod_1.z.object({
     gitlab: exports.GitlabConfigSchema,
     github: exports.GithubConfigSchema
 });
+
+
+/***/ }),
+
+/***/ 1569:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+// src/types/index.ts
+__exportStar(__nccwpck_require__(7899), exports);
+__exportStar(__nccwpck_require__(7004), exports);
 
 
 /***/ }),
@@ -56094,6 +56127,212 @@ function getGitLabRepo(config) {
         owner: config.gitlab.username || context.repo.owner,
         repo: config.gitlab.repo || context.repo.repo
     };
+}
+
+
+/***/ }),
+
+/***/ 7255:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.validateTokens = validateTokens;
+// src/utils/validator.ts
+const core = __importStar(__nccwpck_require__(7484));
+const rest_1 = __nccwpck_require__(4630);
+const github = __importStar(__nccwpck_require__(3228));
+const repository_1 = __nccwpck_require__(6629);
+/**
+ * Validates GitHub token permissions
+ */
+async function validateGitHubToken(token, config) {
+    const result = {
+        isValid: true,
+        errors: [],
+        warnings: []
+    };
+    try {
+        const octokit = github.getOctokit(token);
+        const repo = (0, repository_1.getGitHubRepo)(config);
+        // Check repository access
+        try {
+            await octokit.rest.repos.get({ ...repo });
+        }
+        catch (error) {
+            result.isValid = false;
+            result.errors.push(`EVALID: GitHub token lacks repository access permissions: ${error instanceof Error ? error.message : String(error)}`);
+            return result;
+        }
+        // Check specific permissions based on sync configuration
+        if (config.github.sync?.issues.enabled) {
+            try {
+                await octokit.rest.issues.listForRepo({ ...repo });
+            }
+            catch {
+                result.warnings.push('EVALID: GitHub token lacks issues read/write permissions');
+            }
+        }
+        if (config.github.sync?.pullRequests.enabled) {
+            try {
+                await octokit.rest.pulls.list({ ...repo });
+            }
+            catch {
+                result.warnings.push('EVALID: GitHub token lacks pull requests read/write permissions');
+            }
+        }
+        if (config.github.sync?.releases.enabled) {
+            try {
+                await octokit.rest.repos.listReleases({ ...repo });
+            }
+            catch {
+                result.warnings.push('EVALID: GitHub token lacks releases read/write permissions');
+            }
+        }
+        return result;
+    }
+    catch (error) {
+        result.isValid = false;
+        result.errors.push(`EVALID: Invalid GitHub token: ${error instanceof Error ? error.message : String(error)}`);
+        return result;
+    }
+}
+/**
+ * Validates GitLab token permissions
+ */
+async function validateGitLabToken(token, config) {
+    const result = {
+        isValid: true,
+        errors: [],
+        warnings: []
+    };
+    try {
+        const gitlab = new rest_1.Gitlab({
+            token,
+            host: config.gitlab.url || 'https://gitlab.com'
+        });
+        const repo = (0, repository_1.getGitLabRepo)(config);
+        const projectPath = `${repo.owner}/${repo.repo}`;
+        // Check repository access
+        try {
+            await gitlab.Projects.show(projectPath);
+        }
+        catch (error) {
+            result.isValid = false;
+            result.errors.push(`EVALID: GitLab token lacks repository access permissions: ${error instanceof Error ? error.message : String(error)}`);
+            return result;
+        }
+        // Check specific permissions based on sync configuration
+        if (config.gitlab.sync?.issues.enabled) {
+            try {
+                await gitlab.Issues.all({ projectId: projectPath, perPage: 1 });
+            }
+            catch {
+                result.warnings.push('EVALID: GitLab token lacks issues read/write permissions');
+            }
+        }
+        if (config.gitlab.sync?.pullRequests.enabled) {
+            try {
+                await gitlab.MergeRequests.all({ projectId: projectPath, perPage: 1 });
+            }
+            catch {
+                result.warnings.push('EVALID: GitLab token lacks merge requests read/write permissions');
+            }
+        }
+        if (config.gitlab.sync?.releases.enabled) {
+            try {
+                await gitlab.ProjectReleases.all(projectPath);
+            }
+            catch {
+                result.warnings.push('EVALID: GitLab token lacks releases read/write permissions');
+            }
+        }
+        return result;
+    }
+    catch (error) {
+        result.isValid = false;
+        result.errors.push(`EVALID: Invalid GitLab token: ${error instanceof Error ? error.message : String(error)}`);
+        return result;
+    }
+}
+/**
+ * Validates both GitHub and GitLab tokens based on the configuration
+ */
+async function validateTokens(config) {
+    core.startGroup('Token Validation');
+    try {
+        let hasErrors = false;
+        // Validate GitHub token if GitHub sync is enabled
+        if (config.github.enabled) {
+            if (!config.github.token) {
+                core.error('EVALID: GitHub token is required when GitHub sync is enabled');
+                hasErrors = true;
+            }
+            else {
+                const githubResult = await validateGitHubToken(config.github.token, config);
+                if (!githubResult.isValid) {
+                    githubResult.errors.forEach(error => core.error(`GitHub: ${error}`));
+                    hasErrors = true;
+                }
+                githubResult.warnings.forEach(warning => core.warning(`GitHub: ${warning}`));
+            }
+        }
+        // Validate GitLab token if GitLab sync is enabled
+        if (config.gitlab.enabled) {
+            if (!config.gitlab.token) {
+                core.error('EVALID: GitLab token is required when GitLab sync is enabled');
+                hasErrors = true;
+            }
+            else {
+                const gitlabResult = await validateGitLabToken(config.gitlab.token, config);
+                if (!gitlabResult.isValid) {
+                    gitlabResult.errors.forEach(error => core.error(`GitLab: ${error}`));
+                    hasErrors = true;
+                }
+                gitlabResult.warnings.forEach(warning => core.warning(`GitLab: ${warning}`));
+            }
+        }
+        if (hasErrors) {
+            throw new Error('EVALID: Token validation failed. Please check the logs for details.');
+        }
+    }
+    finally {
+        core.endGroup();
+    }
 }
 
 

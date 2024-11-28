@@ -4,6 +4,7 @@ import * as yaml from 'js-yaml'
 import { ConfigSchema, Config } from './types'
 import { ZodError } from 'zod'
 import { getDefaultConfig } from './utils/defaults'
+import { validateTokens } from './utils/validator'
 
 // Utility function to safely log configuration details
 function logConfigDetails(config: Partial<Config>, hideTokens = true) {
@@ -27,12 +28,24 @@ function logConfigDetails(config: Partial<Config>, hideTokens = true) {
   Sync Options: ${JSON.stringify(safeConfig.sync || {}, null, 2)}`)
 }
 
+// Helper function to get input that works with both core.getInput and process.env
+function getActionInput(name: string, required = false): string {
+  // Try getting from environment first (composite actions)
+  const envValue = process.env[`INPUT_${name.toUpperCase()}`]
+  if (envValue !== undefined) {
+    return envValue
+  }
+
+  // Fallback to core.getInput (node actions)
+  return core.getInput(name, { required })
+}
+
 export async function getConfig(): Promise<Config> {
   // Log the start of config loading
   core.startGroup('Configuration Loading')
 
   try {
-    const CONFIG_PATH = core.getInput('CONFIG_PATH', { required: false })
+    const CONFIG_PATH = getActionInput('CONFIG_PATH', false)
 
     // Log configuration path
     if (CONFIG_PATH) {
@@ -87,6 +100,19 @@ export async function getConfig(): Promise<Config> {
     // Validate and augment tokens
     const validatedConfig = await validateConfig(config)
 
+    // Immediately validate tokens and mark the action as failed if invalid
+    try {
+      await validateTokens(validatedConfig)
+    } catch (tokenValidationError) {
+      const errorMessage =
+        tokenValidationError instanceof Error
+          ? tokenValidationError.message
+          : 'EVALID: Token validation failed'
+      core.setFailed(errorMessage)
+      // Throw to prevent further execution
+      throw tokenValidationError
+    }
+
     // Log configuration details (with tokens hidden)
     logConfigDetails(validatedConfig)
 
@@ -136,7 +162,7 @@ async function validateConfig(config: Config): Promise<Config> {
     // If both GitLab and GitHub are enabled, tokens are mandatory
     if (config.gitlab.enabled && config.github.enabled) {
       // Validate GitLab token
-      const gitlabToken = core.getInput('GITLAB_TOKEN', { required: false })
+      const gitlabToken = getActionInput('GITLAB_TOKEN', false)
       if (!gitlabToken) {
         core.warning(
           'WFLOW: GitLab token is required when syncing between GitLab and GitHub'
@@ -152,9 +178,13 @@ async function validateConfig(config: Config): Promise<Config> {
 
       // Validate GitHub token
       const githubToken =
-        core.getInput('GITHUB_TOKEN') || process.env.GITHUB_TOKEN
+        getActionInput('GITHUB_TOKEN') || process.env.GITHUB_TOKEN
 
-      if (!githubToken) {
+      if (!getActionInput('GITHUB_TOKEN') && process.env.GITHUB_TOKEN) {
+        core.warning(
+          'WFLOW: Using default GITHUB_TOKEN. This may have limited permissions. Consider providing a custom token with explicit repository access.'
+        )
+      } else if (!githubToken) {
         core.warning(
           'WFLOW: GitHub token is required when syncing between GitLab and GitHub'
         )
@@ -163,9 +193,11 @@ async function validateConfig(config: Config): Promise<Config> {
         )
       }
       // Securely set the GitHub token as a secret
-      core.setSecret(githubToken)
-      // Export GitHub token to environment
-      core.exportVariable('GITHUB_TOKEN', githubToken)
+      if (githubToken) {
+        core.setSecret(githubToken)
+        // Export GitHub token to environment
+        core.exportVariable('GITHUB_TOKEN', githubToken)
+      }
 
       core.endGroup()
       return {
@@ -183,7 +215,7 @@ async function validateConfig(config: Config): Promise<Config> {
 
     // Validate GitLab configuration
     if (config.gitlab.enabled) {
-      const gitlabToken = core.getInput('GITLAB_TOKEN', { required: false })
+      const gitlabToken = getActionInput('GITLAB_TOKEN', false)
 
       // Only add token if provided
       if (gitlabToken) {
@@ -207,7 +239,14 @@ async function validateConfig(config: Config): Promise<Config> {
     if (config.github.enabled) {
       // Prefer input token, fall back to default GITHUB_TOKEN
       const githubToken =
-        core.getInput('GITHUB_TOKEN') || process.env.GITHUB_TOKEN
+        getActionInput('GITHUB_TOKEN') || process.env.GITHUB_TOKEN
+
+      if (!getActionInput('GITHUB_TOKEN') && process.env.GITHUB_TOKEN) {
+        core.warning(
+          'WFLOW: Using default GITHUB_TOKEN. This may have limited permissions. ' +
+            'Consider providing a custom token with explicit repository access.'
+        )
+      }
 
       if (!githubToken) {
         core.warning(

@@ -1,3 +1,4 @@
+// src/types/common.ts
 export interface Repository {
   owner: string
   repo: string
