@@ -9,7 +9,7 @@
   },
   "main": "dist/index.js",
   "scripts": {
-    "build": "rimraf dist && ncc build src/index.ts -o dist --source-map",
+    "build": "bun f && rimraf dist && ncc build src/index.ts -o dist --source-map",
     "lint": "eslint src/**/*.ts",
     "f": "prettier --write \"**/*.*\"",
     "prepare": "husky",

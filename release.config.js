@@ -50,14 +50,14 @@ module.exports = {
       }
     ],
 
-    [
-      '@semantic-release/npm',
-      {
-        npmPublish: true,
-        pkgRoot: '.',
-        tarballDir: 'dist'
-      }
-    ],
+    // [
+    //   '@semantic-release/npm',
+    //   {
+    //     npmPublish: true,
+    //     pkgRoot: '.',
+    //     tarballDir: 'dist'
+    //   }
+    // ],
 
     [
       '@semantic-release/github',

@@ -1,4 +1,4 @@
-#action.yaml
+# action.yaml
 
 name: "Advanced Git Sync"
 description: "Synchronize GitHub repository with GitLab including branches, PRs, and issues"
@@ -21,6 +21,14 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Set Action Inputs as Environment Variables
+      shell: bash
+      run: |
+        # Set inputs as environment variables
+        echo "INPUT_GITHUB_TOKEN=${{ inputs.github_token }}" >> $GITHUB_ENV
+        echo "INPUT_GITLAB_TOKEN=${{ inputs.gitlab_token }}" >> $GITHUB_ENV
+        echo "INPUT_CONFIG_PATH=${{ inputs.config_path }}" >> $GITHUB_ENV
+
     - name: Backup Original Project Dependencies
       shell: bash
       run: |
@@ -60,6 +68,10 @@ runs:
 
     - name: Run Git Sync
       shell: bash
+      env:
+        # Additional environment variable for the run step
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GITLAB_TOKEN: ${{ inputs.gitlab_token }}
       run: bun run ${{ github.action_path }}/dist/index.js
 
     - name: Restore Original Project Dependencies
