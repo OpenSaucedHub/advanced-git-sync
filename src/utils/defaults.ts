@@ -18,7 +18,7 @@ export function getDefaultConfig(): Config {
         },
         issues: {
           enabled: true,
-          syncComments: true,
+          syncComments: false,
           labels: ['synced-from-gitlab']
         },
         releases: {
@@ -44,7 +44,7 @@ export function getDefaultConfig(): Config {
         },
         issues: {
           enabled: true,
-          syncComments: true,
+          syncComments: false,
           labels: ['synced-from-github']
         },
         releases: {

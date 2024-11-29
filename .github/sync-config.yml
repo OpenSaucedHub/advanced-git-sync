@@ -18,7 +18,7 @@ gitlab:
 
     issues:
       enabled: true
-      syncComments: true
+      syncComments: false
       labels: ["synced-from-github"]
 
     releases:
@@ -45,7 +45,7 @@ github:
 
     issues:
       enabled: true
-      syncComments: true
+      syncComments: false
       labels: ["synced-from-gitlab"]
 
     releases:

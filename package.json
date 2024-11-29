@@ -1,5 +1,5 @@
 {
-  "name": "@opensaucedhub/git-sync-action",
+  "name": "@opensaucedhub/git-sync",
   "description": "Synchronize GitHub repository with GitLab including branches, PRs, and issues",
   "version": "1.1.4",
   "publishConfig": {
@@ -19,18 +19,19 @@
     "github",
     "actions",
     "gitlab",
-    "automation"
+    "automation",
+    "git"
   ],
   "author": "vikshan",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OpenSaucedHub/git-sync-action.git"
+    "url": "git+https://github.com/OpenSaucedHub/advanced-git-sync.git"
   },
   "bugs": {
-    "url": "https://github.com/OpenSaucedHub/git-sync-action/issues"
+    "url": "https://github.com/OpenSaucedHub/advanced-git-sync/issues"
   },
-  "homepage": "https://github.com/OpenSaucedHub/git-sync-action#readme",
+  "homepage": "https://github.com/OpenSaucedHub/advanced-git-sync#readme",
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
@@ -50,13 +51,13 @@
     "@semantic-release/release-notes-generator": "^14.0.1",
     "@types/jest": "^29.5.14",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^22.10.0",
+    "@types/node": "^22.10.1",
     "@typescript-eslint/eslint-plugin": "^8.16.0",
     "@typescript-eslint/parser": "^8.16.0",
     "@vercel/ncc": "^0.38.3",
     "@zeit/ncc": "^0.22.3",
     "axios": "^1.7.8",
-    "bun-types": "^1.1.37",
+    "bun-types": "^1.1.38",
     "conventional-changelog-conventionalcommits": "^8.0.0",
     "conventional-changelog-gitmoji": "^0.2.5",
     "dotenv": "^16.4.5",

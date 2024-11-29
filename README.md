@@ -49,7 +49,7 @@ jobs:
           fetch-depth: 0
 
       - name: Sync with GitLab
-        uses: OpenSaucedHub/git-sync-action@v1.1.4
+        uses: OpenSaucedHub/advanced-git-sync@v1.1.4
         with:
           CONFIG_PATH: .github/sync-config.yml # optional, defaults to .github/sync-config.yml
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }} # optional, unless you want to sync to GitLab
@@ -72,77 +72,15 @@ github:
 
 > [!WARNING]
 >
-> - If no config is provided, everything defaults to _`true`_, `autoMerge` is _`false`_, `Labels`
->   are set as specified in the default config and `repo` name and `username` default to GitHub
->   repository _`owner/repo`_. [See Accepted Configuration](#accepted-configuration)
+> - If no config is provided, everything fall back to defaults
 > - In case of a partial config (missing fields), the defaults are used. (you MUST strictly set
 >   elements to false if you don't want them to sync).
->   [See Accepted Configuration](#accepted-configuration)
+> - [See Accepted Configuration](#accepted-configuration) for the defaults.
 
 3. Set up required secrets in your GitHub repository:
 
 - `GITLAB_TOKEN`: A GitLab personal access token with API access
 - `GH_TOKEN`: A GitHub personal access token (optional, defaults to `GITHUB_TOKEN`)
-
-## Accepted Configuration
-
-```yaml
-#sync-config.yml
-# When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub TO GitLab
-gitlab:
-  enabled: true
-  url: 'gitlab.com' # Optional, defaults to gitlab.com
-  username: # Optional, defaults to GitHub repo owner
-  repo: # Optional, defaults to GitHub repo name
-  sync:
-    branches:
-      enabled: true
-      protected: true
-      pattern: '*'
-
-    pullRequests:
-      enabled: true
-      autoMerge: false
-      labels: ['synced-from-github']
-
-    issues:
-      enabled: true
-      syncComments: true
-      labels: ['synced-from-github']
-
-    releases:
-      enabled: true
-
-    tags:
-      enabled: true # automatically enabled if releases = true
-
-# When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab TO GitHub
-github:
-  enabled: true
-  username: # Optional, defaults to GitHub username
-  repo: # Optional, defaults to GitHub repo name
-  sync:
-    branches:
-      enabled: true
-      protected: true
-      pattern: '*'
-
-    pullRequests:
-      enabled: true
-      autoMerge: false
-      labels: ['synced-from-gitlab']
-
-    issues:
-      enabled: true
-      syncComments: true
-      labels: ['synced-from-gitlab']
-
-    releases:
-      enabled: true
-
-    tags:
-      enabled: true # automatically enabled if releases = true
-```
 
 ## Configuration Options
 
@@ -195,6 +133,75 @@ github:
 | --------- | ----------------------- | -------- | ------- |
 | `enabled` | Enable release/tag sync | No       | true    |
 
+## Accepted Configuration
+
+This is the expected config and hence the defaults. If you don't want to sync a particular entity,
+set it to `false`.
+
+```yaml
+#sync-config.yml
+# When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub TO GitLab
+gitlab:
+  enabled: true
+  url: 'gitlab.com' # Optional, defaults to gitlab.com
+  username: # Optional, defaults to GitHub repo owner
+  repo: # Optional, defaults to GitHub repo name
+  sync:
+    branches:
+      enabled: true
+      protected: true
+      pattern: '*'
+
+    pullRequests:
+      enabled: true
+      autoMerge: false
+      labels: ['synced-from-github']
+
+    issues:
+      enabled: true
+      syncComments: false
+      labels: ['synced-from-github']
+
+    releases:
+      enabled: true
+
+    tags:
+      enabled: true # automatically enabled if releases = true
+
+# When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab TO GitHub
+github:
+  enabled: true
+  username: # Optional, defaults to GitHub username
+  repo: # Optional, defaults to GitHub repo name
+  sync:
+    branches:
+      enabled: true
+      protected: true
+      pattern: '*'
+
+    pullRequests:
+      enabled: true
+      autoMerge: false
+      labels: ['synced-from-gitlab']
+
+    issues:
+      enabled: true
+      syncComments: false
+      labels: ['synced-from-gitlab']
+
+    releases:
+      enabled: true
+
+    tags:
+      enabled: true # automatically enabled if releases = true
+```
+
+> [!WARNING]
+>
+> Do not leave empty fields in the config. Just because it is optional doesn't mean it can be empty.
+> Add a value or remove the field to use default value. e.g. `username:` is treated as
+> `username: ''`, which trhows an error.
+
 ## Token Permissions
 
 ### GitLab Token
@@ -239,7 +246,7 @@ This project is licensed under the MIT License - see the
 
 For support, please:
 
-1. Check the [Issues](https://github.com/OpenSaucedHub/git-sync-action/issues) page
+1. Check the [Issues](https://github.com/OpenSaucedHub/advanced-git-sync/issues) page
 2. Create a new issue if your problem isn't already listed
 3. Provide as much context as possible
 

@@ -4,7 +4,7 @@ import * as yaml from 'js-yaml'
 import { ConfigSchema, Config } from './types'
 import { ZodError } from 'zod'
 import { getDefaultConfig } from './utils/defaults'
-import { validateTokens } from './utils/validator'
+import { validateSyncConfig, validateTokens } from './utils/validator'
 
 // Utility function to safely log configuration details
 function logConfigDetails(config: Partial<Config>, hideTokens = true) {
@@ -21,11 +21,28 @@ function logConfigDetails(config: Partial<Config>, hideTokens = true) {
     }
   }
 
-  // Log the safe configuration
-  core.info(`CONFIG: Loaded configuration details:
-  GitLab Enabled: ${safeConfig.gitlab?.enabled || false}
-  GitHub Enabled: ${safeConfig.github?.enabled || false}
-  Sync Options: ${JSON.stringify(safeConfig.sync || {}, null, 2)}`)
+  // Start a group for configuration loading logging
+  core.startGroup('📋 Configuration Details')
+
+  // Log the safe configuration with color and emojis
+  core.info(`\x1b[36m🔧 Platform Configuration:\x1b[0m`)
+  core.info(
+    `  \x1b[34m🦊 GitLab Enabled:\x1b[0m ${safeConfig.gitlab?.enabled || false}`
+  )
+  core.info(
+    `  \x1b[34m🐱 GitHub Enabled:\x1b[0m ${safeConfig.github?.enabled || false}`
+  )
+
+  // Log sync options with color
+  core.info(`\x1b[36m🔄 Sync Options:\x1b[0m`)
+  const syncOptions = JSON.stringify(safeConfig.sync || {}, null, 2)
+    .split('\n')
+    .map(line => `  \x1b[90m${line}\x1b[0m`)
+    .join('\n')
+  core.info(syncOptions)
+
+  // End the group for configuration loading logging
+  core.endGroup()
 }
 
 // Helper function to get input that works with both core.getInput and process.env
@@ -41,25 +58,30 @@ function getActionInput(name: string, required = false): string {
 }
 
 export async function getConfig(): Promise<Config> {
-  // Log the start of config loading
-  core.startGroup('Configuration Loading')
+  // Log the start of config loading with a colorful group
+  core.startGroup('🔍 Configuration Loading')
+  core.info('\x1b[34m🚀 Initializing configuration...\x1b[0m')
 
   try {
     const CONFIG_PATH = getActionInput('CONFIG_PATH', false)
 
     // Log configuration path
     if (CONFIG_PATH) {
-      core.info(`CONFIG: Using custom configuration file: ${CONFIG_PATH}`)
+      core.info(
+        `\x1b[36m📂 Using custom configuration file: ${CONFIG_PATH}\x1b[0m`
+      )
     }
     const configPath = CONFIG_PATH || '.github/sync-config.yml'
 
     // Log file existence check
-    core.info(`CONFIG: Checking for configuration file at: ${configPath}`)
+    core.info(
+      `\x1b[36m🕵️ Checking for configuration file at: ${configPath}\x1b[0m`
+    )
 
     // If config file doesn't exist, use default configuration
     if (!fs.existsSync(configPath)) {
       core.info(
-        'CONFIG: No configuration file found. Using default configuration.'
+        '\x1b[33m⚠️ No configuration file found. Using default configuration.\x1b[0m'
       )
       const defaultConfig = await validateConfig(getDefaultConfig())
       logConfigDetails(defaultConfig)
@@ -68,12 +90,11 @@ export async function getConfig(): Promise<Config> {
     }
 
     const configContent = fs.readFileSync(configPath, 'utf8')
-    core.info(`CONFIG: Configuration file size: ${configContent.length} bytes`)
 
     // If config file is empty or just whitespace
     if (!configContent.trim()) {
       core.info(
-        'CONFIG: Empty configuration file. Using default configuration.'
+        '\x1b[33m⚠️ Empty configuration file. Using default configuration.\x1b[0m'
       )
       const defaultConfig = await validateConfig(getDefaultConfig())
       logConfigDetails(defaultConfig)
@@ -86,7 +107,7 @@ export async function getConfig(): Promise<Config> {
     // If parsed config is null or empty
     if (!parsedConfig || Object.keys(parsedConfig).length === 0) {
       core.info(
-        'CONFIG: Empty or invalid configuration. Using default configuration.'
+        '\x1b[33m⚠️ Empty or invalid configuration. Using default configuration.\x1b[0m'
       )
       const defaultConfig = await validateConfig(getDefaultConfig())
       logConfigDetails(defaultConfig)
@@ -95,7 +116,10 @@ export async function getConfig(): Promise<Config> {
     }
 
     // Validate the parsed config
-    const config = ConfigSchema.parse(parsedConfig)
+    let config = ConfigSchema.parse(parsedConfig)
+
+    // Validate sync configuration and automatically enable tags if needed
+    config = validateSyncConfig(config)
 
     // Validate and augment tokens
     const validatedConfig = await validateConfig(config)
@@ -116,6 +140,7 @@ export async function getConfig(): Promise<Config> {
     // Log configuration details (with tokens hidden)
     logConfigDetails(validatedConfig)
 
+    core.info('\x1b[32m✅ Configuration loaded successfully!\x1b[0m')
     core.endGroup()
     return validatedConfig
   } catch (error) {
@@ -128,7 +153,7 @@ export async function getConfig(): Promise<Config> {
         .join('\n')
 
       core.warning(
-        `ZOD: Config validation failed:\n${errorMessages}. Using default configuration.`
+        `\x1b[31m✗ ZOD: Config validation failed:\x1b[0m\n${errorMessages}\n\x1b[33m⚠️ Using default configuration.\x1b[0m`
       )
       const defaultConfig = await validateConfig(getDefaultConfig())
       logConfigDetails(defaultConfig)
@@ -137,7 +162,7 @@ export async function getConfig(): Promise<Config> {
 
     if (error instanceof Error) {
       core.warning(
-        `CONFIG: Failed to load config: ${error.message}. Using default configuration.`
+        `\x1b[31m✗ CONFIG: Failed to load config:\x1b[0m ${error.message}\n\x1b[33m⚠️ Using default configuration.\x1b[0m`
       )
       const defaultConfig = await validateConfig(getDefaultConfig())
       logConfigDetails(defaultConfig)
@@ -146,7 +171,7 @@ export async function getConfig(): Promise<Config> {
 
     // Fallback to default config for any unexpected errors
     core.warning(
-      'CONFIG: Unexpected error loading config. Using default configuration.'
+      '\x1b[31m✗ CONFIG: Unexpected error loading config.\x1b[0m\n\x1b[33m⚠️ Using default configuration.\x1b[0m'
     )
     const defaultConfig = await validateConfig(getDefaultConfig())
     logConfigDetails(defaultConfig)
@@ -156,7 +181,7 @@ export async function getConfig(): Promise<Config> {
 
 async function validateConfig(config: Config): Promise<Config> {
   // Start a group for token validation logging
-  core.startGroup('Token Validation')
+  core.startGroup('🔐 Token Configuration')
 
   try {
     // If both GitLab and GitHub are enabled, tokens are mandatory
@@ -164,8 +189,8 @@ async function validateConfig(config: Config): Promise<Config> {
       // Validate GitLab token
       const gitlabToken = getActionInput('GITLAB_TOKEN', false)
       if (!gitlabToken) {
-        core.warning(
-          'WFLOW: GitLab token is required when syncing between GitLab and GitHub'
+        core.error(
+          '\x1b[31m✗ GitLab token is required when syncing between GitLab and GitHub\x1b[0m'
         )
         throw new Error(
           'WFLOW: GitLab token is required when syncing between GitLab and GitHub'
@@ -182,11 +207,11 @@ async function validateConfig(config: Config): Promise<Config> {
 
       if (!getActionInput('GITHUB_TOKEN') && process.env.GITHUB_TOKEN) {
         core.warning(
-          'WFLOW: Using default GITHUB_TOKEN. This may have limited permissions. Consider providing a custom token with explicit repository access.'
+          '\x1b[33m⚠️ Using default GITHUB_TOKEN. This may have limited permissions. Consider providing a custom token with explicit repository access.\x1b[0m'
         )
       } else if (!githubToken) {
-        core.warning(
-          'WFLOW: GitHub token is required when syncing between GitLab and GitHub'
+        core.error(
+          '\x1b[31m✗ GitHub token is required when syncing between GitLab and GitHub\x1b[0m'
         )
         throw new Error(
           'WFLOW: GitHub token is required when syncing between GitLab and GitHub'
@@ -243,14 +268,14 @@ async function validateConfig(config: Config): Promise<Config> {
 
       if (!getActionInput('GITHUB_TOKEN') && process.env.GITHUB_TOKEN) {
         core.warning(
-          'WFLOW: Using default GITHUB_TOKEN. This may have limited permissions. ' +
-            'Consider providing a custom token with explicit repository access.'
+          '\x1b[33m⚠️ Using default GITHUB_TOKEN. This may have limited permissions. ' +
+            'Consider providing a custom token with explicit repository access.\x1b[0m'
         )
       }
 
       if (!githubToken) {
         core.warning(
-          'WFLOW: No GitHub token provided. Sync operations may have limited permissions.'
+          '\x1b[33m⚠️ No GitHub token provided. Sync operations may have limited permissions.\x1b[0m'
         )
       } else {
         // Securely set the GitHub token as a secret

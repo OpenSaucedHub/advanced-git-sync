@@ -79,7 +79,7 @@ module.exports = {
       '@semantic-release/exec',
       {
         prepareCmd:
-          "sed -i 's|OpenSaucedHub/git-sync-action@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/git-sync-action@v${nextRelease.version}|g' README.md"
+          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' README.md"
       }
     ],
 

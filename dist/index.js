@@ -54922,11 +54922,21 @@ function logConfigDetails(config, hideTokens = true) {
             safeConfig.github.token = '***REDACTED***';
         }
     }
-    // Log the safe configuration
-    core.info(`CONFIG: Loaded configuration details:
-  GitLab Enabled: ${safeConfig.gitlab?.enabled || false}
-  GitHub Enabled: ${safeConfig.github?.enabled || false}
-  Sync Options: ${JSON.stringify(safeConfig.sync || {}, null, 2)}`);
+    // Start a group for configuration loading logging
+    core.startGroup('📋 Configuration Details');
+    // Log the safe configuration with color and emojis
+    core.info(`\x1b[36m🔧 Platform Configuration:\x1b[0m`);
+    core.info(`  \x1b[34m🦊 GitLab Enabled:\x1b[0m ${safeConfig.gitlab?.enabled || false}`);
+    core.info(`  \x1b[34m🐱 GitHub Enabled:\x1b[0m ${safeConfig.github?.enabled || false}`);
+    // Log sync options with color
+    core.info(`\x1b[36m🔄 Sync Options:\x1b[0m`);
+    const syncOptions = JSON.stringify(safeConfig.sync || {}, null, 2)
+        .split('\n')
+        .map(line => `  \x1b[90m${line}\x1b[0m`)
+        .join('\n');
+    core.info(syncOptions);
+    // End the group for configuration loading logging
+    core.endGroup();
 }
 // Helper function to get input that works with both core.getInput and process.env
 function getActionInput(name, required = false) {
@@ -54939,30 +54949,30 @@ function getActionInput(name, required = false) {
     return core.getInput(name, { required });
 }
 async function getConfig() {
-    // Log the start of config loading
-    core.startGroup('Configuration Loading');
+    // Log the start of config loading with a colorful group
+    core.startGroup('🔍 Configuration Loading');
+    core.info('\x1b[34m🚀 Initializing configuration...\x1b[0m');
     try {
         const CONFIG_PATH = getActionInput('CONFIG_PATH', false);
         // Log configuration path
         if (CONFIG_PATH) {
-            core.info(`CONFIG: Using custom configuration file: ${CONFIG_PATH}`);
+            core.info(`\x1b[36m📂 Using custom configuration file: ${CONFIG_PATH}\x1b[0m`);
         }
         const configPath = CONFIG_PATH || '.github/sync-config.yml';
         // Log file existence check
-        core.info(`CONFIG: Checking for configuration file at: ${configPath}`);
+        core.info(`\x1b[36m🕵️ Checking for configuration file at: ${configPath}\x1b[0m`);
         // If config file doesn't exist, use default configuration
         if (!fs.existsSync(configPath)) {
-            core.info('CONFIG: No configuration file found. Using default configuration.');
+            core.info('\x1b[33m⚠️ No configuration file found. Using default configuration.\x1b[0m');
             const defaultConfig = await validateConfig((0, defaults_1.getDefaultConfig)());
             logConfigDetails(defaultConfig);
             core.endGroup();
             return defaultConfig;
         }
         const configContent = fs.readFileSync(configPath, 'utf8');
-        core.info(`CONFIG: Configuration file size: ${configContent.length} bytes`);
         // If config file is empty or just whitespace
         if (!configContent.trim()) {
-            core.info('CONFIG: Empty configuration file. Using default configuration.');
+            core.info('\x1b[33m⚠️ Empty configuration file. Using default configuration.\x1b[0m');
             const defaultConfig = await validateConfig((0, defaults_1.getDefaultConfig)());
             logConfigDetails(defaultConfig);
             core.endGroup();
@@ -54971,14 +54981,16 @@ async function getConfig() {
         const parsedConfig = yaml.load(configContent);
         // If parsed config is null or empty
         if (!parsedConfig || Object.keys(parsedConfig).length === 0) {
-            core.info('CONFIG: Empty or invalid configuration. Using default configuration.');
+            core.info('\x1b[33m⚠️ Empty or invalid configuration. Using default configuration.\x1b[0m');
             const defaultConfig = await validateConfig((0, defaults_1.getDefaultConfig)());
             logConfigDetails(defaultConfig);
             core.endGroup();
             return defaultConfig;
         }
         // Validate the parsed config
-        const config = types_1.ConfigSchema.parse(parsedConfig);
+        let config = types_1.ConfigSchema.parse(parsedConfig);
+        // Validate sync configuration and automatically enable tags if needed
+        config = (0, validator_1.validateSyncConfig)(config);
         // Validate and augment tokens
         const validatedConfig = await validateConfig(config);
         // Immediately validate tokens and mark the action as failed if invalid
@@ -54995,6 +55007,7 @@ async function getConfig() {
         }
         // Log configuration details (with tokens hidden)
         logConfigDetails(validatedConfig);
+        core.info('\x1b[32m✅ Configuration loaded successfully!\x1b[0m');
         core.endGroup();
         return validatedConfig;
     }
@@ -55005,19 +55018,19 @@ async function getConfig() {
             const errorMessages = error.errors
                 .map(err => `${err.path.join('.')}: ${err.message}`)
                 .join('\n');
-            core.warning(`ZOD: Config validation failed:\n${errorMessages}. Using default configuration.`);
+            core.warning(`\x1b[31m✗ ZOD: Config validation failed:\x1b[0m\n${errorMessages}\n\x1b[33m⚠️ Using default configuration.\x1b[0m`);
             const defaultConfig = await validateConfig((0, defaults_1.getDefaultConfig)());
             logConfigDetails(defaultConfig);
             return defaultConfig;
         }
         if (error instanceof Error) {
-            core.warning(`CONFIG: Failed to load config: ${error.message}. Using default configuration.`);
+            core.warning(`\x1b[31m✗ CONFIG: Failed to load config:\x1b[0m ${error.message}\n\x1b[33m⚠️ Using default configuration.\x1b[0m`);
             const defaultConfig = await validateConfig((0, defaults_1.getDefaultConfig)());
             logConfigDetails(defaultConfig);
             return defaultConfig;
         }
         // Fallback to default config for any unexpected errors
-        core.warning('CONFIG: Unexpected error loading config. Using default configuration.');
+        core.warning('\x1b[31m✗ CONFIG: Unexpected error loading config.\x1b[0m\n\x1b[33m⚠️ Using default configuration.\x1b[0m');
         const defaultConfig = await validateConfig((0, defaults_1.getDefaultConfig)());
         logConfigDetails(defaultConfig);
         return defaultConfig;
@@ -55025,14 +55038,14 @@ async function getConfig() {
 }
 async function validateConfig(config) {
     // Start a group for token validation logging
-    core.startGroup('Token Validation');
+    core.startGroup('🔐 Token Configuration');
     try {
         // If both GitLab and GitHub are enabled, tokens are mandatory
         if (config.gitlab.enabled && config.github.enabled) {
             // Validate GitLab token
             const gitlabToken = getActionInput('GITLAB_TOKEN', false);
             if (!gitlabToken) {
-                core.warning('WFLOW: GitLab token is required when syncing between GitLab and GitHub');
+                core.error('\x1b[31m✗ GitLab token is required when syncing between GitLab and GitHub\x1b[0m');
                 throw new Error('WFLOW: GitLab token is required when syncing between GitLab and GitHub');
             }
             // Securely set the GitLab token as a secret
@@ -55042,10 +55055,10 @@ async function validateConfig(config) {
             // Validate GitHub token
             const githubToken = getActionInput('GITHUB_TOKEN') || process.env.GITHUB_TOKEN;
             if (!getActionInput('GITHUB_TOKEN') && process.env.GITHUB_TOKEN) {
-                core.warning('WFLOW: Using default GITHUB_TOKEN. This may have limited permissions. Consider providing a custom token with explicit repository access.');
+                core.warning('\x1b[33m⚠️ Using default GITHUB_TOKEN. This may have limited permissions. Consider providing a custom token with explicit repository access.\x1b[0m');
             }
             else if (!githubToken) {
-                core.warning('WFLOW: GitHub token is required when syncing between GitLab and GitHub');
+                core.error('\x1b[31m✗ GitHub token is required when syncing between GitLab and GitHub\x1b[0m');
                 throw new Error('WFLOW: GitHub token is required when syncing between GitLab and GitHub');
             }
             // Securely set the GitHub token as a secret
@@ -55091,11 +55104,11 @@ async function validateConfig(config) {
             // Prefer input token, fall back to default GITHUB_TOKEN
             const githubToken = getActionInput('GITHUB_TOKEN') || process.env.GITHUB_TOKEN;
             if (!getActionInput('GITHUB_TOKEN') && process.env.GITHUB_TOKEN) {
-                core.warning('WFLOW: Using default GITHUB_TOKEN. This may have limited permissions. ' +
-                    'Consider providing a custom token with explicit repository access.');
+                core.warning('\x1b[33m⚠️ Using default GITHUB_TOKEN. This may have limited permissions. ' +
+                    'Consider providing a custom token with explicit repository access.\x1b[0m');
             }
             if (!githubToken) {
-                core.warning('WFLOW: No GitHub token provided. Sync operations may have limited permissions.');
+                core.warning('\x1b[33m⚠️ No GitHub token provided. Sync operations may have limited permissions.\x1b[0m');
             }
             else {
                 // Securely set the GitHub token as a secret
@@ -55176,60 +55189,193 @@ class GitHubClient {
     constructor(config) {
         this.config = config;
         if (!config.github.token) {
+            core.info('\x1b[31m❌ GitHub Authentication Error\x1b[0m');
             throw new Error('GitHub token is required');
         }
         this.octokit = github.getOctokit(config.github.token);
         this.repo = (0, repository_1.getGitHubRepo)(config);
+        core.info(`\x1b[32m✅ GitHub Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`);
     }
+    // sync branches
     async syncBranches() {
-        if (!this.config.gitlab.sync?.branches.enabled)
+        if (!this.config.gitlab.sync?.branches.enabled) {
             return [];
+        }
         try {
+            core.info('\x1b[36m🌿 Fetching GitHub Branches...\x1b[0m');
             const { data: branches } = await this.octokit.rest.repos.listBranches({
                 ...this.repo,
                 protected: this.config.gitlab.sync?.branches.protected
             });
-            return branches.map(branch => ({
+            const processedBranches = branches.map(branch => ({
                 name: branch.name,
                 sha: branch.commit.sha,
                 protected: branch.protected
             }));
+            core.info(`\x1b[32m✓ Branches Fetched: ${processedBranches.length} branches\x1b[0m`);
+            return processedBranches;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitHub branches: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitHub Branches: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
+        }
+    }
+    async createBranch(name, commitSha) {
+        try {
+            await this.octokit.rest.git.createRef({
+                ...this.repo,
+                ref: `refs/heads/${name}`,
+                sha: commitSha
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to create branch ${name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateBranch(name, commitSha) {
+        try {
+            await this.octokit.rest.git.updateRef({
+                ...this.repo,
+                ref: `refs/heads/${name}`,
+                sha: commitSha,
+                force: true
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update branch ${name}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     async syncPullRequests() {
-        if (!this.config.gitlab.sync?.pullRequests.enabled)
+        if (!this.config.gitlab.sync?.pullRequests.enabled) {
             return [];
+        }
         try {
+            core.info('\x1b[36m🔀 Fetching GitHub Pull Requests...\x1b[0m');
             const { data: prs } = await this.octokit.rest.pulls.list({
                 ...this.repo,
-                state: 'open'
+                state: 'all' // Get all PRs including closed/merged
             });
-            return prs.map(pr => ({
-                title: pr.title,
-                description: pr.body || '',
-                sourceBranch: pr.head.ref,
-                targetBranch: pr.base.ref,
-                labels: this.config.gitlab.sync?.pullRequests.labels ?? []
+            const processedPRs = await Promise.all(prs.map(async (pr) => {
+                // Fetch comments
+                const { data: comments } = await this.octokit.rest.issues.listComments({
+                    ...this.repo,
+                    issue_number: pr.number
+                });
+                // Fetch reviews
+                const { data: reviews } = await this.octokit.rest.pulls.listReviews({
+                    ...this.repo,
+                    pull_number: pr.number
+                });
+                return {
+                    id: pr.id,
+                    number: pr.number,
+                    title: pr.title,
+                    description: pr.body || '',
+                    sourceBranch: pr.head.ref,
+                    targetBranch: pr.base.ref,
+                    labels: pr.labels.map(label => label.name),
+                    state: pr.merged_at
+                        ? 'merged'
+                        : pr.state,
+                    comments: comments.map(comment => ({
+                        id: comment.id,
+                        body: comment.body || '',
+                        author: comment.user?.login || '',
+                        createdAt: comment.created_at
+                    })),
+                    reviews: reviews.map(review => ({
+                        id: review.id,
+                        state: review.state.toLowerCase(),
+                        body: review.body || '',
+                        author: review.user?.login || '',
+                        createdAt: review.submitted_at || ''
+                    }))
+                };
             }));
+            core.info(`\x1b[32m✓ Pull Requests Fetched: ${processedPRs.length} PRs\x1b[0m`);
+            return processedPRs;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitHub pull requests: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitHub Pull Requests: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
         }
     }
-    async syncIssues() {
-        if (!this.config.gitlab.sync?.issues.enabled)
-            return [];
+    async createPullRequest(pr) {
         try {
+            const { data: newPR } = await this.octokit.rest.pulls.create({
+                ...this.repo,
+                title: pr.title,
+                body: pr.description,
+                head: pr.sourceBranch,
+                base: pr.targetBranch
+            });
+            // Add labels
+            if (pr.labels.length > 0) {
+                await this.octokit.rest.issues.addLabels({
+                    ...this.repo,
+                    issue_number: newPR.number,
+                    labels: pr.labels
+                });
+            }
+            // Sync comments
+            if (pr.comments) {
+                for (const comment of pr.comments) {
+                    await this.octokit.rest.issues.createComment({
+                        ...this.repo,
+                        issue_number: newPR.number,
+                        body: comment.body
+                    });
+                }
+            }
+        }
+        catch (error) {
+            throw new Error(`Failed to create PR: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updatePullRequest(number, pr) {
+        try {
+            await this.octokit.rest.pulls.update({
+                ...this.repo,
+                pull_number: number,
+                title: pr.title,
+                body: pr.description,
+                state: pr.state === 'merged' ? 'closed' : pr.state
+            });
+            // Update labels
+            await this.octokit.rest.issues.setLabels({
+                ...this.repo,
+                issue_number: number,
+                labels: pr.labels
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update PR: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async closePullRequest(number) {
+        try {
+            await this.octokit.rest.pulls.update({
+                ...this.repo,
+                pull_number: number,
+                state: 'closed'
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to close PR: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    // sync issues
+    async syncIssues() {
+        if (!this.config.gitlab.sync?.issues.enabled) {
+            return [];
+        }
+        try {
+            core.info('\x1b[36m❗ Fetching GitHub Issues...\x1b[0m');
             const { data: issues } = await this.octokit.rest.issues.list({
                 ...this.repo,
                 state: 'all'
             });
-            return issues.map(issue => ({
+            const processedIssues = issues.map(issue => ({
                 title: issue.title,
                 body: issue.body || '',
                 labels: [
@@ -55239,63 +55385,254 @@ class GitHubClient {
                 number: issue.number,
                 state: issue.state
             }));
+            core.info(`\x1b[32m✓ Issues Fetched: ${processedIssues.length} total issues\x1b[0m`);
+            return processedIssues;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitHub issues: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitHub Issues: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
         }
     }
     async getIssueComments(issueNumber) {
-        if (!this.config.gitlab.sync?.issues.syncComments)
+        if (!this.config.gitlab.sync?.issues.syncComments) {
+            core.info('\x1b[33m⚠️ Issue Comments Sync Disabled\x1b[0m');
             return [];
+        }
         try {
+            core.info(`\x1b[36m💬 Fetching Comments for Issue #${issueNumber}...\x1b[0m`);
             const { data: comments } = await this.octokit.rest.issues.listComments({
                 ...this.repo,
                 issue_number: issueNumber
             });
-            return comments.map(comment => ({
+            const processedComments = comments.map(comment => ({
+                id: comment.id,
                 body: comment.body || '',
                 createdAt: comment.created_at,
                 author: comment.user?.login || 'unknown'
             }));
+            core.info(`\x1b[32m✓ Comments Fetched: ${processedComments.length} comments\x1b[0m`);
+            return processedComments;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitHub issue comments: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitHub Issue Comments: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
+        }
+    }
+    async createIssue(issue) {
+        try {
+            await this.octokit.rest.issues.create({
+                ...this.repo,
+                title: issue.title,
+                body: issue.body,
+                labels: issue.labels
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to create issue "${issue.title}": ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateIssue(issueNumber, issue) {
+        try {
+            await this.octokit.rest.issues.update({
+                ...this.repo,
+                issue_number: issueNumber,
+                title: issue.title,
+                body: issue.body,
+                labels: issue.labels,
+                state: issue.state
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async createIssueComment(issueNumber, comment) {
+        try {
+            await this.octokit.rest.issues.createComment({
+                ...this.repo,
+                issue_number: issueNumber,
+                body: comment.body
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to create comment on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     async syncReleases() {
-        if (!this.config.gitlab.sync?.releases.enabled)
+        if (!this.config.gitlab.sync?.releases.enabled) {
             return [];
+        }
         try {
+            core.info('\x1b[36m🏷️ Fetching GitHub Releases...\x1b[0m');
             const { data: releases } = await this.octokit.rest.repos.listReleases({
                 ...this.repo
             });
-            return releases.map(release => ({
+            const processedReleases = releases.map(release => ({
+                id: release.id.toString(),
                 tag: release.tag_name,
-                name: release.name || '',
+                name: release.name || release.tag_name,
                 body: release.body || '',
                 draft: release.draft,
-                prerelease: release.prerelease
+                prerelease: release.prerelease,
+                createdAt: release.created_at,
+                publishedAt: release.published_at,
+                assets: release.assets.map(asset => ({
+                    name: asset.name,
+                    url: asset.browser_download_url,
+                    size: asset.size,
+                    contentType: asset.content_type
+                }))
             }));
+            core.info(`\x1b[32m✓ Releases Fetched: ${processedReleases.length} releases\x1b[0m`);
+            return processedReleases;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitHub releases: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitHub Releases: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
         }
     }
-    async syncTags() {
-        if (!this.config.gitlab.sync?.tags.enabled)
-            return [];
+    async createRelease(release) {
         try {
+            const { data: createdRelease } = await this.octokit.rest.repos.createRelease({
+                ...this.repo,
+                tag_name: release.tag,
+                name: release.name,
+                body: release.body,
+                draft: release.draft,
+                prerelease: release.prerelease
+            });
+            // Store the created release ID for asset upload
+            release.id = createdRelease.id.toString();
+        }
+        catch (error) {
+            throw new Error(`Failed to create release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateRelease(release) {
+        try {
+            const { data: existingRelease } = await this.octokit.rest.repos.getReleaseByTag({
+                ...this.repo,
+                tag: release.tag
+            });
+            await this.octokit.rest.repos.updateRelease({
+                ...this.repo,
+                release_id: existingRelease.id,
+                tag_name: release.tag,
+                name: release.name,
+                body: release.body,
+                draft: release.draft,
+                prerelease: release.prerelease
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async downloadReleaseAsset(releaseId, asset) {
+        try {
+            const response = await this.octokit.request('GET /repos/{owner}/{repo}/releases/assets/{asset_id}', {
+                ...this.repo,
+                asset_id: parseInt(releaseId),
+                headers: {
+                    Accept: 'application/octet-stream'
+                }
+            });
+            return Buffer.from(response.data);
+        }
+        catch (error) {
+            throw new Error(`Failed to download asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async uploadReleaseAsset(releaseId, asset, content) {
+        try {
+            await this.octokit.rest.repos.uploadReleaseAsset({
+                ...this.repo,
+                release_id: parseInt(releaseId),
+                name: asset.name,
+                data: content.toString('base64'),
+                headers: {
+                    'content-type': asset.contentType,
+                    'content-length': asset.size
+                }
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to upload asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async syncTags() {
+        if (!this.config.gitlab.sync?.tags.enabled) {
+            return [];
+        }
+        try {
+            core.info('\x1b[36m🏷 Fetching GitHub Tags...\x1b[0m');
             const { data: tags } = await this.octokit.rest.repos.listTags({
                 ...this.repo
             });
-            return tags.map(tag => tag.name);
+            // Get tag creation times from refs
+            const processedTags = await Promise.all(tags.map(async (tag) => {
+                try {
+                    const { data: ref } = await this.octokit.rest.git.getRef({
+                        ...this.repo,
+                        ref: `tags/${tag.name}`
+                    });
+                    const { data: tagData } = await this.octokit.rest.git.getTag({
+                        ...this.repo,
+                        tag_sha: ref.object.sha
+                    });
+                    return {
+                        name: tag.name,
+                        createdAt: tagData.tagger.date,
+                        commitSha: tag.commit.sha
+                    };
+                }
+                catch (error) {
+                    core.warning(`\x1b[31m❌ Failed to Fetch GitHub Tags creation time: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+                    // Fallback to commit date if annotated tag data is not available
+                    const { data: commit } = await this.octokit.rest.git.getCommit({
+                        ...this.repo,
+                        commit_sha: tag.commit.sha
+                    });
+                    return {
+                        name: tag.name,
+                        createdAt: commit.author.date,
+                        commitSha: tag.commit.sha
+                    };
+                }
+            }));
+            core.info(`\x1b[32m✓ Tags Fetched: ${processedTags.length} tags\x1b[0m`);
+            return processedTags;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitHub tags: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitHub Tags: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
+        }
+    }
+    async createTag(tag) {
+        try {
+            // Create the tag reference
+            await this.octokit.rest.git.createRef({
+                ...this.repo,
+                ref: `refs/tags/${tag.name}`,
+                sha: tag.commitSha
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to create tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateTag(tag) {
+        try {
+            // Delete existing tag
+            await this.octokit.rest.git.deleteRef({
+                ...this.repo,
+                ref: `tags/${tag.name}`
+            });
+            // Create new tag
+            await this.createTag(tag);
+        }
+        catch (error) {
+            throw new Error(`Failed to update tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }
@@ -55359,58 +55696,145 @@ class GitLabClient {
             host: config.gitlab.url || 'https://gitlab.com'
         });
         this.repo = (0, repository_1.getGitLabRepo)(config);
+        core.info(`\x1b[32m✅ GitLab Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`);
     }
     get projectPath() {
         return `${this.repo.owner}/${this.repo.repo}`;
     }
     async syncBranches() {
-        if (!this.config.github.sync?.branches.enabled)
+        if (!this.config.github.sync?.branches.enabled) {
             return [];
+        }
         try {
+            core.info('\x1b[36m🌿 Fetching GitLab Branches...\x1b[0m');
             const branches = await this.gitlab.Branches.all(this.projectPath);
-            return branches.map(branch => ({
+            const processedBranches = branches.map(branch => ({
                 name: branch.name,
                 sha: branch.commit.id,
                 protected: branch.protected
             }));
+            core.info(`\x1b[32m✓ Branches Fetched: ${processedBranches.length} branches\x1b[0m`);
+            return processedBranches;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitLab branches: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Branches: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
+        }
+    }
+    async createBranch(name, commitSha) {
+        try {
+            await this.gitlab.Branches.create(this.projectPath, name, commitSha);
+        }
+        catch (error) {
+            throw new Error(`Failed to create branch ${name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateBranch(name, commitSha) {
+        try {
+            // GitLab API doesn't have a direct "update branch" endpoint
+            // We need to delete and recreate the branch
+            await this.gitlab.Branches.remove(this.projectPath, name);
+            await this.gitlab.Branches.create(this.projectPath, name, commitSha);
+        }
+        catch (error) {
+            throw new Error(`Failed to update branch ${name}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     async syncPullRequests() {
-        if (!this.config.github.sync?.pullRequests.enabled)
+        if (!this.config.github.sync?.pullRequests.enabled) {
             return [];
+        }
         try {
+            core.info('\x1b[36m🔀 Fetching GitLab Merge Requests...\x1b[0m');
             const mrs = await this.gitlab.MergeRequests.all({
                 projectId: this.projectPath,
-                state: 'opened'
+                scope: 'all' // Use scope instead of state to get all MRs
             });
-            return mrs.map(mr => ({
-                title: mr.title,
-                description: mr.description || '',
-                sourceBranch: mr.source_branch,
-                targetBranch: mr.target_branch,
-                labels: [
-                    ...(mr.labels || []),
-                    ...(this.config.github.sync?.pullRequests.labels || [])
-                ]
+            const processedPRs = await Promise.all(mrs.map(async (mr) => {
+                // Fetch comments (notes in GitLab)
+                const comments = await this.gitlab.MergeRequestNotes.all(this.projectPath, mr.iid);
+                return {
+                    id: mr.id,
+                    number: mr.iid,
+                    title: mr.title,
+                    description: mr.description || '',
+                    sourceBranch: mr.source_branch,
+                    targetBranch: mr.target_branch,
+                    labels: [
+                        ...(mr.labels || []),
+                        ...(this.config.github.sync?.pullRequests.labels || [])
+                    ],
+                    state: (mr.state === 'merged'
+                        ? 'merged'
+                        : mr.state === 'opened'
+                            ? 'open'
+                            : 'closed'),
+                    comments: comments.map(comment => ({
+                        id: comment.id,
+                        body: comment.body || '',
+                        author: comment.author.username,
+                        createdAt: comment.created_at
+                    }))
+                };
             }));
+            core.info(`\x1b[32m✓ Merge Requests Fetched: ${processedPRs.length} MRs\x1b[0m`);
+            return processedPRs;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitLab merge requests: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Merge Requests: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
         }
     }
-    async syncIssues() {
-        if (!this.config.github.sync?.issues.enabled)
-            return [];
+    async createPullRequest(pr) {
         try {
+            const mr = await this.gitlab.MergeRequests.create(this.projectPath, pr.sourceBranch, pr.targetBranch, pr.title, {
+                description: pr.description,
+                labels: pr.labels.join(',')
+            });
+            // Sync comments
+            if (pr.comments) {
+                for (const comment of pr.comments) {
+                    await this.gitlab.MergeRequestNotes.create(this.projectPath, mr.iid, comment.body);
+                }
+            }
+        }
+        catch (error) {
+            throw new Error(`Failed to create MR: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updatePullRequest(number, pr) {
+        try {
+            await this.gitlab.MergeRequests.edit(this.projectPath, number, {
+                title: pr.title,
+                description: pr.description,
+                stateEvent: pr.state === 'closed' ? 'close' : 'reopen',
+                labels: pr.labels.join(',')
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update MR: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async closePullRequest(number) {
+        try {
+            await this.gitlab.MergeRequests.edit(this.projectPath, number, {
+                stateEvent: 'close'
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to close MR: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async syncIssues() {
+        if (!this.config.github.sync?.issues.enabled) {
+            return [];
+        }
+        try {
+            core.info('\x1b[36m❗ Fetching GitLab Issues...\x1b[0m');
             const issues = await this.gitlab.Issues.all({
                 projectId: this.projectPath
             });
-            return issues.map(issue => ({
+            const processedIssues = issues.map(issue => ({
                 title: issue.title,
                 body: issue.description || '',
                 labels: [
@@ -55418,58 +55842,187 @@ class GitLabClient {
                     ...(this.config.github.sync?.issues.labels ?? [])
                 ],
                 number: issue.iid,
-                state: issue.state === 'opened' ? 'open' : 'closed'
+                state: (issue.state === 'opened' ? 'open' : 'closed')
             }));
+            core.info(`\x1b[32m✓ Issues Fetched: ${processedIssues.length} total issues\x1b[0m`);
+            return processedIssues;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitLab issues: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Issues: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
         }
     }
     async getIssueComments(issueNumber) {
-        if (!this.config.github.sync?.issues.syncComments)
+        if (!this.config.github.sync?.issues.syncComments) {
             return [];
+        }
         try {
+            core.info(`\x1b[36m💬 Fetching Comments for Issue #${issueNumber}...\x1b[0m`);
             const notes = await this.gitlab.IssueNotes.all(this.projectPath, issueNumber);
-            return notes.map(note => ({
+            const processedComments = notes.map(note => ({
+                id: note.id,
                 body: note.body,
                 createdAt: note.created_at,
                 author: note.author.username
             }));
+            core.info(`\x1b[32m✓ Comments Fetched: ${processedComments.length} comments\x1b[0m`);
+            return processedComments;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitLab issue comments: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Issue Comments: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
+        }
+    }
+    async createIssue(issue) {
+        try {
+            await this.gitlab.Issues.create(this.projectPath, issue.title, {
+                description: issue.body,
+                labels: issue.labels.join(',')
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to create issue "${issue.title}": ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateIssue(issueNumber, issue) {
+        try {
+            await this.gitlab.Issues.edit(this.projectPath, issueNumber, {
+                title: issue.title,
+                description: issue.body,
+                labels: issue.labels.join(','),
+                stateEvent: issue.state === 'closed' ? 'close' : 'reopen'
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async createIssueComment(issueNumber, comment) {
+        try {
+            await this.gitlab.IssueNotes.create(this.projectPath, issueNumber, comment.body);
+        }
+        catch (error) {
+            throw new Error(`Failed to create comment on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     async syncReleases() {
-        if (!this.config.github.sync?.releases.enabled)
+        if (!this.config.github.sync?.releases.enabled) {
             return [];
+        }
         try {
+            core.info('\x1b[36m🏷️ Fetching GitLab Releases...\x1b[0m');
             const releases = await this.gitlab.ProjectReleases.all(this.projectPath);
-            return releases.map(release => ({
+            const processedReleases = releases.map(release => ({
+                id: release.tag_name, // GitLab uses tag name as release identifier
                 tag: release.tag_name,
                 name: release.name || release.tag_name,
                 body: release.description || '',
-                draft: false, // GitLab doesn't have draft releases
-                prerelease: false // GitLab doesn't have pre-releases
+                draft: false, // GitLab doesn't support draft releases
+                prerelease: false, // GitLab doesn't support prereleases
+                createdAt: release.created_at,
+                publishedAt: release.released_at,
+                assets: (release.assets.links ?? []).map(asset => ({
+                    name: asset.name,
+                    url: asset.url,
+                    size: 0, // GitLab API doesn't provide size information
+                    contentType: asset.link_type || 'application/octet-stream'
+                }))
             }));
+            core.info(`\x1b[32m✓ Releases Fetched: ${processedReleases.length} releases\x1b[0m`);
+            return processedReleases;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitLab releases: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Releases: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
         }
     }
-    async syncTags() {
-        if (!this.config.github.sync?.tags.enabled)
-            return [];
+    async createRelease(release) {
         try {
-            const tags = await this.gitlab.Tags.all(this.projectPath);
-            return tags.map(tag => tag.name);
+            const createdRelease = await this.gitlab.ProjectReleases.create(this.projectPath, {
+                tag_name: release.tag,
+                name: release.name,
+                description: release.body,
+                ref: release.tag // Use tag as reference
+            });
+            // Store the created release ID (tag name in GitLab)
+            release.id = createdRelease.tag_name;
         }
         catch (error) {
-            core.warning(`Failed to fetch GitLab tags: ${error instanceof Error ? error.message : String(error)}`);
+            throw new Error(`Failed to create release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateRelease(release) {
+        try {
+            await this.gitlab.ProjectReleases.edit(this.projectPath, release.tag, {
+                name: release.name,
+                description: release.body
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async downloadReleaseAsset(releaseId, asset) {
+        try {
+            const response = await fetch(asset.url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            return Buffer.from(arrayBuffer);
+        }
+        catch (error) {
+            throw new Error(`Failed to download asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async uploadReleaseAsset(releaseId, asset) {
+        try {
+            await this.gitlab.ReleaseLinks.create(this.projectPath, releaseId, // tag name in GitLab
+            asset.name, asset.url, {
+                linkType: asset.contentType
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to upload asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async syncTags() {
+        if (!this.config.github.sync?.tags.enabled) {
             return [];
+        }
+        try {
+            core.info('\x1b[36m🏷 Fetching GitLab Tags...\x1b[0m');
+            const tags = await this.gitlab.Tags.all(this.projectPath);
+            const processedTags = tags.map(tag => ({
+                name: tag.name,
+                createdAt: tag.commit.created_at,
+                commitSha: tag.commit.id
+            }));
+            core.info(`\x1b[32m✓ Tags Fetched: ${processedTags.length} tags\x1b[0m`);
+            return processedTags;
+        }
+        catch (error) {
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Tags: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+            return [];
+        }
+    }
+    async createTag(tag) {
+        try {
+            await this.gitlab.Tags.create(this.projectPath, tag.name, tag.commitSha);
+        }
+        catch (error) {
+            throw new Error(`Failed to create tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateTag(tag) {
+        try {
+            // Delete existing tag
+            await this.gitlab.Tags.remove(this.projectPath, tag.name);
+            // Create new tag
+            await this.createTag(tag);
+        }
+        catch (error) {
+            throw new Error(`Failed to update tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }
@@ -55483,6 +56036,7 @@ exports.GitLabClient = GitLabClient;
 
 "use strict";
 
+// index.ts
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -55517,7 +56071,6 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-// index.ts is the entry point of the action. It loads the configuration, initializes the GitHub and GitLab clients, and starts the sync process.
 const core = __importStar(__nccwpck_require__(7484));
 const config_1 = __nccwpck_require__(2973);
 const github_1 = __nccwpck_require__(9248);
@@ -55526,60 +56079,123 @@ const branches_1 = __nccwpck_require__(5651);
 const pr_sync_1 = __nccwpck_require__(2997);
 const issues_1 = __nccwpck_require__(8223);
 const releases_1 = __nccwpck_require__(2017);
-const tags_1 = __nccwpck_require__(5362);
 async function run() {
     try {
+        // Enhanced startup logging
+        core.info('\x1b[34m🚀 Repository Synchronization Action Initialized\x1b[0m');
+        core.info('\x1b[90m--------------------------------------------\x1b[0m');
+        // Load configuration
         const config = await (0, config_1.getConfig)();
-        core.info('Configuration loaded successfully');
+        core.info(`\x1b[32m✅ Configuration loaded successfully\x1b[0m`);
+        // Create clients
         const githubClient = new github_1.GitHubClient(config);
         const gitlabClient = new gitlab_1.GitLabClient(config);
         if (config.github.enabled && config.gitlab.enabled) {
-            core.info('Starting bi-directional sync between GitHub and GitLab');
-            // GitHub to GitLab sync
-            if (config.github.sync?.branches.enabled) {
-                await (0, branches_1.syncBranches)(githubClient, gitlabClient);
+            core.info('\x1b[36m🔄 Starting bi-directional sync between GitHub and GitLab\x1b[0m');
+            // Sync tracking
+            const syncOperations = [
+                // GitHub to GitLab sync operations
+                {
+                    name: '\x1b[34m🌿 Branches (GitHub → GitLab)\x1b[0m',
+                    enabled: config.github.sync?.branches.enabled || false,
+                    operation: async () => {
+                        await (0, branches_1.syncBranches)(githubClient, gitlabClient);
+                    }
+                },
+                {
+                    name: '\x1b[32m🔀 Pull Requests (GitHub → GitLab)\x1b[0m',
+                    enabled: config.github.sync?.pullRequests.enabled || false,
+                    operation: async () => {
+                        await (0, pr_sync_1.syncPullRequests)(githubClient, gitlabClient);
+                    }
+                },
+                {
+                    name: '\x1b[35m❗ Issues (GitHub → GitLab)\x1b[0m',
+                    enabled: config.github.sync?.issues.enabled || false,
+                    operation: async () => {
+                        await (0, issues_1.syncIssues)(githubClient, gitlabClient);
+                    }
+                },
+                {
+                    name: '\x1b[33m🏷️ Releases (GitHub → GitLab)\x1b[0m',
+                    enabled: config.github.sync?.releases.enabled || false,
+                    operation: async () => {
+                        await (0, releases_1.syncReleases)(githubClient, gitlabClient);
+                    }
+                },
+                {
+                    name: '\x1b[36m🏷 Tags (GitHub → GitLab)\x1b[0m',
+                    enabled: config.github.sync?.tags.enabled ||
+                        config.github.sync?.releases.enabled ||
+                        false,
+                    operation: async () => {
+                        await (0, releases_1.syncTags)(githubClient, gitlabClient);
+                    }
+                },
+                // GitLab to GitHub sync operations
+                {
+                    name: '\x1b[34m🌿 Branches (GitLab → GitHub)\x1b[0m',
+                    enabled: config.gitlab.sync?.branches.enabled || false,
+                    operation: async () => {
+                        await (0, branches_1.syncBranches)(gitlabClient, githubClient);
+                    }
+                },
+                {
+                    name: '\x1b[32m🔀 Pull Requests (GitLab → GitHub)\x1b[0m',
+                    enabled: config.gitlab.sync?.pullRequests.enabled || false,
+                    operation: async () => {
+                        await (0, pr_sync_1.syncPullRequests)(gitlabClient, githubClient);
+                    }
+                },
+                {
+                    name: '\x1b[35m❗ Issues (GitLab → GitHub)\x1b[0m',
+                    enabled: config.gitlab.sync?.issues.enabled || false,
+                    operation: async () => {
+                        await (0, issues_1.syncIssues)(gitlabClient, githubClient);
+                    }
+                },
+                {
+                    name: '\x1b[33m🏷️ Releases (GitLab → GitHub)\x1b[0m',
+                    enabled: config.gitlab.sync?.releases.enabled || false,
+                    operation: async () => {
+                        await (0, releases_1.syncReleases)(gitlabClient, githubClient);
+                    }
+                },
+                {
+                    name: '\x1b[36m🏷 Tags (GitLab → GitHub)\x1b[0m',
+                    enabled: config.gitlab.sync?.tags.enabled ||
+                        config.gitlab.sync?.releases.enabled ||
+                        false,
+                    operation: async () => {
+                        await (0, releases_1.syncTags)(gitlabClient, githubClient);
+                    }
+                }
+            ];
+            // Execute enabled sync operations
+            for (const syncOp of syncOperations) {
+                if (syncOp.enabled) {
+                    core.info(`\x1b[90m➜ Syncing: ${syncOp.name}\x1b[0m`);
+                    await syncOp.operation();
+                    core.info(`\x1b[32m✓ Completed: ${syncOp.name}\x1b[0m`);
+                }
             }
-            if (config.github.sync?.pullRequests.enabled) {
-                await (0, pr_sync_1.syncPullRequests)(githubClient, gitlabClient);
-            }
-            if (config.github.sync?.issues.enabled) {
-                await (0, issues_1.syncIssues)(githubClient, gitlabClient);
-            }
-            if (config.github.sync?.releases.enabled) {
-                await (0, releases_1.syncReleases)(githubClient, gitlabClient);
-            }
-            if (config.github.sync?.tags.enabled) {
-                await (0, tags_1.syncTags)(githubClient, gitlabClient);
-            }
-            // GitLab to GitHub sync
-            if (config.gitlab.sync?.branches.enabled) {
-                await (0, branches_1.syncBranches)(gitlabClient, githubClient);
-            }
-            if (config.gitlab.sync?.pullRequests.enabled) {
-                await (0, pr_sync_1.syncPullRequests)(gitlabClient, githubClient);
-            }
-            if (config.gitlab.sync?.issues.enabled) {
-                await (0, issues_1.syncIssues)(gitlabClient, githubClient);
-            }
-            if (config.gitlab.sync?.releases.enabled) {
-                await (0, releases_1.syncReleases)(gitlabClient, githubClient);
-            }
-            if (config.gitlab.sync?.tags.enabled) {
-                await (0, tags_1.syncTags)(gitlabClient, githubClient);
-            }
-            core.info('Sync completed successfully');
+            core.info('\x1b[32m🎉 Sync completed successfully!\x1b[0m');
         }
         else {
-            core.warning('Either GitHub or GitLab sync is disabled in configuration');
+            core.warning('\x1b[33m⚠️ Sync not performed: Either GitHub or GitLab sync is disabled in configuration\x1b[0m');
         }
+        core.info('\x1b[90m--------------------------------------------\x1b[0m');
+        core.info('\x1b[34m🏁 Repository Synchronization Action Finished\x1b[0m');
     }
     catch (error) {
+        core.info('\x1b[90m--------------------------------------------\x1b[0m');
         if (error instanceof Error) {
-            core.setFailed(error.message);
+            core.setFailed(`\x1b[31m❌ Sync Failed: ${error.message}\x1b[0m`);
         }
         else {
-            core.setFailed('An unexpected error occurred');
+            core.setFailed('\x1b[31m❌ An unexpected error occurred during synchronization\x1b[0m');
         }
+        core.info('\x1b[90m--------------------------------------------\x1b[0m');
     }
 }
 run();
@@ -55626,23 +56242,111 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.compareBranches = compareBranches;
 exports.syncBranches = syncBranches;
+// src/sync/branches.ts
 const core = __importStar(__nccwpck_require__(7484));
+function compareBranches(sourceBranches, targetBranches) {
+    const comparisons = [];
+    for (const sourceBranch of sourceBranches) {
+        const targetBranch = targetBranches.find(b => b.name === sourceBranch.name);
+        if (!targetBranch) {
+            // Branch doesn't exist in target - needs to be created
+            comparisons.push({
+                name: sourceBranch.name,
+                sourceCommit: sourceBranch.sha,
+                action: 'create',
+                protected: sourceBranch.protected
+            });
+            core.debug(`Branch ${sourceBranch.name} will be created in target`);
+            continue;
+        }
+        // Branch exists - check if it needs updating
+        if (sourceBranch.sha !== targetBranch.sha) {
+            comparisons.push({
+                name: sourceBranch.name,
+                sourceCommit: sourceBranch.sha,
+                targetCommit: targetBranch.sha,
+                action: 'update',
+                protected: sourceBranch.protected
+            });
+            core.debug(`Branch ${sourceBranch.name} will be updated in target`);
+        }
+        else {
+            comparisons.push({
+                name: sourceBranch.name,
+                sourceCommit: sourceBranch.sha,
+                targetCommit: targetBranch.sha,
+                action: 'skip',
+                protected: sourceBranch.protected
+            });
+            core.debug(`Branch ${sourceBranch.name} is up to date`);
+        }
+    }
+    return comparisons;
+}
 async function syncBranches(source, target) {
     try {
+        // Fetch branches from both repositories
         const sourceBranches = await source.syncBranches();
-        core.info(`Fetched ${sourceBranches.length} branches from source`);
         const targetBranches = await target.syncBranches();
-        core.info(`Fetched ${targetBranches.length} branches from target`);
-        // Compare and sync branches
-        const branchesToSync = sourceBranches.filter(sourceBranch => !targetBranches.some(targetBranch => targetBranch.name === sourceBranch.name));
-        core.info(`Found ${branchesToSync.length} branches to sync`);
-        return branchesToSync;
+        // Compare branches and determine required actions
+        const branchComparisons = compareBranches(sourceBranches, targetBranches);
+        // Log sync plan
+        core.info('\n🔍 Branch Sync Analysis:');
+        logSyncPlan(branchComparisons);
+        // Process each branch according to its required action
+        for (const comparison of branchComparisons) {
+            try {
+                switch (comparison.action) {
+                    case 'create':
+                        await createBranch(target, comparison);
+                        break;
+                    case 'update':
+                        await updateBranch(target, comparison);
+                        break;
+                    case 'skip':
+                        core.info(`⏭️ Skipping ${comparison.name} - already in sync`);
+                        break;
+                }
+            }
+            catch (error) {
+                core.warning(`Failed to process branch ${comparison.name}: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+        core.info('✅ Branch synchronization completed');
     }
     catch (error) {
-        core.error(`Failed to sync branches: ${error instanceof Error ? error.message : String(error)}`);
-        return [];
+        core.error(`Branch synchronization failed: ${error instanceof Error ? error.message : String(error)}`);
+        throw error;
     }
+}
+async function createBranch(target, comparison) {
+    core.info(`🌱 Creating branch ${comparison.name}`);
+    // Implementation will be handled by the specific client (GitHub/GitLab)
+    await target.createBranch(comparison.name, comparison.sourceCommit);
+    core.info(`✅ Created branch ${comparison.name}`);
+}
+async function updateBranch(target, comparison) {
+    if (comparison.protected) {
+        core.warning(`⚠️ Skipping protected branch ${comparison.name} - manual update required`);
+        return;
+    }
+    core.info(`📝 Updating branch ${comparison.name}`);
+    // Implementation will be handled by the specific client (GitHub/GitLab)
+    await target.updateBranch(comparison.name, comparison.sourceCommit);
+    core.info(`✅ Updated branch ${comparison.name}`);
+}
+function logSyncPlan(comparisons) {
+    const create = comparisons.filter(c => c.action === 'create').length;
+    const update = comparisons.filter(c => c.action === 'update').length;
+    const skip = comparisons.filter(c => c.action === 'skip').length;
+    core.info(`
+📊 Sync Plan Summary:
+  - Create: ${create} branches
+  - Update: ${update} branches
+  - Skip: ${skip} branches (already in sync)
+`);
 }
 
 
@@ -55687,44 +56391,160 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.compareIssues = compareIssues;
+exports.compareComments = compareComments;
 exports.syncIssues = syncIssues;
+// src/sync/issues.ts
 const core = __importStar(__nccwpck_require__(7484));
+function compareIssues(sourceIssues, targetIssues) {
+    const comparisons = [];
+    for (const sourceIssue of sourceIssues) {
+        const targetIssue = targetIssues.find(target => target.title === sourceIssue.title);
+        if (!targetIssue) {
+            comparisons.push({
+                sourceIssue,
+                action: 'create'
+            });
+            core.debug(`Issue "${sourceIssue.title}" will be created in target`);
+            continue;
+        }
+        if (sourceIssue.body !== targetIssue.body ||
+            sourceIssue.state !== targetIssue.state ||
+            !arraysEqual(sourceIssue.labels, targetIssue.labels)) {
+            comparisons.push({
+                sourceIssue,
+                targetIssue,
+                action: 'update'
+            });
+            core.debug(`Issue "${sourceIssue.title}" will be updated in target`);
+        }
+        else {
+            comparisons.push({
+                sourceIssue,
+                targetIssue,
+                action: 'skip'
+            });
+            core.debug(`Issue "${sourceIssue.title}" is up to date`);
+        }
+    }
+    return comparisons;
+}
+function compareComments(sourceComments, targetComments) {
+    const comparisons = [];
+    for (const sourceComment of sourceComments) {
+        const targetComment = targetComments.find(target => target.body === sourceComment.body &&
+            target.author === sourceComment.author);
+        if (!targetComment) {
+            comparisons.push({
+                sourceComment,
+                action: 'create'
+            });
+            core.debug(`Comment by ${sourceComment.author} will be created`);
+        }
+        else {
+            comparisons.push({
+                sourceComment,
+                action: 'skip'
+            });
+            core.debug(`Comment by ${sourceComment.author} already exists`);
+        }
+    }
+    return comparisons;
+}
+function arraysEqual(a, b) {
+    if (a.length !== b.length)
+        return false;
+    const sortedA = [...a].sort();
+    const sortedB = [...b].sort();
+    return sortedA.every((val, idx) => val === sortedB[idx]);
+}
 async function syncIssues(source, target) {
     try {
+        // Fetch issues from both repositories
         const sourceIssues = await source.syncIssues();
-        core.info(`Fetched ${sourceIssues.length} issues from source`);
         const targetIssues = await target.syncIssues();
-        core.info(`Fetched ${targetIssues.length} issues from target`);
-        // Compare and sync issues
-        const issuesToSync = sourceIssues.filter(sourceIssue => !targetIssues.some(targetIssue => targetIssue.title === sourceIssue.title));
-        // Sync comments for matching issues
-        for (const sourceIssue of sourceIssues) {
-            const targetIssue = targetIssues.find(ti => ti.title === sourceIssue.title);
-            if (targetIssue) {
-                await syncIssueComments(source, target, sourceIssue.number, targetIssue.number);
+        // Compare issues and determine required actions
+        const issueComparisons = compareIssues(sourceIssues, targetIssues);
+        // Log sync plan
+        core.info('\n🔍 Issue Sync Analysis:');
+        logSyncPlan(issueComparisons);
+        // Process each issue according to its required action
+        for (const comparison of issueComparisons) {
+            try {
+                switch (comparison.action) {
+                    case 'create':
+                        await createIssue(target, comparison);
+                        break;
+                    case 'update':
+                        await updateIssue(target, comparison);
+                        break;
+                    case 'skip':
+                        core.info(`⏭️ Skipping "${comparison.sourceIssue.title}" - already in sync`);
+                        break;
+                }
+                // Sync comments if the issue exists in both repositories
+                if (comparison.targetIssue) {
+                    await syncIssueComments(source, target, comparison.sourceIssue.number, comparison.targetIssue.number);
+                }
+            }
+            catch (error) {
+                core.warning(`Failed to process issue "${comparison.sourceIssue.title}": ${error instanceof Error ? error.message : String(error)}`);
             }
         }
-        core.info(`Found ${issuesToSync.length} issues to sync`);
-        return issuesToSync;
+        core.info('✅ Issue synchronization completed');
     }
     catch (error) {
-        core.error(`Failed to sync issues: ${error instanceof Error ? error.message : String(error)}`);
-        return [];
+        core.error(`Issue synchronization failed: ${error instanceof Error ? error.message : String(error)}`);
+        throw error;
     }
 }
 async function syncIssueComments(source, target, sourceIssueNumber, targetIssueNumber) {
     try {
         const sourceComments = await source.getIssueComments(sourceIssueNumber);
         const targetComments = await target.getIssueComments(targetIssueNumber);
-        const commentsToSync = sourceComments.filter(sourceComment => !targetComments.some(targetComment => targetComment.body === sourceComment.body &&
-            targetComment.author === sourceComment.author));
-        core.info(`Found ${commentsToSync.length} comments to sync for issue #${sourceIssueNumber}`);
-        return commentsToSync;
+        const commentComparisons = compareComments(sourceComments, targetComments);
+        for (const comparison of commentComparisons) {
+            try {
+                if (comparison.action === 'create') {
+                    await createComment(target, targetIssueNumber, comparison);
+                }
+            }
+            catch (error) {
+                core.warning(`Failed to sync comment in issue #${targetIssueNumber}: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
     }
     catch (error) {
-        core.error(`Failed to sync comments for issue #${sourceIssueNumber}: ${error instanceof Error ? error.message : String(error)}`);
-        return [];
+        core.warning(`Failed to sync comments for issue #${sourceIssueNumber}: ${error instanceof Error ? error.message : String(error)}`);
     }
+}
+async function createIssue(target, comparison) {
+    core.info(`📝 Creating issue "${comparison.sourceIssue.title}"`);
+    await target.createIssue(comparison.sourceIssue);
+    core.info(`✅ Created issue "${comparison.sourceIssue.title}"`);
+}
+async function updateIssue(target, comparison) {
+    if (!comparison.targetIssue)
+        return;
+    core.info(`📝 Updating issue "${comparison.sourceIssue.title}"`);
+    await target.updateIssue(comparison.targetIssue.number, comparison.sourceIssue);
+    core.info(`✅ Updated issue "${comparison.sourceIssue.title}"`);
+}
+async function createComment(target, issueNumber, comparison) {
+    core.info(`💬 Creating comment in issue #${issueNumber}`);
+    await target.createIssueComment(issueNumber, comparison.sourceComment);
+    core.info(`✅ Created comment in issue #${issueNumber}`);
+}
+function logSyncPlan(comparisons) {
+    const create = comparisons.filter(c => c.action === 'create').length;
+    const update = comparisons.filter(c => c.action === 'update').length;
+    const skip = comparisons.filter(c => c.action === 'skip').length;
+    core.info(`
+📊 Sync Plan Summary:
+  - Create: ${create} issues
+  - Update: ${update} issues
+  - Skip: ${skip} issues (already in sync)
+`);
 }
 
 
@@ -55777,15 +56597,42 @@ async function syncPullRequests(source, target) {
         core.info(`Fetched ${sourcePRs.length} pull requests from source`);
         const targetPRs = await target.syncPullRequests();
         core.info(`Fetched ${targetPRs.length} pull requests from target`);
-        // Compare and sync PRs
-        const prsToSync = sourcePRs.filter(sourcePR => !targetPRs.some(targetPR => targetPR.title === sourcePR.title));
-        core.info(`Found ${prsToSync.length} pull requests to sync`);
-        return prsToSync;
+        // Process each source PR
+        for (const sourcePR of sourcePRs) {
+            const targetPR = targetPRs.find(pr => pr.title === sourcePR.title);
+            if (!targetPR) {
+                // Create new PR if it doesn't exist in target
+                core.info(`Creating new PR: ${sourcePR.title}`);
+                await target.createPullRequest(sourcePR);
+            }
+            else {
+                // Update existing PR if needed
+                if (needsUpdate(sourcePR, targetPR)) {
+                    core.info(`Updating PR: ${sourcePR.title}`);
+                    await target.updatePullRequest(targetPR.number, sourcePR);
+                }
+                // Handle state changes
+                if (sourcePR.state === 'closed' && targetPR.state === 'open') {
+                    core.info(`Closing PR: ${sourcePR.title}`);
+                    await target.closePullRequest(targetPR.number);
+                }
+            }
+        }
+        return sourcePRs;
     }
     catch (error) {
         core.error(`Failed to sync pull requests: ${error instanceof Error ? error.message : String(error)}`);
         return [];
     }
+}
+function needsUpdate(sourcePR, targetPR) {
+    return (sourcePR.title !== targetPR.title ||
+        sourcePR.description !== targetPR.description ||
+        !arraysEqual(sourcePR.labels, targetPR.labels) ||
+        sourcePR.state !== targetPR.state);
+}
+function arraysEqual(a, b) {
+    return JSON.stringify(a.sort()) === JSON.stringify(b.sort());
 }
 
 
@@ -55831,6 +56678,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.syncReleases = syncReleases;
+exports.syncTags = syncTags;
 const core = __importStar(__nccwpck_require__(7484));
 async function syncReleases(source, target) {
     try {
@@ -55838,9 +56686,41 @@ async function syncReleases(source, target) {
         core.info(`Fetched ${sourceReleases.length} releases from source`);
         const targetReleases = await target.syncReleases();
         core.info(`Fetched ${targetReleases.length} releases from target`);
-        // Compare and sync releases
-        const releasesToSync = sourceReleases.filter(sourceRelease => !targetReleases.some(targetRelease => targetRelease.tag === sourceRelease.tag));
+        // Sort releases by creation time (newest first)
+        sourceReleases.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        // Filter out releases that already exist in target
+        // If a release exists, only update if source release is newer
+        const releasesToSync = sourceReleases.filter(sourceRelease => {
+            const targetRelease = targetReleases.find(r => r.tag === sourceRelease.tag);
+            if (!targetRelease) {
+                return true; // Release doesn't exist in target, should sync
+            }
+            // Compare creation times
+            return (new Date(sourceRelease.createdAt).getTime() >
+                new Date(targetRelease.createdAt).getTime());
+        });
         core.info(`Found ${releasesToSync.length} releases to sync`);
+        // Sync releases
+        for (const release of releasesToSync) {
+            try {
+                const existingRelease = targetReleases.find(r => r.tag === release.tag);
+                if (existingRelease) {
+                    await target.updateRelease(release);
+                    core.info(`Updated release ${release.tag}`);
+                }
+                else {
+                    await target.createRelease(release);
+                    core.info(`Created release ${release.tag}`);
+                }
+                // Sync release assets if any
+                if (release.assets.length > 0) {
+                    await syncReleaseAssets(source, target, release);
+                }
+            }
+            catch (error) {
+                core.warning(`Failed to sync release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
         return releasesToSync;
     }
     catch (error) {
@@ -55848,60 +56728,55 @@ async function syncReleases(source, target) {
         return [];
     }
 }
-
-
-/***/ }),
-
-/***/ 5362:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
+async function syncReleaseAssets(source, target, release) {
+    try {
+        for (const asset of release.assets) {
+            const assetContent = await source.downloadReleaseAsset(release.id, asset);
+            await target.uploadReleaseAsset(release.id, asset, assetContent);
+            core.info(`Synced asset ${asset.name} for release ${release.tag}`);
+        }
     }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.syncTags = syncTags;
-const core = __importStar(__nccwpck_require__(7484));
+    catch (error) {
+        core.warning(`Failed to sync assets for release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
 async function syncTags(source, target) {
     try {
         const sourceTags = await source.syncTags();
         core.info(`Fetched ${sourceTags.length} tags from source`);
         const targetTags = await target.syncTags();
         core.info(`Fetched ${targetTags.length} tags from target`);
-        // Compare and sync tags
-        const tagsToSync = sourceTags.filter(sourceTag => !targetTags.includes(sourceTag));
+        // Sort tags by creation time (newest first)
+        sourceTags.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        // Filter out tags that already exist in target
+        // If a tag exists, only update if source tag is newer
+        const tagsToSync = sourceTags.filter(sourceTag => {
+            const targetTag = targetTags.find(t => t.name === sourceTag.name);
+            if (!targetTag) {
+                return true; // Tag doesn't exist in target, should sync
+            }
+            // Compare creation times
+            return (new Date(sourceTag.createdAt).getTime() >
+                new Date(targetTag.createdAt).getTime());
+        });
         core.info(`Found ${tagsToSync.length} tags to sync`);
+        // Sync tags
+        for (const tag of tagsToSync) {
+            try {
+                const existingTag = targetTags.find(t => t.name === tag.name);
+                if (existingTag) {
+                    await target.updateTag(tag);
+                    core.info(`Updated tag ${tag.name}`);
+                }
+                else {
+                    await target.createTag(tag);
+                    core.info(`Created tag ${tag.name}`);
+                }
+            }
+            catch (error) {
+                core.warning(`Failed to sync tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
         return tagsToSync;
     }
     catch (error) {
@@ -55909,16 +56784,6 @@ async function syncTags(source, target) {
         return [];
     }
 }
-
-
-/***/ }),
-
-/***/ 7004:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 
 /***/ }),
@@ -55999,7 +56864,17 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 // src/types/index.ts
 __exportStar(__nccwpck_require__(7899), exports);
-__exportStar(__nccwpck_require__(7004), exports);
+__exportStar(__nccwpck_require__(3054), exports);
+
+
+/***/ }),
+
+/***/ 3054:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 
 /***/ }),
@@ -56028,7 +56903,7 @@ function getDefaultConfig() {
                 },
                 issues: {
                     enabled: true,
-                    syncComments: true,
+                    syncComments: false,
                     labels: ['synced-from-gitlab']
                 },
                 releases: {
@@ -56054,7 +56929,7 @@ function getDefaultConfig() {
                 },
                 issues: {
                     enabled: true,
-                    syncComments: true,
+                    syncComments: false,
                     labels: ['synced-from-github']
                 },
                 releases: {
@@ -56172,6 +57047,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.validateTokens = validateTokens;
+exports.validateSyncConfig = validateSyncConfig;
 // src/utils/validator.ts
 const core = __importStar(__nccwpck_require__(7484));
 const rest_1 = __nccwpck_require__(4630);
@@ -56189,43 +57065,60 @@ async function validateGitHubToken(token, config) {
     try {
         const octokit = github.getOctokit(token);
         const repo = (0, repository_1.getGitHubRepo)(config);
+        // Log the start of GitHub token validation
+        core.startGroup('🔍 GitHub Token Validation');
+        core.info(`\x1b[36mValidating GitHub token for repository: ${repo.owner}/${repo.repo}\x1b[0m`);
         // Check repository access
         try {
             await octokit.rest.repos.get({ ...repo });
+            core.info(`\x1b[32m✓ Repository access verified successfully\x1b[0m`);
         }
         catch (error) {
             result.isValid = false;
-            result.errors.push(`EVALID: GitHub token lacks repository access permissions: ${error instanceof Error ? error.message : String(error)}`);
+            const errorMessage = `Repository access verification failed: ${error instanceof Error ? error.message : String(error)}`;
+            core.error(`\x1b[31m✗ ${errorMessage}\x1b[0m`);
+            result.errors.push(`EVALID: GitHub token lacks repository access permissions: ${errorMessage}`);
+            core.endGroup();
             return result;
         }
         // Check specific permissions based on sync configuration
-        if (config.github.sync?.issues.enabled) {
-            try {
-                await octokit.rest.issues.listForRepo({ ...repo });
+        const permissionChecks = [
+            {
+                feature: 'issues',
+                check: async () => await octokit.rest.issues.listForRepo({ ...repo }),
+                warningMessage: 'GitHub token lacks issues read/write permissions'
+            },
+            {
+                feature: 'pullRequests',
+                check: async () => await octokit.rest.pulls.list({ ...repo }),
+                warningMessage: 'GitHub token lacks pull requests read/write permissions'
+            },
+            {
+                feature: 'releases',
+                check: async () => await octokit.rest.repos.listReleases({ ...repo }),
+                warningMessage: 'GitHub token lacks releases read/write permissions'
             }
-            catch {
-                result.warnings.push('EVALID: GitHub token lacks issues read/write permissions');
+        ];
+        for (const check of permissionChecks) {
+            if (config.github.sync?.[check.feature]
+                ?.enabled) {
+                try {
+                    await check.check();
+                    core.info(`\x1b[32m✓ ${check.feature} permissions verified\x1b[0m`);
+                }
+                catch {
+                    core.warning(`\x1b[33m⚠ ${check.warningMessage}\x1b[0m`);
+                    result.warnings.push(`EVALID: ${check.warningMessage}`);
+                }
             }
         }
-        if (config.github.sync?.pullRequests.enabled) {
-            try {
-                await octokit.rest.pulls.list({ ...repo });
-            }
-            catch {
-                result.warnings.push('EVALID: GitHub token lacks pull requests read/write permissions');
-            }
-        }
-        if (config.github.sync?.releases.enabled) {
-            try {
-                await octokit.rest.repos.listReleases({ ...repo });
-            }
-            catch {
-                result.warnings.push('EVALID: GitHub token lacks releases read/write permissions');
-            }
-        }
+        core.info('\x1b[32m✅ GitHub Token Validation Completed Successfully\x1b[0m');
+        core.endGroup();
         return result;
     }
     catch (error) {
+        core.error(`\x1b[31m✗ Invalid GitHub token\x1b[0m`);
+        core.endGroup();
         result.isValid = false;
         result.errors.push(`EVALID: Invalid GitHub token: ${error instanceof Error ? error.message : String(error)}`);
         return result;
@@ -56247,43 +57140,63 @@ async function validateGitLabToken(token, config) {
         });
         const repo = (0, repository_1.getGitLabRepo)(config);
         const projectPath = `${repo.owner}/${repo.repo}`;
+        // Log the start of GitLab token validation
+        core.startGroup('🔍 GitLab Token Validation');
+        core.info(`\x1b[36mValidating GitLab token for repository: ${projectPath}\x1b[0m`);
         // Check repository access
         try {
             await gitlab.Projects.show(projectPath);
+            core.info(`\x1b[32m✓ Repository access verified successfully\x1b[0m`);
         }
         catch (error) {
             result.isValid = false;
-            result.errors.push(`EVALID: GitLab token lacks repository access permissions: ${error instanceof Error ? error.message : String(error)}`);
+            const errorMessage = `Repository access verification failed: ${error instanceof Error ? error.message : String(error)}`;
+            core.error(`\x1b[31m✗ ${errorMessage}\x1b[0m`);
+            result.errors.push(`EVALID: GitLab token lacks repository access permissions: ${errorMessage}`);
+            core.endGroup();
             return result;
         }
         // Check specific permissions based on sync configuration
-        if (config.gitlab.sync?.issues.enabled) {
-            try {
-                await gitlab.Issues.all({ projectId: projectPath, perPage: 1 });
+        const permissionChecks = [
+            {
+                feature: 'issues',
+                check: async () => await gitlab.Issues.all({ projectId: projectPath, perPage: 1 }),
+                warningMessage: 'GitLab token lacks issues read/write permissions'
+            },
+            {
+                feature: 'pullRequests',
+                check: async () => await gitlab.MergeRequests.all({
+                    projectId: projectPath,
+                    perPage: 1
+                }),
+                warningMessage: 'GitLab token lacks merge requests read/write permissions'
+            },
+            {
+                feature: 'releases',
+                check: async () => await gitlab.ProjectReleases.all(projectPath),
+                warningMessage: 'GitLab token lacks releases read/write permissions'
             }
-            catch {
-                result.warnings.push('EVALID: GitLab token lacks issues read/write permissions');
+        ];
+        for (const check of permissionChecks) {
+            if (config.gitlab.sync?.[check.feature]
+                ?.enabled) {
+                try {
+                    await check.check();
+                    core.info(`\x1b[32m✓ ${check.feature} permissions verified\x1b[0m`);
+                }
+                catch {
+                    core.warning(`\x1b[33m⚠ ${check.warningMessage}\x1b[0m`);
+                    result.warnings.push(`EVALID: ${check.warningMessage}`);
+                }
             }
         }
-        if (config.gitlab.sync?.pullRequests.enabled) {
-            try {
-                await gitlab.MergeRequests.all({ projectId: projectPath, perPage: 1 });
-            }
-            catch {
-                result.warnings.push('EVALID: GitLab token lacks merge requests read/write permissions');
-            }
-        }
-        if (config.gitlab.sync?.releases.enabled) {
-            try {
-                await gitlab.ProjectReleases.all(projectPath);
-            }
-            catch {
-                result.warnings.push('EVALID: GitLab token lacks releases read/write permissions');
-            }
-        }
+        core.info('\x1b[32m✅ GitLab Token Validation Completed Successfully\x1b[0m');
+        core.endGroup();
         return result;
     }
     catch (error) {
+        core.error(`\x1b[31m✗ Invalid GitLab token\x1b[0m`);
+        core.endGroup();
         result.isValid = false;
         result.errors.push(`EVALID: Invalid GitLab token: ${error instanceof Error ? error.message : String(error)}`);
         return result;
@@ -56293,46 +57206,76 @@ async function validateGitLabToken(token, config) {
  * Validates both GitHub and GitLab tokens based on the configuration
  */
 async function validateTokens(config) {
-    core.startGroup('Token Validation');
-    try {
-        let hasErrors = false;
-        // Validate GitHub token if GitHub sync is enabled
-        if (config.github.enabled) {
-            if (!config.github.token) {
-                core.error('EVALID: GitHub token is required when GitHub sync is enabled');
+    let hasErrors = false;
+    core.startGroup('🔐 Token Validation');
+    // Validate GitHub token if GitHub sync is enabled
+    if (config.github.enabled) {
+        core.info('\x1b[34m🟢 Validating GitHub Token\x1b[0m');
+        if (!config.github.token) {
+            core.error('\x1b[31m✗ GitHub token is required when GitHub sync is enabled\x1b[0m');
+            hasErrors = true;
+        }
+        else {
+            const githubResult = await validateGitHubToken(config.github.token, config);
+            if (!githubResult.isValid) {
+                githubResult.errors.forEach(error => core.error(`\x1b[31m✗ GitHub: ${error}\x1b[0m`));
                 hasErrors = true;
             }
-            else {
-                const githubResult = await validateGitHubToken(config.github.token, config);
-                if (!githubResult.isValid) {
-                    githubResult.errors.forEach(error => core.error(`GitHub: ${error}`));
-                    hasErrors = true;
-                }
-                githubResult.warnings.forEach(warning => core.warning(`GitHub: ${warning}`));
-            }
+            githubResult.warnings.forEach(warning => core.warning(`\x1b[33m⚠ GitHub: ${warning}\x1b[0m`));
         }
-        // Validate GitLab token if GitLab sync is enabled
-        if (config.gitlab.enabled) {
-            if (!config.gitlab.token) {
-                core.error('EVALID: GitLab token is required when GitLab sync is enabled');
+    }
+    // Validate GitLab token if GitLab sync is enabled
+    if (config.gitlab.enabled) {
+        core.info('\x1b[34m🟢 Validating GitLab Token\x1b[0m');
+        if (!config.gitlab.token) {
+            core.error('\x1b[31m✗ GitLab token is required when GitLab sync is enabled\x1b[0m');
+            hasErrors = true;
+        }
+        else {
+            const gitlabResult = await validateGitLabToken(config.gitlab.token, config);
+            if (!gitlabResult.isValid) {
+                gitlabResult.errors.forEach(error => core.error(`\x1b[31m✗ GitLab: ${error}\x1b[0m`));
                 hasErrors = true;
             }
-            else {
-                const gitlabResult = await validateGitLabToken(config.gitlab.token, config);
-                if (!gitlabResult.isValid) {
-                    gitlabResult.errors.forEach(error => core.error(`GitLab: ${error}`));
-                    hasErrors = true;
-                }
-                gitlabResult.warnings.forEach(warning => core.warning(`GitLab: ${warning}`));
-            }
-        }
-        if (hasErrors) {
-            throw new Error('EVALID: Token validation failed. Please check the logs for details.');
+            gitlabResult.warnings.forEach(warning => core.warning(`\x1b[33m⚠ GitLab: ${warning}\x1b[0m`));
         }
     }
-    finally {
-        core.endGroup();
+    core.endGroup();
+    if (hasErrors) {
+        throw new Error('EVALID: Token validation failed. Please check the logs for details.');
     }
+    else {
+        core.info('\x1b[32m✅ All tokens validated successfully!\x1b[0m');
+    }
+}
+/**
+ * Validates and adjusts sync configuration settings
+ * Ensures proper relationship between releases and tags
+ */
+function validateSyncConfig(config) {
+    // Check GitLab sync configuration
+    if (config.gitlab?.enabled && config.gitlab.sync) {
+        if (config.gitlab.sync.releases?.enabled &&
+            !config.gitlab.sync.tags?.enabled) {
+            core.warning('\x1b[33m⚠️ GitLab tags sync was automatically enabled because releases sync is enabled. This prevents release-tag orphaning.\x1b[0m');
+            config.gitlab.sync.tags = {
+                ...config.gitlab.sync.tags,
+                enabled: true
+            };
+        }
+    }
+    // Check GitHub sync configuration
+    if (config.github?.enabled && config.github.sync) {
+        if (config.github.sync.releases?.enabled &&
+            !config.github.sync.tags?.enabled) {
+            core.warning('\x1b[33m⚠️ GitHub tags sync was automatically enabled because releases sync is enabled. This prevents release-tag orphaning.\x1b[0m');
+            config.github.sync.tags = {
+                ...config.github.sync.tags,
+                enabled: true
+            };
+        }
+    }
+    return config;
 }
 
 
