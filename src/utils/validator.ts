@@ -43,7 +43,7 @@ async function validateGitHubToken(
       const errorMessage = `Repository access verification failed: ${error instanceof Error ? error.message : String(error)}`
       core.error(`\x1b[31m✗ ${errorMessage}\x1b[0m`)
       result.errors.push(
-        `EVALID: GitHub token lacks repository access permissions: ${errorMessage}`
+        `EVLD: GitHub token lacks repository access permissions: ${errorMessage}`
       )
       core.endGroup()
       return result
@@ -79,22 +79,21 @@ async function validateGitHubToken(
           core.info(`\x1b[32m✓ ${check.feature} permissions verified\x1b[0m`)
         } catch {
           core.warning(`\x1b[33m⚠ ${check.warningMessage}\x1b[0m`)
-          result.warnings.push(`EVALID: ${check.warningMessage}`)
+          result.warnings.push(`EVLD: ${check.warningMessage}`)
         }
       }
     }
 
-    core.info(
-      '\x1b[32m✅ GitHub Token Validation Completed Successfully\x1b[0m'
-    )
     core.endGroup()
+    core.info('\x1b[32m✓ GitHub Token Validation Completed Successfully\x1b[0m')
+
     return result
   } catch (error) {
-    core.error(`\x1b[31m✗ Invalid GitHub token\x1b[0m`)
     core.endGroup()
+    core.error(`\x1b[31m✗ Invalid GitHub token\x1b[0m`)
     result.isValid = false
     result.errors.push(
-      `EVALID: Invalid GitHub token: ${error instanceof Error ? error.message : String(error)}`
+      `EVLD: Invalid GitHub token: ${error instanceof Error ? error.message : String(error)}`
     )
     return result
   }
@@ -119,12 +118,14 @@ async function validateGitLabToken(
       host: config.gitlab.url || 'https://gitlab.com'
     })
     const repo = getGitLabRepo(config)
-    const projectPath = `${repo.owner}/${repo.repo}`
+
+    // Properly encode the project path
+    const projectPath = encodeURIComponent(`${repo.owner}/${repo.repo}`)
 
     // Log the start of GitLab token validation
     core.startGroup('🔍 GitLab Token Validation')
     core.info(
-      `\x1b[36mValidating GitLab token for repository: ${projectPath}\x1b[0m`
+      `\x1b[36mValidating GitLab token for repository: ${repo.owner}/${repo.repo}\x1b[0m`
     )
 
     // Check repository access
@@ -136,7 +137,7 @@ async function validateGitLabToken(
       const errorMessage = `Repository access verification failed: ${error instanceof Error ? error.message : String(error)}`
       core.error(`\x1b[31m✗ ${errorMessage}\x1b[0m`)
       result.errors.push(
-        `EVALID: GitLab token lacks repository access permissions: ${errorMessage}`
+        `EVLD: GitLab token lacks repository access permissions: ${errorMessage}`
       )
       core.endGroup()
       return result
@@ -177,14 +178,12 @@ async function validateGitLabToken(
           core.info(`\x1b[32m✓ ${check.feature} permissions verified\x1b[0m`)
         } catch {
           core.warning(`\x1b[33m⚠ ${check.warningMessage}\x1b[0m`)
-          result.warnings.push(`EVALID: ${check.warningMessage}`)
+          result.warnings.push(`EVLD: ${check.warningMessage}`)
         }
       }
     }
 
-    core.info(
-      '\x1b[32m✅ GitLab Token Validation Completed Successfully\x1b[0m'
-    )
+    core.info('\x1b[32m✓ GitLab Token Validation Completed Successfully\x1b[0m')
     core.endGroup()
     return result
   } catch (error) {
@@ -192,7 +191,7 @@ async function validateGitLabToken(
     core.endGroup()
     result.isValid = false
     result.errors.push(
-      `EVALID: Invalid GitLab token: ${error instanceof Error ? error.message : String(error)}`
+      `EVLD: Invalid GitLab token: ${error instanceof Error ? error.message : String(error)}`
     )
     return result
   }
@@ -204,11 +203,9 @@ async function validateGitLabToken(
 export async function validateTokens(config: Config): Promise<void> {
   let hasErrors = false
 
-  core.startGroup('🔐 Token Validation')
-
   // Validate GitHub token if GitHub sync is enabled
   if (config.github.enabled) {
-    core.info('\x1b[34m🟢 Validating GitHub Token\x1b[0m')
+    core.info('\x1b[34mValidating GitHub Token\x1b[0m')
     if (!config.github.token) {
       core.error(
         '\x1b[31m✗ GitHub token is required when GitHub sync is enabled\x1b[0m'
@@ -235,7 +232,7 @@ export async function validateTokens(config: Config): Promise<void> {
 
   // Validate GitLab token if GitLab sync is enabled
   if (config.gitlab.enabled) {
-    core.info('\x1b[34m🟢 Validating GitLab Token\x1b[0m')
+    core.info('\x1b[34mValidating GitLab Token\x1b[0m')
     if (!config.gitlab.token) {
       core.error(
         '\x1b[31m✗ GitLab token is required when GitLab sync is enabled\x1b[0m'
@@ -260,14 +257,13 @@ export async function validateTokens(config: Config): Promise<void> {
     }
   }
 
-  core.endGroup()
-
   if (hasErrors) {
+    core.setFailed('Token validation failed')
     throw new Error(
-      'EVALID: Token validation failed. Please check the logs for details.'
+      'EVLD: Token validation failed. Please check the logs for details.'
     )
   } else {
-    core.info('\x1b[32m✅ All tokens validated successfully!\x1b[0m')
+    core.info('\x1b[32m✓ All tokens validated successfully!\x1b[0m')
   }
 }
 

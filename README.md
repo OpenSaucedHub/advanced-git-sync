@@ -70,11 +70,13 @@ github:
   enabled: true
 ```
 
-> [!WARNING]
+> [!INFO]
 >
-> - If no config is provided, everything fall back to defaults
-> - In case of a partial config (missing fields), the defaults are used. (you MUST strictly set
->   elements to false if you don't want them to sync).
+> - If no config is provided, everything falls back to defaults.
+> - In case of partial config, missing fields will default to `false`.
+> - If `gitlab.enabled: true` or `github.enabled: true` is set with no other details, that
+>   platform's defaults are populated. (The action assumes you meant to sync everything)
+> - In case of an invalid config, the action will try to reason with your config.
 > - [See Accepted Configuration](#accepted-configuration) for the defaults.
 
 3. Set up required secrets in your GitHub repository:
@@ -195,12 +197,6 @@ github:
     tags:
       enabled: true # automatically enabled if releases = true
 ```
-
-> [!WARNING]
->
-> Do not leave empty fields in the config. Just because it is optional doesn't mean it can be empty.
-> Add a value or remove the field to use default value. e.g. `username:` is treated as
-> `username: ''`, which trhows an error.
 
 ## Token Permissions
 

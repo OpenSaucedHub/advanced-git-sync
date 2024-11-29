@@ -4,6 +4,11 @@ export declare class GitLabClient {
     private config;
     private repo;
     constructor(config: Config);
+    getRepoInfo(): {
+        owner: string;
+        repo: string;
+        url: string;
+    };
     private get projectPath();
     syncBranches(): Promise<Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;

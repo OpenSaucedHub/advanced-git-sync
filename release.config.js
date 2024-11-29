@@ -34,7 +34,7 @@ module.exports = {
             { type: 'style', section: '💄 Styles' },
             { type: 'chore', section: '🔧 Miscellaneous' },
             { type: 'refactor', section: '♻️ Code Refactoring' },
-            { type: 'test', section: '✅ Tests' },
+            { type: 'test', section: '✓ Tests' },
             { type: 'build', section: '👷 Build System' },
             { type: 'ci', section: '🔄 CI/CD' }
           ]
@@ -50,14 +50,14 @@ module.exports = {
       }
     ],
 
-    [
-      '@semantic-release/npm',
-      {
-        npmPublish: true,
-        pkgRoot: '.',
-        tarballDir: 'dist'
-      }
-    ],
+    // [
+    //   '@semantic-release/npm',
+    //   {
+    //     npmPublish: true,
+    //     pkgRoot: '.',
+    //     tarballDir: 'dist'
+    //   }
+    // ],
 
     [
       '@semantic-release/github',

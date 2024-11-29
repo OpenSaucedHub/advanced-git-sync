@@ -12,12 +12,12 @@ import { syncReleases, syncTags } from './sync/releases'
 async function run(): Promise<void> {
   try {
     // Enhanced startup logging
-    core.info('\x1b[34m🚀 Repository Synchronization Action Initialized\x1b[0m')
+    core.info('\x1b[34m🚀 Repository Synchronization Initialized\x1b[0m')
     core.info('\x1b[90m--------------------------------------------\x1b[0m')
 
     // Load configuration
     const config = await getConfig()
-    core.info(`\x1b[32m✅ Configuration loaded successfully\x1b[0m`)
+    core.info(`\x1b[32m✓ Configuration loaded successfully\x1b[0m`)
 
     // Create clients
     const githubClient = new GitHubClient(config)
@@ -65,10 +65,7 @@ async function run(): Promise<void> {
         },
         {
           name: '\x1b[36m🏷 Tags (GitHub → GitLab)\x1b[0m',
-          enabled:
-            config.github.sync?.tags.enabled ||
-            config.github.sync?.releases.enabled ||
-            false,
+          enabled: config.github.sync?.tags.enabled || false,
           operation: async () => {
             await syncTags(githubClient, gitlabClient)
           }
@@ -105,10 +102,7 @@ async function run(): Promise<void> {
         },
         {
           name: '\x1b[36m🏷 Tags (GitLab → GitHub)\x1b[0m',
-          enabled:
-            config.gitlab.sync?.tags.enabled ||
-            config.gitlab.sync?.releases.enabled ||
-            false,
+          enabled: config.gitlab.sync?.tags.enabled || false,
           operation: async () => {
             await syncTags(gitlabClient, githubClient)
           }
@@ -132,7 +126,7 @@ async function run(): Promise<void> {
     }
 
     core.info('\x1b[90m--------------------------------------------\x1b[0m')
-    core.info('\x1b[34m🏁 Repository Synchronization Action Finished\x1b[0m')
+    core.info('\x1b[34m🏁 Repository Synchronization Finished\x1b[0m')
   } catch (error) {
     core.info('\x1b[90m--------------------------------------------\x1b[0m')
 

@@ -4,6 +4,10 @@ import { GitHubClient } from '../github'
 import { GitLabClient } from '../gitlab'
 import { IssueComparison, CommentComparison, Issue, Comment } from '../types'
 
+function arraysEqual(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((val, index) => val === b[index])
+}
+
 export function compareIssues(
   sourceIssues: Issue[],
   targetIssues: Issue[]
@@ -11,11 +15,13 @@ export function compareIssues(
   const comparisons: IssueComparison[] = []
 
   for (const sourceIssue of sourceIssues) {
+    // Only look for issues in the current repository
     const targetIssue = targetIssues.find(
       target => target.title === sourceIssue.title
     )
 
     if (!targetIssue) {
+      // Always create issues that don't exist in the target
       comparisons.push({
         sourceIssue,
         action: 'create'
@@ -48,42 +54,47 @@ export function compareIssues(
   return comparisons
 }
 
+export function prepareSourceLink(
+  sourceClient: GitHubClient | GitLabClient,
+  sourceIssue: Issue
+): string {
+  // Prepare a link to the source issue for tracking
+  const repoInfo = sourceClient.getRepoInfo()
+  return `**Original Issue**: [${sourceIssue.title}](${repoInfo.url}/issues/${sourceIssue.number})`
+}
+
 export function compareComments(
   sourceComments: Comment[],
   targetComments: Comment[]
 ): CommentComparison[] {
   const comparisons: CommentComparison[] = []
 
-  for (const sourceComment of sourceComments) {
-    const targetComment = targetComments.find(
-      target =>
-        target.body === sourceComment.body &&
-        target.author === sourceComment.author
-    )
+  // Only consider the first and last comments (assuming these are opening/closing comments)
+  const openingComment = sourceComments[0]
+  const closingComment = sourceComments[sourceComments.length - 1]
 
-    if (!targetComment) {
-      comparisons.push({
-        sourceComment,
-        action: 'create'
-      })
-      core.debug(`Comment by ${sourceComment.author} will be created`)
-    } else {
-      comparisons.push({
-        sourceComment,
-        action: 'skip'
-      })
-      core.debug(`Comment by ${sourceComment.author} already exists`)
-    }
+  if (
+    openingComment &&
+    !targetComments.some(c => c.body === openingComment.body)
+  ) {
+    comparisons.push({
+      sourceComment: openingComment,
+      action: 'create'
+    })
+  }
+
+  if (
+    closingComment &&
+    closingComment !== openingComment &&
+    !targetComments.some(c => c.body === closingComment.body)
+  ) {
+    comparisons.push({
+      sourceComment: closingComment,
+      action: 'create'
+    })
   }
 
   return comparisons
-}
-
-function arraysEqual(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) return false
-  const sortedA = [...a].sort()
-  const sortedB = [...b].sort()
-  return sortedA.every((val, idx) => val === sortedB[idx])
 }
 
 export async function syncIssues(
@@ -106,9 +117,19 @@ export async function syncIssues(
     for (const comparison of issueComparisons) {
       try {
         switch (comparison.action) {
-          case 'create':
-            await createIssue(target, comparison)
+          case 'create': {
+            // Add a link to the original source issue in the body
+            const sourceLink = prepareSourceLink(source, comparison.sourceIssue)
+            const issueToCreate = {
+              ...comparison.sourceIssue,
+              body: `${comparison.sourceIssue.body || ''}\n\n${sourceLink}`
+            }
+            await createIssue(target, {
+              sourceIssue: issueToCreate,
+              action: 'create'
+            })
             break
+          }
           case 'update':
             await updateIssue(target, comparison)
             break
@@ -119,7 +140,7 @@ export async function syncIssues(
             break
         }
 
-        // Sync comments if the issue exists in both repositories
+        // Sync only opening/closing comments if the issue exists in both repositories
         if (comparison.targetIssue) {
           await syncIssueComments(
             source,
@@ -137,7 +158,7 @@ export async function syncIssues(
       }
     }
 
-    core.info('✅ Issue synchronization completed')
+    core.info('✓ Issue synchronization completed')
   } catch (error) {
     core.error(
       `Issue synchronization failed: ${
@@ -188,7 +209,7 @@ async function createIssue(
 ): Promise<void> {
   core.info(`📝 Creating issue "${comparison.sourceIssue.title}"`)
   await target.createIssue(comparison.sourceIssue)
-  core.info(`✅ Created issue "${comparison.sourceIssue.title}"`)
+  core.info(`✓ Created issue "${comparison.sourceIssue.title}"`)
 }
 
 async function updateIssue(
@@ -202,7 +223,7 @@ async function updateIssue(
     comparison.targetIssue.number,
     comparison.sourceIssue
   )
-  core.info(`✅ Updated issue "${comparison.sourceIssue.title}"`)
+  core.info(`✓ Updated issue "${comparison.sourceIssue.title}"`)
 }
 
 async function createComment(
@@ -212,7 +233,7 @@ async function createComment(
 ): Promise<void> {
   core.info(`💬 Creating comment in issue #${issueNumber}`)
   await target.createIssueComment(issueNumber, comparison.sourceComment)
-  core.info(`✅ Created comment in issue #${issueNumber}`)
+  core.info(`✓ Created comment in issue #${issueNumber}`)
 }
 
 function logSyncPlan(comparisons: IssueComparison[]): void {

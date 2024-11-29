@@ -4,6 +4,11 @@ export declare class GitHubClient {
     private config;
     private repo;
     constructor(config: Config);
+    getRepoInfo(): {
+        owner: string;
+        repo: string;
+        url: string;
+    };
     syncBranches(): Promise<Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;
     updateBranch(name: string, commitSha: string): Promise<void>;

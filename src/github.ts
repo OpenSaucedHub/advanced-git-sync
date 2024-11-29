@@ -31,8 +31,16 @@ export class GitHubClient {
     this.repo = getGitHubRepo(config)
 
     core.info(
-      `\x1b[32m✅ GitHub Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`
+      `\x1b[32m✓ GitHub Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`
     )
+  }
+
+  getRepoInfo() {
+    return {
+      owner: this.repo.owner,
+      repo: this.repo.repo,
+      url: `https://github.com/${this.repo.owner}/${this.repo.repo}`
+    }
   }
 
   // sync branches
@@ -255,19 +263,23 @@ export class GitHubClient {
 
       const { data: issues } = await this.octokit.rest.issues.list({
         ...this.repo,
-        state: 'all'
+        state: 'all',
+        // only fetch issues from the current repository
+        per_page: 100 // Adjust as needed
       })
 
-      const processedIssues = issues.map(issue => ({
-        title: issue.title,
-        body: issue.body || '',
-        labels: [
-          ...(issue.labels as string[]),
-          ...(this.config.gitlab.sync?.issues.labels ?? [])
-        ],
-        number: issue.number,
-        state: issue.state as 'open' | 'closed'
-      }))
+      const processedIssues = issues
+        .filter(issue => !issue.pull_request) // Exclude pull requests
+        .map(issue => ({
+          title: issue.title,
+          body: issue.body || '',
+          labels: [
+            ...(issue.labels as string[]),
+            ...(this.config.gitlab.sync?.issues.labels ?? [])
+          ],
+          number: issue.number,
+          state: issue.state as 'open' | 'closed'
+        }))
 
       core.info(
         `\x1b[32m✓ Issues Fetched: ${processedIssues.length} total issues\x1b[0m`
@@ -280,7 +292,6 @@ export class GitHubClient {
       return []
     }
   }
-
   async getIssueComments(issueNumber: number): Promise<Comment[]> {
     if (!this.config.gitlab.sync?.issues.syncComments) {
       core.info('\x1b[33m⚠️ Issue Comments Sync Disabled\x1b[0m')
@@ -412,6 +423,7 @@ export class GitHubClient {
     }
   }
 
+  // releases
   async createRelease(release: Release): Promise<void> {
     try {
       const { data: createdRelease } =
@@ -528,34 +540,57 @@ export class GitHubClient {
       const processedTags = await Promise.all(
         tags.map(async tag => {
           try {
-            const { data: ref } = await this.octokit.rest.git.getRef({
-              ...this.repo,
-              ref: `tags/${tag.name}`
-            })
+            // First, try to get the ref
+            const { data: ref } = await this.octokit.rest.git
+              .getRef({
+                ...this.repo,
+                ref: `tags/${tag.name}`
+              })
+              .catch(error => {
+                // Log the error but continue
+                core.warning(
+                  `\x1b[33m⚠️ Could not fetch ref for tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}\x1b[0m`
+                )
+                return { data: { object: { sha: tag.commit.sha } } }
+              })
 
-            const { data: tagData } = await this.octokit.rest.git.getTag({
-              ...this.repo,
-              tag_sha: ref.object.sha
-            })
+            // Try to get tag details, but fall back to commit details if fails
+            try {
+              const { data: tagData } = await this.octokit.rest.git.getTag({
+                ...this.repo,
+                tag_sha: ref.object.sha
+              })
 
-            return {
-              name: tag.name,
-              createdAt: tagData.tagger.date,
-              commitSha: tag.commit.sha
+              return {
+                name: tag.name,
+                createdAt: tagData.tagger?.date || new Date().toISOString(),
+                commitSha: tag.commit.sha
+              }
+            } catch (error) {
+              // If getting tag details fails, fall back to commit details
+              core.warning(
+                `\x1b[33m⚠️ Failed to get tag details for ${tag.name}: ${error instanceof Error ? error.message : String(error)}, falling back to commit details\x1b[0m`
+              )
+              const { data: commit } = await this.octokit.rest.git.getCommit({
+                ...this.repo,
+                commit_sha: tag.commit.sha
+              })
+
+              return {
+                name: tag.name,
+                createdAt: commit.author.date,
+                commitSha: tag.commit.sha
+              }
             }
           } catch (error) {
             core.warning(
-              `\x1b[31m❌ Failed to Fetch GitHub Tags creation time: ${error instanceof Error ? error.message : String(error)}\x1b[0m`
+              `\x1b[31m❌ Failed to process tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}\x1b[0m`
             )
-            // Fallback to commit date if annotated tag data is not available
-            const { data: commit } = await this.octokit.rest.git.getCommit({
-              ...this.repo,
-              commit_sha: tag.commit.sha
-            })
 
+            // Absolute fallback - use basic tag information
             return {
               name: tag.name,
-              createdAt: commit.author.date,
+              createdAt: new Date().toISOString(), // Fallback to current time
               commitSha: tag.commit.sha
             }
           }
@@ -571,7 +606,6 @@ export class GitHubClient {
       return []
     }
   }
-
   async createTag(tag: Tag): Promise<void> {
     try {
       // Create the tag reference

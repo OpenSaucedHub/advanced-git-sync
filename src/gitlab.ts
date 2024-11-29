@@ -29,8 +29,15 @@ export class GitLabClient {
     this.repo = getGitLabRepo(config)
 
     core.info(
-      `\x1b[32m✅ GitLab Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`
+      `\x1b[32m✓ GitLab Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`
     )
+  }
+  getRepoInfo() {
+    return {
+      owner: this.repo.owner,
+      repo: this.repo.repo,
+      url: `${this.config.gitlab.url || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
+    }
   }
 
   private get projectPath(): string {
@@ -215,7 +222,8 @@ export class GitLabClient {
       core.info('\x1b[36m❗ Fetching GitLab Issues...\x1b[0m')
 
       const issues = await this.gitlab.Issues.all({
-        projectId: this.projectPath
+        projectId: this.projectPath,
+        state: 'all'
       })
 
       const processedIssues = issues.map(issue => ({
@@ -242,7 +250,6 @@ export class GitLabClient {
       return []
     }
   }
-
   async getIssueComments(issueNumber: number): Promise<Comment[]> {
     if (!this.config.github.sync?.issues.syncComments) {
       return []

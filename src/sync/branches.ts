@@ -89,7 +89,7 @@ export async function syncBranches(
       }
     }
 
-    core.info('✅ Branch synchronization completed')
+    core.info('✓ Branch synchronization completed')
   } catch (error) {
     core.error(
       `Branch synchronization failed: ${
@@ -107,7 +107,7 @@ async function createBranch(
   core.info(`🌱 Creating branch ${comparison.name}`)
   // Implementation will be handled by the specific client (GitHub/GitLab)
   await target.createBranch(comparison.name, comparison.sourceCommit)
-  core.info(`✅ Created branch ${comparison.name}`)
+  core.info(`✓ Created branch ${comparison.name}`)
 }
 
 async function updateBranch(
@@ -124,7 +124,7 @@ async function updateBranch(
   core.info(`📝 Updating branch ${comparison.name}`)
   // Implementation will be handled by the specific client (GitHub/GitLab)
   await target.updateBranch(comparison.name, comparison.sourceCommit)
-  core.info(`✅ Updated branch ${comparison.name}`)
+  core.info(`✓ Updated branch ${comparison.name}`)
 }
 
 function logSyncPlan(comparisons: BranchComparison[]): void {
