@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.0.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.0...v1.0.1) (2024-11-29)
+
+
+
+## [1.0.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.0...v1.0.1) (2024-11-29)
+
+### Bug Fixes
+
+* Add getRepoInfo method to GitLabClient and GitHubClient; update logging messages for consistency ([2838bb7](https://github.com/OpenSaucedHub/advanced-git-sync/commit/2838bb7644da4b65d29accacc89c4beb46116719))
+
 # v1.0.0 (2024-11-29)
 
 ## 1.0.0 (2024-11-29)
