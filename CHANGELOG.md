@@ -2,16 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.0.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.2...v1.0.3) (2024-12-01)
-
-
 
 ## [1.0.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.2...v1.0.3) (2024-12-01)
 
 ### Bug Fixes
 
-* Remove lodash dependency and update permission validation methods for GitHub and GitLab clients ([1de581a](https://github.com/OpenSaucedHub/advanced-git-sync/commit/1de581ac07779273fdb3c7d1796c04ed626d7bca))
+- Remove lodash dependency and update permission validation methods for GitHub and GitLab clients
+  ([1de581a](https://github.com/OpenSaucedHub/advanced-git-sync/commit/1de581ac07779273fdb3c7d1796c04ed626d7bca))
 
 # [v1.0.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.1...v1.0.2) (2024-12-01)
 

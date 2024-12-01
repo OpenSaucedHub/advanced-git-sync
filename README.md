@@ -66,7 +66,7 @@ github:
   enabled: true
 ```
 
-> [!INFO]
+> [!IMPORTANT]
 >
 > - If no config is provided, everything falls back to defaults.
 > - In case of partial config, missing fields will default to `false`.

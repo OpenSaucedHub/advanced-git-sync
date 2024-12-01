@@ -9,22 +9,22 @@ import {
   PullRequest,
   Release,
   ReleaseAsset,
-  Tag
+  Tag,
+  PermissionCheck
 } from '@/src/types'
 import { BaseClient } from '../baseClient'
 import {
   branchHelper,
-  permHelper,
   pullRequestHelper,
   issueHelper,
   releaseHelper,
   tagsHelper
 } from './helpers'
+import { ErrorCodes } from '@/src/utils/errorCodes'
 
 export class GitHubClient extends BaseClient {
   private octokit
   public branches: branchHelper
-  public permissions: permHelper
   public pullRequest: pullRequestHelper
   public issue: issueHelper
   public release: releaseHelper
@@ -33,7 +33,6 @@ export class GitHubClient extends BaseClient {
   constructor(config: Config, repo?: Repository) {
     super(config, repo || { owner: '', repo: '' })
     this.octokit = github.getOctokit(config.github.token!)
-    this.permissions = new permHelper(this.octokit, this.repo, this.config)
     this.branches = new branchHelper(this.octokit, this.repo, this.config)
     this.pullRequest = new pullRequestHelper(
       this.octokit,
@@ -58,7 +57,39 @@ export class GitHubClient extends BaseClient {
   }
 
   async validateAccess(): Promise<void> {
-    return this.permissions.validateAccess()
+    try {
+      const permissionChecks: PermissionCheck[] = [
+        {
+          feature: 'issues',
+          check: () => this.octokit.rest.issues.listForRepo({ ...this.repo }),
+          warningMessage: `${ErrorCodes.EPERM2}: Issues read/write permissions missing`
+        },
+        {
+          feature: 'pullRequests',
+          check: () => this.octokit.rest.pulls.list({ ...this.repo }),
+          warningMessage: `${ErrorCodes.EPERM3}: Pull requests read/write permissions missing`
+        },
+        {
+          feature: 'releases',
+          check: () => this.octokit.rest.repos.listReleases({ ...this.repo }),
+          warningMessage: `${ErrorCodes.EPERM4}: Releases read/write permissions missing`
+        }
+      ]
+
+      // Verify repository access first
+      await this.octokit.rest.repos.get({ ...this.repo })
+      core.info(`\x1b[32m✓ Repository access verified\x1b[0m`)
+
+      await this.validatePermissions(
+        'github',
+        this.config.github.sync,
+        permissionChecks
+      )
+    } catch (error) {
+      throw new Error(
+        `${ErrorCodes.EGHUB}: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
   }
 
   // Delegate branch operations to branchHelper

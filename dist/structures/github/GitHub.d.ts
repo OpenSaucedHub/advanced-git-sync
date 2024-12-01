@@ -1,10 +1,9 @@
 import { Repository, Config, Issue, Comment, PullRequest, Release, ReleaseAsset, Tag } from '@/src/types';
 import { BaseClient } from '../baseClient';
-import { branchHelper, permHelper, pullRequestHelper, issueHelper, releaseHelper, tagsHelper } from './helpers';
+import { branchHelper, pullRequestHelper, issueHelper, releaseHelper, tagsHelper } from './helpers';
 export declare class GitHubClient extends BaseClient {
     private octokit;
     branches: branchHelper;
-    permissions: permHelper;
     pullRequest: pullRequestHelper;
     issue: issueHelper;
     release: releaseHelper;

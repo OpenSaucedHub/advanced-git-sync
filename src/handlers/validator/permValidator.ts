@@ -7,7 +7,7 @@ export async function validateTokenPermissions(config: Config): Promise<void> {
   try {
     if (config.github.enabled && config.github.token) {
       const githubClient = ClientManager.getGitHubClient(config)
-      await githubClient.validateAccess()
+      await githubClient.validateAccess() // use permissions helper
     }
 
     if (config.gitlab.enabled && config.gitlab.token) {

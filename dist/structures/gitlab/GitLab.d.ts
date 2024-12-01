@@ -1,5 +1,5 @@
 import { Repository, Config } from '@/src/types';
-import { BranchHelper, IssueHelper, PullRequestHelper, ReleaseHelper, TagHelper, PermissionHelper } from './helpers';
+import { BranchHelper, IssueHelper, PullRequestHelper, ReleaseHelper, TagHelper } from './helpers';
 import { BaseClient } from '../baseClient';
 export declare class GitLabClient extends BaseClient {
     private gitlab;
@@ -8,13 +8,13 @@ export declare class GitLabClient extends BaseClient {
     pullRequest: PullRequestHelper;
     release: ReleaseHelper;
     tags: TagHelper;
-    permissions: PermissionHelper;
     constructor(config: Config, repo?: Repository);
     getRepoInfo(): {
         owner: string;
         repo: string;
         url: string;
     };
+    private get projectPath();
     validateAccess(): Promise<void>;
     syncBranches(): Promise<import("@/src/types").Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;

@@ -55571,7 +55571,7 @@ async function validateTokenPermissions(config) {
     try {
         if (config.github.enabled && config.github.token) {
             const githubClient = baseClient_1.ClientManager.getGitHubClient(config);
-            await githubClient.validateAccess();
+            await githubClient.validateAccess(); // use permissions helper
         }
         if (config.gitlab.enabled && config.gitlab.token) {
             const gitlabClient = baseClient_1.ClientManager.getGitLabClient(config);
@@ -55969,10 +55969,10 @@ const github = __importStar(__nccwpck_require__(3228));
 const core = __importStar(__nccwpck_require__(7484));
 const baseClient_1 = __nccwpck_require__(574);
 const helpers_1 = __nccwpck_require__(6170);
+const errorCodes_1 = __nccwpck_require__(9481);
 class GitHubClient extends baseClient_1.BaseClient {
     octokit;
     branches;
-    permissions;
     pullRequest;
     issue;
     release;
@@ -55980,7 +55980,6 @@ class GitHubClient extends baseClient_1.BaseClient {
     constructor(config, repo) {
         super(config, repo || { owner: '', repo: '' });
         this.octokit = github.getOctokit(config.github.token);
-        this.permissions = new helpers_1.permHelper(this.octokit, this.repo, this.config);
         this.branches = new helpers_1.branchHelper(this.octokit, this.repo, this.config);
         this.pullRequest = new helpers_1.pullRequestHelper(this.octokit, this.repo, this.config);
         this.issue = new helpers_1.issueHelper(this.octokit, this.repo, this.config);
@@ -55996,7 +55995,32 @@ class GitHubClient extends baseClient_1.BaseClient {
         };
     }
     async validateAccess() {
-        return this.permissions.validateAccess();
+        try {
+            const permissionChecks = [
+                {
+                    feature: 'issues',
+                    check: () => this.octokit.rest.issues.listForRepo({ ...this.repo }),
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
+                },
+                {
+                    feature: 'pullRequests',
+                    check: () => this.octokit.rest.pulls.list({ ...this.repo }),
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Pull requests read/write permissions missing`
+                },
+                {
+                    feature: 'releases',
+                    check: () => this.octokit.rest.repos.listReleases({ ...this.repo }),
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
+                }
+            ];
+            // Verify repository access first
+            await this.octokit.rest.repos.get({ ...this.repo });
+            core.info(`\x1b[32m✓ Repository access verified\x1b[0m`);
+            await this.validatePermissions('github', this.config.github.sync, permissionChecks);
+        }
+        catch (error) {
+            throw new Error(`${errorCodes_1.ErrorCodes.EGHUB}: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
     // Delegate branch operations to branchHelper
     async syncBranches() {
@@ -56203,7 +56227,6 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 __exportStar(__nccwpck_require__(7852), exports);
-__exportStar(__nccwpck_require__(1550), exports);
 __exportStar(__nccwpck_require__(5062), exports);
 __exportStar(__nccwpck_require__(3913), exports);
 __exportStar(__nccwpck_require__(4539), exports);
@@ -56375,89 +56398,6 @@ class issueHelper {
     }
 }
 exports.issueHelper = issueHelper;
-
-
-/***/ }),
-
-/***/ 1550:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.permHelper = void 0;
-const core = __importStar(__nccwpck_require__(7484));
-const errorCodes_1 = __nccwpck_require__(9481);
-const baseClient_1 = __nccwpck_require__(574);
-class permHelper extends baseClient_1.BaseClient {
-    octokit;
-    constructor(octokit, repo, config) {
-        super(config, repo);
-        this.octokit = octokit;
-    }
-    async validateAccess() {
-        try {
-            const permissionChecks = [
-                {
-                    feature: 'issues',
-                    check: () => this.octokit.rest.issues.listForRepo({ ...this.repo }),
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
-                },
-                {
-                    feature: 'pullRequests',
-                    check: () => this.octokit.rest.pulls.list({ ...this.repo }),
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Pull requests read/write permissions missing`
-                },
-                {
-                    feature: 'releases',
-                    check: () => this.octokit.rest.repos.listReleases({ ...this.repo }),
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
-                }
-            ];
-            // Verify repository access first
-            await this.octokit.rest.repos.get({ ...this.repo });
-            core.info(`\x1b[32m✓ Repository access verified\x1b[0m`);
-            await this.validatePermissions('github', this.config.github.sync, permissionChecks);
-        }
-        catch (error) {
-            throw new Error(`${errorCodes_1.ErrorCodes.EGHUB}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-}
-exports.permHelper = permHelper;
 
 
 /***/ }),
@@ -56991,6 +56931,7 @@ const core = __importStar(__nccwpck_require__(7484));
 const rest_1 = __nccwpck_require__(4630);
 const helpers_1 = __nccwpck_require__(3682);
 const baseClient_1 = __nccwpck_require__(574);
+const errorCodes_1 = __nccwpck_require__(9481);
 class GitLabClient extends baseClient_1.BaseClient {
     gitlab;
     branches;
@@ -56998,14 +56939,12 @@ class GitLabClient extends baseClient_1.BaseClient {
     pullRequest;
     release;
     tags;
-    permissions;
     constructor(config, repo) {
         super(config, repo || { owner: '', repo: '' });
         this.gitlab = new rest_1.Gitlab({
             token: config.gitlab.token,
             host: config.gitlab.url || 'https://gitlab.com'
         });
-        this.permissions = new helpers_1.PermissionHelper(this.gitlab, this.repo, this.config);
         this.branches = new helpers_1.BranchHelper(this.gitlab, this.repo, this.config);
         this.issues = new helpers_1.IssueHelper(this.gitlab, this.repo, this.config);
         this.pullRequest = new helpers_1.PullRequestHelper(this.gitlab, this.repo, this.config);
@@ -57020,8 +56959,40 @@ class GitLabClient extends baseClient_1.BaseClient {
             url: `${this.config.gitlab.url || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
         };
     }
+    get projectPath() {
+        return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`);
+    }
     async validateAccess() {
-        return this.permissions.validateAccess();
+        try {
+            const permissionChecks = [
+                {
+                    feature: 'issues',
+                    check: () => this.gitlab.Issues.all({ projectId: this.projectPath, perPage: 1 }),
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
+                },
+                {
+                    feature: 'pullRequests',
+                    check: () => this.gitlab.MergeRequests.all({
+                        projectId: this.projectPath,
+                        perPage: 1
+                    }),
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Merge requests read/write permissions missing`
+                },
+                {
+                    feature: 'releases',
+                    check: () => this.gitlab.ProjectReleases.all(this.projectPath),
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
+                }
+            ];
+            // Verify repository access first
+            await this.gitlab.Projects.show(this.projectPath);
+            core.info(`\x1b[32m✓ Repository access verified\x1b[0m`);
+            // Validate permissions using the base client method
+            await this.validatePermissions('gitlab', this.config.gitlab.sync, permissionChecks);
+        }
+        catch (error) {
+            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
     // Delegate to branch helper
     async syncBranches() {
@@ -57215,7 +57186,6 @@ __exportStar(__nccwpck_require__(9617), exports);
 __exportStar(__nccwpck_require__(606), exports);
 __exportStar(__nccwpck_require__(515), exports);
 __exportStar(__nccwpck_require__(5374), exports);
-__exportStar(__nccwpck_require__(8089), exports);
 
 
 /***/ }),
@@ -57356,96 +57326,6 @@ class IssueHelper {
     }
 }
 exports.IssueHelper = IssueHelper;
-
-
-/***/ }),
-
-/***/ 8089:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PermissionHelper = void 0;
-const baseClient_1 = __nccwpck_require__(574);
-const errorCodes_1 = __nccwpck_require__(9481);
-const core = __importStar(__nccwpck_require__(7484));
-class PermissionHelper extends baseClient_1.BaseClient {
-    gitlab;
-    constructor(gitlab, repo, config) {
-        super(config, repo);
-        this.gitlab = gitlab;
-    }
-    get projectPath() {
-        return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`);
-    }
-    async validateAccess() {
-        try {
-            const permissionChecks = [
-                {
-                    feature: 'issues',
-                    check: () => this.gitlab.Issues.all({ projectId: this.projectPath, perPage: 1 }),
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
-                },
-                {
-                    feature: 'pullRequests',
-                    check: () => this.gitlab.MergeRequests.all({
-                        projectId: this.projectPath,
-                        perPage: 1
-                    }),
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Merge requests read/write permissions missing`
-                },
-                {
-                    feature: 'releases',
-                    check: () => this.gitlab.ProjectReleases.all(this.projectPath),
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
-                }
-            ];
-            // Verify repository access first
-            await this.gitlab.Projects.show(this.projectPath);
-            core.info(`\x1b[32m✓ Repository access verified\x1b[0m`);
-            // Validate permissions using the base client method
-            await this.validatePermissions('gitlab', this.config.gitlab.sync, permissionChecks);
-        }
-        catch (error) {
-            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-}
-exports.PermissionHelper = PermissionHelper;
 
 
 /***/ }),
