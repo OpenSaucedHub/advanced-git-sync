@@ -1,13 +1,9 @@
-// src/structures/clientManager.ts
-import { Config, PermissionCheck, Repository } from '@/src/types'
-import { GitHubClient } from '@/src/structures/github/GitHub'
-import { GitLabClient } from '@/src/structures/gitlab/GitLab'
-import { getGitHubRepo, getGitLabRepo } from '../utils/repository'
+import { Config, PermissionCheck, Repository, IClient } from '../types'
 import * as core from '@actions/core'
 
-export abstract class BaseClient {
-  protected config: Config
-  protected repo: Repository
+export abstract class BaseClient implements IClient {
+  public config: Config
+  public repo: Repository
 
   constructor(config: Config, repo: Repository) {
     this.config = config
@@ -41,23 +37,4 @@ export abstract class BaseClient {
   }
 
   abstract validateAccess(): Promise<void>
-}
-
-export class ClientManager {
-  private static githubClient: GitHubClient
-  private static gitlabClient: GitLabClient
-
-  static getGitHubClient(config: Config): GitHubClient {
-    if (!this.githubClient) {
-      this.githubClient = new GitHubClient(config, getGitHubRepo(config))
-    }
-    return this.githubClient
-  }
-
-  static getGitLabClient(config: Config): GitLabClient {
-    if (!this.gitlabClient) {
-      this.gitlabClient = new GitLabClient(config, getGitLabRepo(config))
-    }
-    return this.gitlabClient
-  }
 }

@@ -1,13 +1,13 @@
 import { Config } from '@/src/types'
 import { ErrorCodes } from '@utils/errorCodes'
 import * as core from '@actions/core'
-import { ClientManager } from '@/src/structures/baseClient'
+import { ClientManager } from '@/src/structures/clientManager'
 
 export async function validateTokenPermissions(config: Config): Promise<void> {
   try {
     if (config.github.enabled && config.github.token) {
       const githubClient = ClientManager.getGitHubClient(config)
-      await githubClient.validateAccess() // use permissions helper
+      await githubClient.validateAccess()
     }
 
     if (config.gitlab.enabled && config.gitlab.token) {

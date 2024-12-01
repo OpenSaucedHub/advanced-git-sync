@@ -131,6 +131,10 @@ github:
 | --------- | ----------------------- | -------- | ------- |
 | `enabled` | Enable release/tag sync | No       | true    |
 
+> [!TIP]
+>
+> Tags syncing is automatically enabled if releases syncing is enabled to avoid orphaning releases.
+
 ## Accepted Configuration
 
 This is the expected config and hence the defaults. If you don't want to sync a particular entity,

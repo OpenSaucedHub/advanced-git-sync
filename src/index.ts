@@ -6,7 +6,7 @@ import { syncBranches } from './sync/brancheSync'
 import { syncPullRequests } from './sync/prSync'
 import { syncIssues } from './sync/issueSync'
 import { syncReleases, syncTags } from './sync/releaseSync'
-import { ClientManager } from './structures/baseClient'
+import { ClientManager } from './structures/clientManager'
 
 async function run(): Promise<void> {
   try {

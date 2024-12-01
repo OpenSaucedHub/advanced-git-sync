@@ -55566,15 +55566,15 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.validateTokenPermissions = validateTokenPermissions;
 const errorCodes_1 = __nccwpck_require__(9481);
 const core = __importStar(__nccwpck_require__(7484));
-const baseClient_1 = __nccwpck_require__(574);
+const clientManager_1 = __nccwpck_require__(5188);
 async function validateTokenPermissions(config) {
     try {
         if (config.github.enabled && config.github.token) {
-            const githubClient = baseClient_1.ClientManager.getGitHubClient(config);
-            await githubClient.validateAccess(); // use permissions helper
+            const githubClient = clientManager_1.ClientManager.getGitHubClient(config);
+            await githubClient.validateAccess();
         }
         if (config.gitlab.enabled && config.gitlab.token) {
-            const gitlabClient = baseClient_1.ClientManager.getGitLabClient(config);
+            const gitlabClient = clientManager_1.ClientManager.getGitLabClient(config);
             await gitlabClient.validateAccess();
         }
         core.info('\x1b[32m✓ Permission validation completed successfully\x1b[0m');
@@ -55711,7 +55711,7 @@ const brancheSync_1 = __nccwpck_require__(3019);
 const prSync_1 = __nccwpck_require__(2678);
 const issueSync_1 = __nccwpck_require__(4455);
 const releaseSync_1 = __nccwpck_require__(6389);
-const baseClient_1 = __nccwpck_require__(574);
+const clientManager_1 = __nccwpck_require__(5188);
 async function run() {
     try {
         // Enhanced startup logging
@@ -55721,8 +55721,8 @@ async function run() {
         const config = await (0, config_1.getConfig)();
         core.info(`\x1b[32m✓ Configuration loaded successfully\x1b[0m`);
         // Use ClientManager to get client instances
-        const githubClient = baseClient_1.ClientManager.getGitHubClient(config);
-        const gitlabClient = baseClient_1.ClientManager.getGitLabClient(config);
+        const githubClient = clientManager_1.ClientManager.getGitHubClient(config);
+        const gitlabClient = clientManager_1.ClientManager.getGitLabClient(config);
         if (config.github.enabled && config.gitlab.enabled) {
             core.info('\x1b[36m🔄 Starting bi-directional sync between GitHub and GitLab\x1b[0m');
             // Sync tracking
@@ -55871,10 +55871,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ClientManager = exports.BaseClient = void 0;
-const GitHub_1 = __nccwpck_require__(4821);
-const GitLab_1 = __nccwpck_require__(741);
-const repository_1 = __nccwpck_require__(6629);
+exports.BaseClient = void 0;
 const core = __importStar(__nccwpck_require__(7484));
 class BaseClient {
     config;
@@ -55903,6 +55900,20 @@ class BaseClient {
     }
 }
 exports.BaseClient = BaseClient;
+
+
+/***/ }),
+
+/***/ 5188:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ClientManager = void 0;
+const GitHub_1 = __nccwpck_require__(4821);
+const GitLab_1 = __nccwpck_require__(741);
+const repository_1 = __nccwpck_require__(6629);
 class ClientManager {
     static githubClient;
     static gitlabClient;
@@ -58305,7 +58316,7 @@ async function syncTags(source, target) {
 
 /***/ }),
 
-/***/ 9169:
+/***/ 2857:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -58402,7 +58413,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 // src/types/index.ts
 __exportStar(__nccwpck_require__(7899), exports);
 __exportStar(__nccwpck_require__(7004), exports);
-__exportStar(__nccwpck_require__(9169), exports);
+__exportStar(__nccwpck_require__(2857), exports);
 
 
 /***/ }),

@@ -41,7 +41,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@eslint/js": "^9.15.0",
+    "@eslint/js": "^9.16.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/exec": "^6.0.3",
@@ -61,8 +61,8 @@
     "conventional-changelog-conventionalcommits": "^8.0.0",
     "conventional-changelog-gitmoji": "^0.2.5",
     "dotenv": "^16.4.5",
-    "eslint": "^9.15.0",
-    "globals": "^15.12.0",
+    "eslint": "^9.16.0",
+    "globals": "^15.13.0",
     "husky": "^9.1.7",
     "jest": "^29.7.0",
     "prettier": "^3.4.1",

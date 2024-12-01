@@ -2,16 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.0.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.3...v1.0.4) (2024-12-01)
-
-
 
 ## [1.0.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.3...v1.0.4) (2024-12-01)
 
 ### Bug Fixes
 
-* Remove permission helper classes and update README for configuration clarity ([c1d14fa](https://github.com/OpenSaucedHub/advanced-git-sync/commit/c1d14faa6b4e4307da61f929f1a89ff8b362e553))
+- Remove permission helper classes and update README for configuration clarity
+  ([c1d14fa](https://github.com/OpenSaucedHub/advanced-git-sync/commit/c1d14faa6b4e4307da61f929f1a89ff8b362e553))
 
 # [v1.0.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.2...v1.0.3) (2024-12-01)
 
