@@ -55571,11 +55571,11 @@ async function validateTokenPermissions(config) {
     try {
         if (config.github.enabled && config.github.token) {
             const githubClient = baseClient_1.ClientManager.getGitHubClient(config);
-            await githubClient.permissions.validateAccess(); // use permissions helper
+            await githubClient.validateAccess();
         }
         if (config.gitlab.enabled && config.gitlab.token) {
             const gitlabClient = baseClient_1.ClientManager.getGitLabClient(config);
-            await gitlabClient.permissions.validateAccess();
+            await gitlabClient.validateAccess();
         }
         core.info('\x1b[32m✓ Permission validation completed successfully\x1b[0m');
     }
