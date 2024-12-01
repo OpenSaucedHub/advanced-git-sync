@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.0.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.1...v1.0.2) (2024-12-01)
+
+
+
+## [1.0.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.1...v1.0.2) (2024-12-01)
+
+### Bug Fixes
+
+* Add configuration loading and validation functions; implement permission checks and token management, and lots, lots more fixes ([a07bf4c](https://github.com/OpenSaucedHub/advanced-git-sync/commit/a07bf4cb15707a699478d0c4327a5f6843b03248))
+
 # [v1.0.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.0...v1.0.1) (2024-11-29)
 
 ## [1.0.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.0...v1.0.1) (2024-11-29)
