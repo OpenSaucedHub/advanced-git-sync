@@ -44,10 +44,6 @@ jobs:
       issues: write
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Sync with GitLab
         uses: OpenSaucedHub/advanced-git-sync@v1.0.1
         with:

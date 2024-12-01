@@ -1,0 +1,23 @@
+export declare const ErrorCodes: {
+    readonly EAUTH1: "Invalid token";
+    readonly EAUTH2: "Token expired";
+    readonly EAUTH3: "Missing token";
+    readonly EPERM1: "Repository access denied";
+    readonly EPERM2: "Issues permission denied";
+    readonly EPERM3: "Pull requests permission denied";
+    readonly EPERM4: "Releases permission denied";
+    readonly ECFG01: "Invalid configuration";
+    readonly ECFG02: "Missing required fields";
+    readonly EVAL01: "GitHub validation failed";
+    readonly EVAL02: "GitLab validation failed";
+    readonly EGHUB: "GitHub API error";
+    readonly EGLAB: "GitLab API error";
+    readonly EFS01: "File not found";
+    readonly EFS02: "Permission denied";
+    readonly EFS03: "File read error";
+    readonly EFS04: "File write error";
+    readonly ENET1: "Network timeout";
+    readonly ENET2: "DNS resolution failed";
+    readonly ENET3: "Connection refused";
+    readonly ENET4: "Connection reset";
+};

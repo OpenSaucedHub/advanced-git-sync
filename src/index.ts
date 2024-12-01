@@ -2,12 +2,11 @@
 
 import * as core from '@actions/core'
 import { getConfig } from './config'
-import { GitHubClient } from './github'
-import { GitLabClient } from './gitlab'
-import { syncBranches } from './sync/branches'
-import { syncPullRequests } from './sync/pr-sync'
-import { syncIssues } from './sync/issues'
-import { syncReleases, syncTags } from './sync/releases'
+import { syncBranches } from './sync/brancheSync'
+import { syncPullRequests } from './sync/prSync'
+import { syncIssues } from './sync/issueSync'
+import { syncReleases, syncTags } from './sync/releaseSync'
+import { ClientManager } from './structures/baseClient'
 
 async function run(): Promise<void> {
   try {
@@ -19,9 +18,9 @@ async function run(): Promise<void> {
     const config = await getConfig()
     core.info(`\x1b[32m✓ Configuration loaded successfully\x1b[0m`)
 
-    // Create clients
-    const githubClient = new GitHubClient(config)
-    const gitlabClient = new GitLabClient(config)
+    // Use ClientManager to get client instances
+    const githubClient = ClientManager.getGitHubClient(config)
+    const gitlabClient = ClientManager.getGitLabClient(config)
 
     if (config.github.enabled && config.gitlab.enabled) {
       core.info(
