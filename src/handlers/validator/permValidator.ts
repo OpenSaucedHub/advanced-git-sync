@@ -11,7 +11,7 @@ export async function validateTokenPermissions(config: Config): Promise<void> {
         await githubClient.validateAccess()
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        throw new Error(`${ErrorCodes.EVALGH}: ${message}`)
+        throw new Error(`${ErrorCodes.EGHUB}: ${message}`)
       }
     }
 
@@ -21,7 +21,7 @@ export async function validateTokenPermissions(config: Config): Promise<void> {
         await gitlabClient.validateAccess()
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        throw new Error(`${ErrorCodes.EVALGL}: ${message}`)
+        throw new Error(`${ErrorCodes.EGLAB}: ${message}`)
       }
     }
 

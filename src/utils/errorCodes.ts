@@ -15,8 +15,6 @@ export const ErrorCodes = {
   ECFG02: 'Missing required fields',
 
   // Validation Errors (VAL)
-  EVALGH: 'GitHub validation failed',
-  EVALGL: 'GitLab validation failed',
   EVAL01: 'Multiple validation errors occurred',
 
   // Platform Errors (GHUB/GLAB)

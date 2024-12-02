@@ -55579,7 +55579,7 @@ async function validateTokenPermissions(config) {
             }
             catch (error) {
                 const message = error instanceof Error ? error.message : String(error);
-                throw new Error(`${errorCodes_1.ErrorCodes.EVALGH}: ${message}`);
+                throw new Error(`${errorCodes_1.ErrorCodes.EGHUB}: ${message}`);
             }
         }
         if (config.gitlab.enabled && config.gitlab.token) {
@@ -55589,7 +55589,7 @@ async function validateTokenPermissions(config) {
             }
             catch (error) {
                 const message = error instanceof Error ? error.message : String(error);
-                throw new Error(`${errorCodes_1.ErrorCodes.EVALGL}: ${message}`);
+                throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: ${message}`);
             }
         }
         core.info('\x1b[32m✓ Permission validation completed successfully\x1b[0m');
@@ -56958,6 +56958,7 @@ const rest_1 = __nccwpck_require__(4630);
 const helpers_1 = __nccwpck_require__(3682);
 const baseClient_1 = __nccwpck_require__(574);
 const errorCodes_1 = __nccwpck_require__(9481);
+const urlUtils_1 = __nccwpck_require__(7794);
 class GitLabClient extends baseClient_1.BaseClient {
     gitlab;
     branches;
@@ -56967,9 +56968,10 @@ class GitLabClient extends baseClient_1.BaseClient {
     tags;
     constructor(config, repo) {
         super(config, repo || { owner: '', repo: '' });
+        const baseUrl = (0, urlUtils_1.getApiBaseUrl)(config.gitlab.url);
         this.gitlab = new rest_1.Gitlab({
             token: config.gitlab.token,
-            host: config.gitlab.url || 'https://gitlab.com'
+            host: baseUrl
         });
         this.branches = new helpers_1.BranchHelper(this.gitlab, this.repo, this.config);
         this.issues = new helpers_1.IssueHelper(this.gitlab, this.repo, this.config);
@@ -56977,35 +56979,29 @@ class GitLabClient extends baseClient_1.BaseClient {
         this.release = new helpers_1.ReleaseHelper(this.gitlab, this.repo, this.config);
         this.tags = new helpers_1.TagHelper(this.gitlab, this.repo, this.config);
         core.startGroup('🦊 GitLab Client Initialization');
-        core.info(`\x1b[32m✓ GitLab Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`);
+        core.info(`\x1b[32m✓ GitLab Client Initialized: ${(0, urlUtils_1.getProjectPath)(this.repo)}\x1b[0m`);
         core.endGroup();
     }
     getRepoInfo() {
+        const baseUrl = this.config.gitlab.url || 'https://gitlab.com';
         return {
             ...this.repo,
-            url: `${this.config.gitlab.url || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
+            url: `${baseUrl}/${(0, urlUtils_1.getProjectPath)(this.repo)}`
         };
-    }
-    get projectPath() {
-        // Using namespace/project format required by GitLab API
-        return `${this.repo.owner}/${this.repo.repo}`;
-    }
-    get projectId() {
-        // URL encode the full path for API calls
-        return encodeURIComponent(this.projectPath);
     }
     async validateAccess() {
         try {
-            core.debug(`Validating GitLab access for project: ${this.projectPath}`);
+            const projectId = (0, urlUtils_1.getProjectId)(this.repo);
+            core.debug(`Validating GitLab access for project: ${projectId}`);
             // First verify the token has access to the API
-            await this.gitlab.Users.showCurrentUser();
-            core.debug('GitLab token authentication successful');
+            const currentUser = await this.gitlab.Users.showCurrentUser();
+            core.debug(`GitLab token authenticated as user: ${currentUser.username}`);
             const permissionChecks = [
                 {
                     feature: 'issues',
                     check: async () => {
                         const response = await this.gitlab.Issues.all({
-                            projectId: this.projectId,
+                            projectId,
                             perPage: 1
                         });
                         core.debug(`Issues API check response: ${!!response}`);
@@ -57017,7 +57013,7 @@ class GitLabClient extends baseClient_1.BaseClient {
                     feature: 'pullRequests',
                     check: async () => {
                         const response = await this.gitlab.MergeRequests.all({
-                            projectId: this.projectId,
+                            projectId,
                             perPage: 1
                         });
                         core.debug(`Merge Requests API check response: ${!!response}`);
@@ -57028,7 +57024,7 @@ class GitLabClient extends baseClient_1.BaseClient {
                 {
                     feature: 'releases',
                     check: async () => {
-                        const response = await this.gitlab.ProjectReleases.all(this.projectId);
+                        const response = await this.gitlab.ProjectReleases.all(projectId);
                         core.debug(`Releases API check response: ${!!response}`);
                         return response;
                     },
@@ -57036,9 +57032,9 @@ class GitLabClient extends baseClient_1.BaseClient {
                 }
             ];
             // Verify repository access first
-            const project = await this.gitlab.Projects.show(this.projectId);
+            const project = await this.gitlab.Projects.show(projectId);
             if (!project) {
-                throw new Error(`Repository ${this.projectPath} not found or not accessible`);
+                throw new Error(`Repository ${(0, urlUtils_1.getProjectPath)(this.repo)} not found or not accessible`);
             }
             core.info(`\x1b[32m✓ Repository access verified\x1b[0m`);
             // Validate permissions using the base client method
@@ -57758,6 +57754,29 @@ class TagHelper {
     }
 }
 exports.TagHelper = TagHelper;
+
+
+/***/ }),
+
+/***/ 7794:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getProjectPath = getProjectPath;
+exports.getProjectId = getProjectId;
+exports.getApiBaseUrl = getApiBaseUrl;
+function getProjectPath(repo) {
+    return `${repo.owner}/${repo.repo}`;
+}
+function getProjectId(repo) {
+    return encodeURIComponent(getProjectPath(repo));
+}
+function getApiBaseUrl(host) {
+    const baseUrl = host?.replace(/\/$/, '') || 'https://gitlab.com';
+    return `${baseUrl}/api/v4`;
+}
 
 
 /***/ }),
@@ -58551,8 +58570,6 @@ exports.ErrorCodes = {
     ECFG01: 'Invalid configuration',
     ECFG02: 'Missing required fields',
     // Validation Errors (VAL)
-    EVALGH: 'GitHub validation failed',
-    EVALGL: 'GitLab validation failed',
     EVAL01: 'Multiple validation errors occurred',
     // Platform Errors (GHUB/GLAB)
     EGHUB: 'GitHub API error',

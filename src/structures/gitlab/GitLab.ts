@@ -10,6 +10,7 @@ import {
 } from './helpers'
 import { BaseClient } from '../baseClient'
 import { ErrorCodes } from '@/src/utils/errorCodes'
+import { getProjectPath, getProjectId, getApiBaseUrl } from './helpers/urlUtils'
 
 export class GitLabClient extends BaseClient {
   private gitlab
@@ -21,9 +22,11 @@ export class GitLabClient extends BaseClient {
 
   constructor(config: Config, repo?: Repository) {
     super(config, repo || { owner: '', repo: '' })
+
+    const baseUrl = getApiBaseUrl(config.gitlab.url)
     this.gitlab = new Gitlab({
       token: config.gitlab.token,
-      host: config.gitlab.url || 'https://gitlab.com'
+      host: baseUrl
     })
 
     this.branches = new BranchHelper(this.gitlab, this.repo, this.config)
@@ -37,42 +40,34 @@ export class GitLabClient extends BaseClient {
     this.tags = new TagHelper(this.gitlab, this.repo, this.config)
     core.startGroup('🦊 GitLab Client Initialization')
     core.info(
-      `\x1b[32m✓ GitLab Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`
+      `\x1b[32m✓ GitLab Client Initialized: ${getProjectPath(this.repo)}\x1b[0m`
     )
     core.endGroup()
   }
 
   getRepoInfo() {
+    const baseUrl = this.config.gitlab.url || 'https://gitlab.com'
     return {
       ...this.repo,
-      url: `${this.config.gitlab.url || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
+      url: `${baseUrl}/${getProjectPath(this.repo)}`
     }
-  }
-
-  private get projectPath(): string {
-    // Using namespace/project format required by GitLab API
-    return `${this.repo.owner}/${this.repo.repo}`
-  }
-
-  private get projectId(): string {
-    // URL encode the full path for API calls
-    return encodeURIComponent(this.projectPath)
   }
 
   async validateAccess(): Promise<void> {
     try {
-      core.debug(`Validating GitLab access for project: ${this.projectPath}`)
+      const projectId = getProjectId(this.repo)
+      core.debug(`Validating GitLab access for project: ${projectId}`)
 
       // First verify the token has access to the API
-      await this.gitlab.Users.showCurrentUser()
-      core.debug('GitLab token authentication successful')
+      const currentUser = await this.gitlab.Users.showCurrentUser()
+      core.debug(`GitLab token authenticated as user: ${currentUser.username}`)
 
       const permissionChecks: PermissionCheck[] = [
         {
           feature: 'issues',
           check: async () => {
             const response = await this.gitlab.Issues.all({
-              projectId: this.projectId,
+              projectId,
               perPage: 1
             })
             core.debug(`Issues API check response: ${!!response}`)
@@ -84,7 +79,7 @@ export class GitLabClient extends BaseClient {
           feature: 'pullRequests',
           check: async () => {
             const response = await this.gitlab.MergeRequests.all({
-              projectId: this.projectId,
+              projectId,
               perPage: 1
             })
             core.debug(`Merge Requests API check response: ${!!response}`)
@@ -95,9 +90,7 @@ export class GitLabClient extends BaseClient {
         {
           feature: 'releases',
           check: async () => {
-            const response = await this.gitlab.ProjectReleases.all(
-              this.projectId
-            )
+            const response = await this.gitlab.ProjectReleases.all(projectId)
             core.debug(`Releases API check response: ${!!response}`)
             return response
           },
@@ -106,10 +99,10 @@ export class GitLabClient extends BaseClient {
       ]
 
       // Verify repository access first
-      const project = await this.gitlab.Projects.show(this.projectId)
+      const project = await this.gitlab.Projects.show(projectId)
       if (!project) {
         throw new Error(
-          `Repository ${this.projectPath} not found or not accessible`
+          `Repository ${getProjectPath(this.repo)} not found or not accessible`
         )
       }
       core.info(`\x1b[32m✓ Repository access verified\x1b[0m`)

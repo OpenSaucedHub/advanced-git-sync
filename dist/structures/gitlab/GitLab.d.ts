@@ -14,8 +14,6 @@ export declare class GitLabClient extends BaseClient {
         owner: string;
         repo: string;
     };
-    private get projectPath();
-    private get projectId();
     validateAccess(): Promise<void>;
     syncBranches(): Promise<import("@/src/types").Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;

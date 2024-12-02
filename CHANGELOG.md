@@ -2,16 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.0.6](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.5...v1.0.6) (2024-12-02)
-
-
 
 ## [1.0.6](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.5...v1.0.6) (2024-12-02)
 
 ### Bug Fixes
 
-* rename config module and restructure repository utility functions ([f3e1477](https://github.com/OpenSaucedHub/advanced-git-sync/commit/f3e1477dba043f41eae49cf93364b7c76c2e1631))
+- rename config module and restructure repository utility functions
+  ([f3e1477](https://github.com/OpenSaucedHub/advanced-git-sync/commit/f3e1477dba043f41eae49cf93364b7c76c2e1631))
 
 # [v1.0.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.4...v1.0.5) (2024-12-01)
 
