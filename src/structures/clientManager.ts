@@ -24,9 +24,6 @@ export class ClientManager {
     if (!this.gitlabClient) {
       core.startGroup('🦊 GitLab Client Initialization')
       this.gitlabClient = new GitLabClient(config, getGitLabRepo(config))
-      core.info(
-        `\x1b[32m✓ GitLab Client Initialized: ${this.gitlabClient.repo.owner}/${this.gitlabClient.repo.repo}\x1b[0m`
-      )
     }
     return this.gitlabClient
   }

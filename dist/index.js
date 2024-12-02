@@ -55978,7 +55978,6 @@ class ClientManager {
         if (!this.gitlabClient) {
             core.startGroup('🦊 GitLab Client Initialization');
             this.gitlabClient = new GitLab_1.GitLabClient(config, (0, repoUtils_1.getGitLabRepo)(config));
-            core.info(`\x1b[32m✓ GitLab Client Initialized: ${this.gitlabClient.repo.owner}/${this.gitlabClient.repo.repo}\x1b[0m`);
         }
         return this.gitlabClient;
     }
@@ -57004,11 +57003,18 @@ class GitLabClient extends baseClient_1.BaseClient {
     projectId = null;
     constructor(config, repo) {
         super(config, repo || { owner: '', repo: '' });
+        if (!config.gitlab?.token) {
+            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: GitLab token is required`);
+        }
+        const host = config.gitlab.url || 'https://gitlab.com';
+        core.info(`🦊 Initializing GitLab client for host: ${host}`);
         this.gitlab = new rest_1.Gitlab({
             token: config.gitlab.token,
-            host: config.gitlab.url || 'https://gitlab.com'
+            host
+            // rejectUnauthorized: false // Add this if dealing with self-signed certificates
         });
-        // Initialize helpers (implementation details omitted for brevity)
+        core.info(`\x1b[32m✓ GitLab Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`);
+        // Initialize helpers
         this.branches = new helpers_1.BranchHelper(this.gitlab, this.repo, this.config);
         this.issues = new helpers_1.IssueHelper(this.gitlab, this.repo, this.config);
         this.pullRequest = new helpers_1.PullRequestHelper(this.gitlab, this.repo, this.config);
@@ -57022,16 +57028,45 @@ class GitLabClient extends baseClient_1.BaseClient {
     async getProjectId() {
         if (this.projectId)
             return this.projectId;
+        const projectPath = `${this.repo.owner}/${this.repo.repo}`;
+        core.info(`📂 Attempting to fetch project ID for: ${projectPath}`);
         try {
-            // Use the full project path (namespace/project)
-            const project = await this.gitlab.Projects.show(`${this.repo.owner}/${this.repo.repo}`);
+            // First try with URL encoded path
+            const encodedPath = encodeURIComponent(projectPath);
+            core.debug(`Encoded project path: ${encodedPath}`);
+            const project = await this.gitlab.Projects.show(encodedPath);
+            if (!project?.id) {
+                throw new Error('Project ID not found in response');
+            }
             this.projectId = project.id;
             core.info(`\x1b[32m✓ Project ID retrieved: ${this.projectId}\x1b[0m`);
             return this.projectId;
         }
         catch (error) {
+            // Enhanced error logging
             core.error('Failed to retrieve GitLab project ID');
-            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: Unable to fetch project details`);
+            core.error(`Project path: ${projectPath}`);
+            core.error(`Error details: ${error instanceof Error ? error.message : String(error)}`);
+            // Try alternative method using search
+            try {
+                core.info('Attempting alternative project lookup method...');
+                const projects = await this.gitlab.Projects.search(this.repo.repo);
+                const matchingProject = projects.find(p => p.path_with_namespace === projectPath ||
+                    p.path_with_namespace === projectPath.toLowerCase());
+                if (matchingProject?.id) {
+                    this.projectId = matchingProject.id;
+                    core.info(`\x1b[32m✓ Project ID retrieved using alternative method: ${this.projectId}\x1b[0m`);
+                    return this.projectId;
+                }
+            }
+            catch (searchError) {
+                core.error('Alternative lookup method also failed');
+                core.error(`Search error: ${searchError instanceof Error ? searchError.message : String(searchError)}`);
+            }
+            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: Unable to fetch project details. Please verify:
+        1. The project path "${projectPath}" is correct
+        2. The GitLab token has sufficient permissions
+        3. The project exists and is accessible`);
         }
     }
     /**
@@ -57039,32 +57074,44 @@ class GitLabClient extends baseClient_1.BaseClient {
      */
     async validateAccess() {
         try {
+            core.startGroup('GitLab Access Validation');
             // First, get the project ID
             const projectId = await this.getProjectId();
-            core.info(`\x1b[32m✓ validating access using Project ID: ${projectId}\x1b[0m`);
+            core.info(`\x1b[32m✓ Validating access using Project ID: ${projectId}\x1b[0m`);
             // Define permission checks specific to GitLab
             const permissionChecks = [
                 {
                     feature: 'issues',
-                    check: () => this.gitlab.Issues.all({ projectId }),
+                    check: async () => {
+                        const issues = await this.gitlab.Issues.all({ projectId });
+                        return Array.isArray(issues);
+                    },
                     warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
                 },
                 {
-                    feature: 'mergeRequests', // GitLab equivalent of pull requests
-                    check: () => this.gitlab.MergeRequests.all({ projectId }),
+                    feature: 'mergeRequests',
+                    check: async () => {
+                        const mrs = await this.gitlab.MergeRequests.all({ projectId });
+                        return Array.isArray(mrs);
+                    },
                     warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Merge requests read/write permissions missing`
                 },
                 {
                     feature: 'releases',
-                    check: () => this.gitlab.ProjectReleases.all(projectId),
+                    check: async () => {
+                        const releases = await this.gitlab.ProjectReleases.all(projectId);
+                        return Array.isArray(releases);
+                    },
                     warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
                 }
             ];
             // Validate repository access and permissions
             await this.validatePermissions('gitlab', this.config.gitlab.sync, permissionChecks);
             core.info(`\x1b[32m✓ GitLab Project Access Verified: ${this.repo.owner}/${this.repo.repo}; Project ID: ${projectId}\x1b[0m`);
+            core.endGroup();
         }
         catch (error) {
+            core.error('GitLab access validation failed');
             throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
