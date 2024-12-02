@@ -10,11 +10,12 @@ export declare class GitLabClient extends BaseClient {
     tags: TagHelper;
     constructor(config: Config, repo?: Repository);
     getRepoInfo(): {
+        url: string;
         owner: string;
         repo: string;
-        url: string;
     };
     private get projectPath();
+    private get projectId();
     validateAccess(): Promise<void>;
     syncBranches(): Promise<import("@/src/types").Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;

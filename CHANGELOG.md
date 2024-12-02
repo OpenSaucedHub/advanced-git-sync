@@ -2,16 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.0.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.4...v1.0.5) (2024-12-01)
-
-
 
 ## [1.0.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.4...v1.0.5) (2024-12-01)
 
 ### Bug Fixes
 
-* fix a circular dependency between modules. The client classes and base client were trying to import each other. fixed this by restructuring the imports and class hierarchy. ([45b457a](https://github.com/OpenSaucedHub/advanced-git-sync/commit/45b457a95ce3c72bea9ec657a90ca72df31d70d6))
+- fix a circular dependency between modules. The client classes and base client were trying to
+  import each other. fixed this by restructuring the imports and class hierarchy.
+  ([45b457a](https://github.com/OpenSaucedHub/advanced-git-sync/commit/45b457a95ce3c72bea9ec657a90ca72df31d70d6))
 
 # [v1.0.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.3...v1.0.4) (2024-12-01)
 

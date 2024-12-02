@@ -10,9 +10,9 @@ export declare class GitHubClient extends BaseClient {
     tags: tagsHelper;
     constructor(config: Config, repo?: Repository);
     getRepoInfo(): {
+        url: string;
         owner: string;
         repo: string;
-        url: string;
     };
     validateAccess(): Promise<void>;
     syncBranches(): Promise<import("@/src/types").Branch[]>;

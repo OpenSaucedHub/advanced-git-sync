@@ -1,4 +1,4 @@
 // src/types/index.ts
-export * from './config'
+export * from './configTypes'
 export * from './common'
 export * from './clientTypes'

@@ -42,7 +42,7 @@ export class GitHubClient extends BaseClient {
     this.issue = new issueHelper(this.octokit, this.repo, this.config)
     this.release = new releaseHelper(this.octokit, this.repo, this.config)
     this.tags = new tagsHelper(this.octokit, this.repo, this.config)
-
+    core.startGroup('🐱 GitHub Client Initialization')
     core.info(
       `\x1b[32m✓ GitHub Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`
     )
@@ -50,8 +50,7 @@ export class GitHubClient extends BaseClient {
 
   getRepoInfo() {
     return {
-      owner: this.repo.owner,
-      repo: this.repo.repo,
+      ...this.repo,
       url: `https://github.com/${this.repo.owner}/${this.repo.repo}`
     }
   }

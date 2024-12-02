@@ -44,6 +44,9 @@ jobs:
       issues: write
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4.2.2
+
       - name: Sync with GitLab
         uses: OpenSaucedHub/advanced-git-sync@v1.0.5
         with:
@@ -133,7 +136,9 @@ github:
 
 > [!TIP]
 >
-> Tags syncing is automatically enabled if releases syncing is enabled to avoid orphaning releases.
+> - Tags syncing is automatically enabled if releases syncing is enabled to avoid orphaning
+>   releases.
+> - labels can be either a string or an array of strings.
 
 ## Accepted Configuration
 

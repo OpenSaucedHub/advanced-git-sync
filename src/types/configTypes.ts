@@ -10,13 +10,13 @@ export const BranchConfigSchema = z.object({
 export const PRConfigSchema = z.object({
   enabled: z.boolean(),
   autoMerge: z.boolean(),
-  labels: z.array(z.string())
+  labels: z.union([z.string(), z.array(z.string())])
 })
 
 export const IssueConfigSchema = z.object({
   enabled: z.boolean(),
   syncComments: z.boolean(),
-  labels: z.array(z.string())
+  labels: z.union([z.string(), z.array(z.string())])
 })
 
 export const SyncConfigSchema = z.object({

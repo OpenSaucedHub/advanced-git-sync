@@ -1,7 +1,8 @@
+// src/structures/clientManager.ts
 import { Config } from '../types'
 import { GitHubClient } from './github/GitHub'
 import { GitLabClient } from './gitlab/GitLab'
-import { getGitHubRepo, getGitLabRepo } from '../utils/repository'
+import { getGitHubRepo, getGitLabRepo } from '../utils/repoUtils'
 
 export class ClientManager {
   private static githubClient: GitHubClient

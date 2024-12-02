@@ -1,3 +1,4 @@
+// src/structures/baseClient.ts
 import { Config, PermissionCheck, Repository, IClient } from '../types'
 import * as core from '@actions/core'
 
@@ -15,7 +16,7 @@ export abstract class BaseClient implements IClient {
     sync: any,
     checks: PermissionCheck[]
   ): Promise<void> {
-    core.startGroup(`🔍 ${platform.toUpperCase()} Permissions Validation`)
+    core.info(`🔍 ${platform.toUpperCase()} Permissions Validation`)
     core.info(
       `\x1b[36mValidating ${platform} permissions for: ${this.repo.owner}/${this.repo.repo}\x1b[0m`
     )

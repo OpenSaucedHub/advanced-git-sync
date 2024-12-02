@@ -8,8 +8,9 @@ export declare const ErrorCodes: {
     readonly EPERM4: "Releases permission denied";
     readonly ECFG01: "Invalid configuration";
     readonly ECFG02: "Missing required fields";
-    readonly EVAL01: "GitHub validation failed";
-    readonly EVAL02: "GitLab validation failed";
+    readonly EVALGH: "GitHub validation failed";
+    readonly EVALGL: "GitLab validation failed";
+    readonly EVAL01: "Multiple validation errors occurred";
     readonly EGHUB: "GitHub API error";
     readonly EGLAB: "GitLab API error";
     readonly EFS01: "File not found";

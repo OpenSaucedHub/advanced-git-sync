@@ -3,7 +3,7 @@ import * as core from '@actions/core'
 import { TokenManager } from './tokenManager'
 import { validateTokenPermissions } from './permValidator'
 import { logWarning, ValidationError } from './errors'
-import { getGitHubRepo, getGitLabRepo } from '@/src/utils/repository'
+import { getGitHubRepo, getGitLabRepo } from '@/src/utils/repoUtils'
 
 /**
  * Validates and enhances the configuration with tokens

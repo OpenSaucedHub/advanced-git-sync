@@ -28,7 +28,7 @@ export async function loadConfig(): Promise<Config> {
     // If config file doesn't exist, use default configuration
     if (!fs.existsSync(configPath)) {
       core.info(
-        `\x1b[33m⚠️ ${ErrorCodes.EFS01}: No configuration file found. Using default configuration.\x1b[0m`
+        `\x1b[33m⚠️ ${ErrorCodes.EFS01}: Using default configuration.\x1b[0m`
       )
       const defaultConfig = await validateConfig(getDefaultConfig())
       logConfigDetails(defaultConfig)
@@ -90,7 +90,6 @@ export async function loadConfig(): Promise<Config> {
       core.endGroup()
       return validatedConfig
     } catch (error) {
-      core.endGroup()
       if (error instanceof ZodError) {
         // Handle Zod validation errors
         const errorMessages = error.errors
@@ -100,19 +99,23 @@ export async function loadConfig(): Promise<Config> {
         core.setFailed(
           `\x1b[31m❌ Config validation failed:\x1b[0m\n${errorMessages}`
         )
+        core.endGroup()
         throw error
       }
+      core.endGroup()
       throw error
     }
   } catch (error) {
-    core.endGroup()
     if (error instanceof Error) {
       core.setFailed(
         `\x1b[31m❌ Failed to load config: ${error.message}\x1b[0m`
       )
+      core.endGroup()
     } else {
       core.setFailed('\x1b[31m❌ Unexpected error loading config.\x1b[0m')
+      core.endGroup()
     }
+    core.endGroup()
     throw error
   }
 }

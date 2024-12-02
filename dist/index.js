@@ -55071,7 +55071,7 @@ async function loadConfig() {
         }
         // If config file doesn't exist, use default configuration
         if (!fs.existsSync(configPath)) {
-            core.info(`\x1b[33m⚠️ ${errorCodes_1.ErrorCodes.EFS01}: No configuration file found. Using default configuration.\x1b[0m`);
+            core.info(`\x1b[33m⚠️ ${errorCodes_1.ErrorCodes.EFS01}: Using default configuration.\x1b[0m`);
             const defaultConfig = await (0, validator_1.validateConfig)((0, defaults_1.getDefaultConfig)());
             (0, inputs_1.logConfigDetails)(defaultConfig);
             core.endGroup();
@@ -55120,26 +55120,29 @@ async function loadConfig() {
             return validatedConfig;
         }
         catch (error) {
-            core.endGroup();
             if (error instanceof zod_1.ZodError) {
                 // Handle Zod validation errors
                 const errorMessages = error.errors
                     .map(err => `${err.path.join('.')}: ${err.message}`)
                     .join('\n');
                 core.setFailed(`\x1b[31m❌ Config validation failed:\x1b[0m\n${errorMessages}`);
+                core.endGroup();
                 throw error;
             }
+            core.endGroup();
             throw error;
         }
     }
     catch (error) {
-        core.endGroup();
         if (error instanceof Error) {
             core.setFailed(`\x1b[31m❌ Failed to load config: ${error.message}\x1b[0m`);
+            core.endGroup();
         }
         else {
             core.setFailed('\x1b[31m❌ Unexpected error loading config.\x1b[0m');
+            core.endGroup();
         }
+        core.endGroup();
         throw error;
     }
 }
@@ -55311,7 +55314,7 @@ const core = __importStar(__nccwpck_require__(7484));
 const tokenManager_1 = __nccwpck_require__(6514);
 const permValidator_1 = __nccwpck_require__(9132);
 const errors_1 = __nccwpck_require__(1253);
-const repository_1 = __nccwpck_require__(6629);
+const repoUtils_1 = __nccwpck_require__(9600);
 /**
  * Validates and enhances the configuration with tokens
  */
@@ -55338,7 +55341,7 @@ async function validateConfig(config) {
             updatedConfig.github = {
                 ...updatedConfig.github,
                 ...(token && { token }),
-                ...(0, repository_1.getGitHubRepo)(config)
+                ...(0, repoUtils_1.getGitHubRepo)(config)
             };
         }
         // Handle GitLab configuration
@@ -55358,7 +55361,7 @@ async function validateConfig(config) {
             updatedConfig.gitlab = {
                 ...updatedConfig.gitlab,
                 ...(token && { token }),
-                ...(0, repository_1.getGitLabRepo)(config)
+                ...(0, repoUtils_1.getGitLabRepo)(config)
             };
         }
         // Throw errors if any exist
@@ -55571,18 +55574,30 @@ async function validateTokenPermissions(config) {
     try {
         if (config.github.enabled && config.github.token) {
             const githubClient = clientManager_1.ClientManager.getGitHubClient(config);
-            await githubClient.validateAccess();
+            try {
+                await githubClient.validateAccess();
+            }
+            catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                throw new Error(`${errorCodes_1.ErrorCodes.EVALGH}: ${message}`);
+            }
         }
         if (config.gitlab.enabled && config.gitlab.token) {
             const gitlabClient = clientManager_1.ClientManager.getGitLabClient(config);
-            await gitlabClient.validateAccess();
+            try {
+                await gitlabClient.validateAccess();
+            }
+            catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                throw new Error(`${errorCodes_1.ErrorCodes.EVALGL}: ${message}`);
+            }
         }
         core.info('\x1b[32m✓ Permission validation completed successfully\x1b[0m');
     }
     catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        core.setFailed(`${errorCodes_1.ErrorCodes.EVAL01}: ${message}`);
-        throw new Error(`${errorCodes_1.ErrorCodes.EVAL01}: ${message}`);
+        core.setFailed(message);
+        throw error;
     }
 }
 
@@ -55881,7 +55896,7 @@ class BaseClient {
         this.repo = repo;
     }
     async validatePermissions(platform, sync, checks) {
-        core.startGroup(`🔍 ${platform.toUpperCase()} Permissions Validation`);
+        core.info(`🔍 ${platform.toUpperCase()} Permissions Validation`);
         core.info(`\x1b[36mValidating ${platform} permissions for: ${this.repo.owner}/${this.repo.repo}\x1b[0m`);
         for (const check of checks) {
             if (sync?.[check.feature]?.enabled) {
@@ -55913,19 +55928,19 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ClientManager = void 0;
 const GitHub_1 = __nccwpck_require__(4821);
 const GitLab_1 = __nccwpck_require__(741);
-const repository_1 = __nccwpck_require__(6629);
+const repoUtils_1 = __nccwpck_require__(9600);
 class ClientManager {
     static githubClient;
     static gitlabClient;
     static getGitHubClient(config) {
         if (!this.githubClient) {
-            this.githubClient = new GitHub_1.GitHubClient(config, (0, repository_1.getGitHubRepo)(config));
+            this.githubClient = new GitHub_1.GitHubClient(config, (0, repoUtils_1.getGitHubRepo)(config));
         }
         return this.githubClient;
     }
     static getGitLabClient(config) {
         if (!this.gitlabClient) {
-            this.gitlabClient = new GitLab_1.GitLabClient(config, (0, repository_1.getGitLabRepo)(config));
+            this.gitlabClient = new GitLab_1.GitLabClient(config, (0, repoUtils_1.getGitLabRepo)(config));
         }
         return this.gitlabClient;
     }
@@ -55996,12 +56011,12 @@ class GitHubClient extends baseClient_1.BaseClient {
         this.issue = new helpers_1.issueHelper(this.octokit, this.repo, this.config);
         this.release = new helpers_1.releaseHelper(this.octokit, this.repo, this.config);
         this.tags = new helpers_1.tagsHelper(this.octokit, this.repo, this.config);
+        core.startGroup('🐱 GitHub Client Initialization');
         core.info(`\x1b[32m✓ GitHub Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`);
     }
     getRepoInfo() {
         return {
-            owner: this.repo.owner,
-            repo: this.repo.repo,
+            ...this.repo,
             url: `https://github.com/${this.repo.owner}/${this.repo.repo}`
         };
     }
@@ -56961,48 +56976,78 @@ class GitLabClient extends baseClient_1.BaseClient {
         this.pullRequest = new helpers_1.PullRequestHelper(this.gitlab, this.repo, this.config);
         this.release = new helpers_1.ReleaseHelper(this.gitlab, this.repo, this.config);
         this.tags = new helpers_1.TagHelper(this.gitlab, this.repo, this.config);
+        core.startGroup('🦊 GitLab Client Initialization');
         core.info(`\x1b[32m✓ GitLab Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`);
+        core.endGroup();
     }
     getRepoInfo() {
         return {
-            owner: this.repo.owner,
-            repo: this.repo.repo,
+            ...this.repo,
             url: `${this.config.gitlab.url || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
         };
     }
     get projectPath() {
-        return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`);
+        // Using namespace/project format required by GitLab API
+        return `${this.repo.owner}/${this.repo.repo}`;
+    }
+    get projectId() {
+        // URL encode the full path for API calls
+        return encodeURIComponent(this.projectPath);
     }
     async validateAccess() {
         try {
+            core.debug(`Validating GitLab access for project: ${this.projectPath}`);
+            // First verify the token has access to the API
+            await this.gitlab.Users.showCurrentUser();
+            core.debug('GitLab token authentication successful');
             const permissionChecks = [
                 {
                     feature: 'issues',
-                    check: () => this.gitlab.Issues.all({ projectId: this.projectPath, perPage: 1 }),
+                    check: async () => {
+                        const response = await this.gitlab.Issues.all({
+                            projectId: this.projectId,
+                            perPage: 1
+                        });
+                        core.debug(`Issues API check response: ${!!response}`);
+                        return response;
+                    },
                     warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
                 },
                 {
                     feature: 'pullRequests',
-                    check: () => this.gitlab.MergeRequests.all({
-                        projectId: this.projectPath,
-                        perPage: 1
-                    }),
+                    check: async () => {
+                        const response = await this.gitlab.MergeRequests.all({
+                            projectId: this.projectId,
+                            perPage: 1
+                        });
+                        core.debug(`Merge Requests API check response: ${!!response}`);
+                        return response;
+                    },
                     warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Merge requests read/write permissions missing`
                 },
                 {
                     feature: 'releases',
-                    check: () => this.gitlab.ProjectReleases.all(this.projectPath),
+                    check: async () => {
+                        const response = await this.gitlab.ProjectReleases.all(this.projectId);
+                        core.debug(`Releases API check response: ${!!response}`);
+                        return response;
+                    },
                     warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
                 }
             ];
             // Verify repository access first
-            await this.gitlab.Projects.show(this.projectPath);
+            const project = await this.gitlab.Projects.show(this.projectId);
+            if (!project) {
+                throw new Error(`Repository ${this.projectPath} not found or not accessible`);
+            }
             core.info(`\x1b[32m✓ Repository access verified\x1b[0m`);
             // Validate permissions using the base client method
             await this.validatePermissions('gitlab', this.config.gitlab.sync, permissionChecks);
         }
         catch (error) {
-            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: ${error instanceof Error ? error.message : String(error)}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            core.debug(`GitLab validation error: ${errorMessage}`);
+            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: GitLab API error: ${errorMessage}`);
         }
     }
     // Delegate to branch helper
@@ -58336,7 +58381,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 /***/ }),
 
-/***/ 7899:
+/***/ 8602:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -58353,12 +58398,12 @@ exports.BranchConfigSchema = zod_1.z.object({
 exports.PRConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
     autoMerge: zod_1.z.boolean(),
-    labels: zod_1.z.array(zod_1.z.string())
+    labels: zod_1.z.union([zod_1.z.string(), zod_1.z.array(zod_1.z.string())])
 });
 exports.IssueConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
     syncComments: zod_1.z.boolean(),
-    labels: zod_1.z.array(zod_1.z.string())
+    labels: zod_1.z.union([zod_1.z.string(), zod_1.z.array(zod_1.z.string())])
 });
 exports.SyncConfigSchema = zod_1.z.object({
     branches: exports.BranchConfigSchema,
@@ -58411,7 +58456,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 // src/types/index.ts
-__exportStar(__nccwpck_require__(7899), exports);
+__exportStar(__nccwpck_require__(8602), exports);
 __exportStar(__nccwpck_require__(7004), exports);
 __exportStar(__nccwpck_require__(2857), exports);
 
@@ -58506,8 +58551,9 @@ exports.ErrorCodes = {
     ECFG01: 'Invalid configuration',
     ECFG02: 'Missing required fields',
     // Validation Errors (VAL)
-    EVAL01: 'GitHub validation failed',
-    EVAL02: 'GitLab validation failed',
+    EVALGH: 'GitHub validation failed',
+    EVALGL: 'GitLab validation failed',
+    EVAL01: 'Multiple validation errors occurred',
     // Platform Errors (GHUB/GLAB)
     EGHUB: 'GitHub API error',
     EGLAB: 'GitLab API error',
@@ -58526,7 +58572,7 @@ exports.ErrorCodes = {
 
 /***/ }),
 
-/***/ 6629:
+/***/ 9600:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
