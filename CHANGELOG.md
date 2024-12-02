@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.0.8](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.7...v1.0.8) (2024-12-02)
+
+
+
+## [1.0.8](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.7...v1.0.8) (2024-12-02)
+
+### Bug Fixes
+
+* remove GitLab URL utility functions and enhance GitLabClient initialization ([8178b6f](https://github.com/OpenSaucedHub/advanced-git-sync/commit/8178b6f9a80c002a402f0824db004fcd07a6dc71))
+
 # [v1.0.7](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.6...v1.0.7) (2024-12-02)
 
 ## [1.0.7](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.6...v1.0.7) (2024-12-02)
