@@ -2,16 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.0.7](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.6...v1.0.7) (2024-12-02)
-
-
 
 ## [1.0.7](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.6...v1.0.7) (2024-12-02)
 
 ### Bug Fixes
 
-* add GitLab URL utility functions and refactor error handling ([675246b](https://github.com/OpenSaucedHub/advanced-git-sync/commit/675246bc2073166de42a14abcc554603192f0b1d))
+- add GitLab URL utility functions and refactor error handling
+  ([675246b](https://github.com/OpenSaucedHub/advanced-git-sync/commit/675246bc2073166de42a14abcc554603192f0b1d))
 
 # [v1.0.6](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.5...v1.0.6) (2024-12-02)
 

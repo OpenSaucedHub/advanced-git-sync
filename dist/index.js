@@ -55920,27 +55920,65 @@ exports.BaseClient = BaseClient;
 /***/ }),
 
 /***/ 5188:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ClientManager = void 0;
 const GitHub_1 = __nccwpck_require__(4821);
 const GitLab_1 = __nccwpck_require__(741);
+const core = __importStar(__nccwpck_require__(7484));
 const repoUtils_1 = __nccwpck_require__(9600);
 class ClientManager {
     static githubClient;
     static gitlabClient;
     static getGitHubClient(config) {
         if (!this.githubClient) {
+            core.startGroup('🐱 GitHub Client Initialization');
             this.githubClient = new GitHub_1.GitHubClient(config, (0, repoUtils_1.getGitHubRepo)(config));
+            core.info(`\x1b[32m✓ GitHub Client Initialized: ${this.githubClient.repo.owner}/${this.githubClient.repo.repo}\x1b[0m`);
         }
         return this.githubClient;
     }
     static getGitLabClient(config) {
         if (!this.gitlabClient) {
+            core.startGroup('🦊 GitLab Client Initialization');
             this.gitlabClient = new GitLab_1.GitLabClient(config, (0, repoUtils_1.getGitLabRepo)(config));
+            core.info(`\x1b[32m✓ GitLab Client Initialized: ${this.gitlabClient.repo.owner}/${this.gitlabClient.repo.repo}\x1b[0m`);
         }
         return this.gitlabClient;
     }
@@ -56011,8 +56049,6 @@ class GitHubClient extends baseClient_1.BaseClient {
         this.issue = new helpers_1.issueHelper(this.octokit, this.repo, this.config);
         this.release = new helpers_1.releaseHelper(this.octokit, this.repo, this.config);
         this.tags = new helpers_1.tagsHelper(this.octokit, this.repo, this.config);
-        core.startGroup('🐱 GitHub Client Initialization');
-        core.info(`\x1b[32m✓ GitHub Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`);
     }
     getRepoInfo() {
         return {
@@ -56958,7 +56994,6 @@ const rest_1 = __nccwpck_require__(4630);
 const helpers_1 = __nccwpck_require__(3682);
 const baseClient_1 = __nccwpck_require__(574);
 const errorCodes_1 = __nccwpck_require__(9481);
-const urlUtils_1 = __nccwpck_require__(7794);
 class GitLabClient extends baseClient_1.BaseClient {
     gitlab;
     branches;
@@ -56966,85 +57001,82 @@ class GitLabClient extends baseClient_1.BaseClient {
     pullRequest;
     release;
     tags;
+    projectId = null;
     constructor(config, repo) {
         super(config, repo || { owner: '', repo: '' });
-        const baseUrl = (0, urlUtils_1.getApiBaseUrl)(config.gitlab.url);
         this.gitlab = new rest_1.Gitlab({
             token: config.gitlab.token,
-            host: baseUrl
+            host: config.gitlab.url || 'https://gitlab.com'
         });
+        // Initialize helpers (implementation details omitted for brevity)
         this.branches = new helpers_1.BranchHelper(this.gitlab, this.repo, this.config);
         this.issues = new helpers_1.IssueHelper(this.gitlab, this.repo, this.config);
         this.pullRequest = new helpers_1.PullRequestHelper(this.gitlab, this.repo, this.config);
         this.release = new helpers_1.ReleaseHelper(this.gitlab, this.repo, this.config);
         this.tags = new helpers_1.TagHelper(this.gitlab, this.repo, this.config);
-        core.startGroup('🦊 GitLab Client Initialization');
-        core.info(`\x1b[32m✓ GitLab Client Initialized: ${(0, urlUtils_1.getProjectPath)(this.repo)}\x1b[0m`);
-        core.endGroup();
     }
-    getRepoInfo() {
-        const baseUrl = this.config.gitlab.url || 'https://gitlab.com';
-        return {
-            ...this.repo,
-            url: `${baseUrl}/${(0, urlUtils_1.getProjectPath)(this.repo)}`
-        };
+    /**
+     * Get the unique project ID from GitLab
+     * @returns Promise<number> The unique project ID
+     */
+    async getProjectId() {
+        if (this.projectId)
+            return this.projectId;
+        try {
+            // Use the full project path (namespace/project)
+            const project = await this.gitlab.Projects.show(`${this.repo.owner}/${this.repo.repo}`);
+            this.projectId = project.id;
+            core.info(`\x1b[32m✓ Project ID retrieved: ${this.projectId}\x1b[0m`);
+            return this.projectId;
+        }
+        catch (error) {
+            core.error('Failed to retrieve GitLab project ID');
+            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: Unable to fetch project details`);
+        }
     }
+    /**
+     * Validate access and permissions for the GitLab project
+     */
     async validateAccess() {
         try {
-            const projectId = (0, urlUtils_1.getProjectId)(this.repo);
-            core.debug(`Validating GitLab access for project: ${projectId}`);
-            // First verify the token has access to the API
-            const currentUser = await this.gitlab.Users.showCurrentUser();
-            core.debug(`GitLab token authenticated as user: ${currentUser.username}`);
+            // First, get the project ID
+            const projectId = await this.getProjectId();
+            core.info(`\x1b[32m✓ validating access using Project ID: ${projectId}\x1b[0m`);
+            // Define permission checks specific to GitLab
             const permissionChecks = [
                 {
                     feature: 'issues',
-                    check: async () => {
-                        const response = await this.gitlab.Issues.all({
-                            projectId,
-                            perPage: 1
-                        });
-                        core.debug(`Issues API check response: ${!!response}`);
-                        return response;
-                    },
+                    check: () => this.gitlab.Issues.all({ projectId }),
                     warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
                 },
                 {
-                    feature: 'pullRequests',
-                    check: async () => {
-                        const response = await this.gitlab.MergeRequests.all({
-                            projectId,
-                            perPage: 1
-                        });
-                        core.debug(`Merge Requests API check response: ${!!response}`);
-                        return response;
-                    },
+                    feature: 'mergeRequests', // GitLab equivalent of pull requests
+                    check: () => this.gitlab.MergeRequests.all({ projectId }),
                     warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Merge requests read/write permissions missing`
                 },
                 {
                     feature: 'releases',
-                    check: async () => {
-                        const response = await this.gitlab.ProjectReleases.all(projectId);
-                        core.debug(`Releases API check response: ${!!response}`);
-                        return response;
-                    },
+                    check: () => this.gitlab.ProjectReleases.all(projectId),
                     warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
                 }
             ];
-            // Verify repository access first
-            const project = await this.gitlab.Projects.show(projectId);
-            if (!project) {
-                throw new Error(`Repository ${(0, urlUtils_1.getProjectPath)(this.repo)} not found or not accessible`);
-            }
-            core.info(`\x1b[32m✓ Repository access verified\x1b[0m`);
-            // Validate permissions using the base client method
+            // Validate repository access and permissions
             await this.validatePermissions('gitlab', this.config.gitlab.sync, permissionChecks);
+            core.info(`\x1b[32m✓ GitLab Project Access Verified: ${this.repo.owner}/${this.repo.repo}; Project ID: ${projectId}\x1b[0m`);
         }
         catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            core.debug(`GitLab validation error: ${errorMessage}`);
-            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: GitLab API error: ${errorMessage}`);
+            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: ${error instanceof Error ? error.message : String(error)}`);
         }
+    }
+    /**
+     * Get repository information
+     * @returns Repository details including URL
+     */
+    getRepoInfo() {
+        return {
+            ...this.repo,
+            url: `${this.config.gitlab.url || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
+        };
     }
     // Delegate to branch helper
     async syncBranches() {
@@ -57754,29 +57786,6 @@ class TagHelper {
     }
 }
 exports.TagHelper = TagHelper;
-
-
-/***/ }),
-
-/***/ 7794:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getProjectPath = getProjectPath;
-exports.getProjectId = getProjectId;
-exports.getApiBaseUrl = getApiBaseUrl;
-function getProjectPath(repo) {
-    return `${repo.owner}/${repo.repo}`;
-}
-function getProjectId(repo) {
-    return encodeURIComponent(getProjectPath(repo));
-}
-function getApiBaseUrl(host) {
-    const baseUrl = host?.replace(/\/$/, '') || 'https://gitlab.com';
-    return `${baseUrl}/api/v4`;
-}
 
 
 /***/ }),

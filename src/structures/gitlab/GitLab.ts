@@ -10,7 +10,6 @@ import {
 } from './helpers'
 import { BaseClient } from '../baseClient'
 import { ErrorCodes } from '@/src/utils/errorCodes'
-import { getProjectPath, getProjectId, getApiBaseUrl } from './helpers/urlUtils'
 
 export class GitLabClient extends BaseClient {
   private gitlab
@@ -20,15 +19,16 @@ export class GitLabClient extends BaseClient {
   public release: ReleaseHelper
   public tags: TagHelper
 
+  private projectId: number | null = null
+
   constructor(config: Config, repo?: Repository) {
     super(config, repo || { owner: '', repo: '' })
-
-    const baseUrl = getApiBaseUrl(config.gitlab.url)
     this.gitlab = new Gitlab({
       token: config.gitlab.token,
-      host: baseUrl
+      host: config.gitlab.url || 'https://gitlab.com'
     })
 
+    // Initialize helpers (implementation details omitted for brevity)
     this.branches = new BranchHelper(this.gitlab, this.repo, this.config)
     this.issues = new IssueHelper(this.gitlab, this.repo, this.config)
     this.pullRequest = new PullRequestHelper(
@@ -38,86 +38,85 @@ export class GitLabClient extends BaseClient {
     )
     this.release = new ReleaseHelper(this.gitlab, this.repo, this.config)
     this.tags = new TagHelper(this.gitlab, this.repo, this.config)
-    core.startGroup('🦊 GitLab Client Initialization')
-    core.info(
-      `\x1b[32m✓ GitLab Client Initialized: ${getProjectPath(this.repo)}\x1b[0m`
-    )
-    core.endGroup()
   }
 
-  getRepoInfo() {
-    const baseUrl = this.config.gitlab.url || 'https://gitlab.com'
-    return {
-      ...this.repo,
-      url: `${baseUrl}/${getProjectPath(this.repo)}`
+  /**
+   * Get the unique project ID from GitLab
+   * @returns Promise<number> The unique project ID
+   */
+  private async getProjectId(): Promise<number> {
+    if (this.projectId) return this.projectId
+    try {
+      // Use the full project path (namespace/project)
+      const project = await this.gitlab.Projects.show(
+        `${this.repo.owner}/${this.repo.repo}`
+      )
+      this.projectId = project.id
+
+      core.info(`\x1b[32m✓ Project ID retrieved: ${this.projectId}\x1b[0m`)
+
+      return this.projectId
+    } catch (error) {
+      core.error('Failed to retrieve GitLab project ID')
+      throw new Error(`${ErrorCodes.EGLAB}: Unable to fetch project details`)
     }
   }
 
+  /**
+   * Validate access and permissions for the GitLab project
+   */
   async validateAccess(): Promise<void> {
     try {
-      const projectId = getProjectId(this.repo)
-      core.debug(`Validating GitLab access for project: ${projectId}`)
+      // First, get the project ID
+      const projectId = await this.getProjectId()
+      core.info(
+        `\x1b[32m✓ validating access using Project ID: ${projectId}\x1b[0m`
+      )
 
-      // First verify the token has access to the API
-      const currentUser = await this.gitlab.Users.showCurrentUser()
-      core.debug(`GitLab token authenticated as user: ${currentUser.username}`)
-
+      // Define permission checks specific to GitLab
       const permissionChecks: PermissionCheck[] = [
         {
           feature: 'issues',
-          check: async () => {
-            const response = await this.gitlab.Issues.all({
-              projectId,
-              perPage: 1
-            })
-            core.debug(`Issues API check response: ${!!response}`)
-            return response
-          },
+          check: () => this.gitlab.Issues.all({ projectId }),
           warningMessage: `${ErrorCodes.EPERM2}: Issues read/write permissions missing`
         },
         {
-          feature: 'pullRequests',
-          check: async () => {
-            const response = await this.gitlab.MergeRequests.all({
-              projectId,
-              perPage: 1
-            })
-            core.debug(`Merge Requests API check response: ${!!response}`)
-            return response
-          },
+          feature: 'mergeRequests', // GitLab equivalent of pull requests
+          check: () => this.gitlab.MergeRequests.all({ projectId }),
           warningMessage: `${ErrorCodes.EPERM3}: Merge requests read/write permissions missing`
         },
         {
           feature: 'releases',
-          check: async () => {
-            const response = await this.gitlab.ProjectReleases.all(projectId)
-            core.debug(`Releases API check response: ${!!response}`)
-            return response
-          },
+          check: () => this.gitlab.ProjectReleases.all(projectId),
           warningMessage: `${ErrorCodes.EPERM4}: Releases read/write permissions missing`
         }
       ]
 
-      // Verify repository access first
-      const project = await this.gitlab.Projects.show(projectId)
-      if (!project) {
-        throw new Error(
-          `Repository ${getProjectPath(this.repo)} not found or not accessible`
-        )
-      }
-      core.info(`\x1b[32m✓ Repository access verified\x1b[0m`)
-
-      // Validate permissions using the base client method
+      // Validate repository access and permissions
       await this.validatePermissions(
         'gitlab',
         this.config.gitlab.sync,
         permissionChecks
       )
+
+      core.info(
+        `\x1b[32m✓ GitLab Project Access Verified: ${this.repo.owner}/${this.repo.repo}; Project ID: ${projectId}\x1b[0m`
+      )
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error)
-      core.debug(`GitLab validation error: ${errorMessage}`)
-      throw new Error(`${ErrorCodes.EGLAB}: GitLab API error: ${errorMessage}`)
+      throw new Error(
+        `${ErrorCodes.EGLAB}: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  /**
+   * Get repository information
+   * @returns Repository details including URL
+   */
+  getRepoInfo() {
+    return {
+      ...this.repo,
+      url: `${this.config.gitlab.url || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
     }
   }
 

@@ -8,13 +8,26 @@ export declare class GitLabClient extends BaseClient {
     pullRequest: PullRequestHelper;
     release: ReleaseHelper;
     tags: TagHelper;
+    private projectId;
     constructor(config: Config, repo?: Repository);
+    /**
+     * Get the unique project ID from GitLab
+     * @returns Promise<number> The unique project ID
+     */
+    private getProjectId;
+    /**
+     * Validate access and permissions for the GitLab project
+     */
+    validateAccess(): Promise<void>;
+    /**
+     * Get repository information
+     * @returns Repository details including URL
+     */
     getRepoInfo(): {
         url: string;
         owner: string;
         repo: string;
     };
-    validateAccess(): Promise<void>;
     syncBranches(): Promise<import("@/src/types").Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;
     updateBranch(name: string, commitSha: string): Promise<void>;
