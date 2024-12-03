@@ -1,4 +1,3 @@
-// src/structures/gitlab/GitLab.ts
 import * as core from '@actions/core'
 import { Gitlab } from '@gitbeaker/rest'
 import { Repository, Config, PermissionCheck } from '@/src/types'
@@ -11,6 +10,7 @@ import {
 } from './helpers'
 import { BaseClient } from '../baseClient'
 import { ErrorCodes } from '@/src/utils/errorCodes'
+import { PermissionValidator } from '@/src/handlers/validator'
 
 export class GitLabClient extends BaseClient {
   private gitlab
@@ -31,12 +31,14 @@ export class GitLabClient extends BaseClient {
 
     // Simplify host handling
     const host = this.formatHostUrl(config.gitlab.url || 'gitlab.com')
-    core.info(`🦊 Initializing GitLab client for host: ${host}`)
+    core.info(`Initializing GitLab client for host: ${host}`)
 
     this.gitlab = new Gitlab({
       token: config.gitlab.token,
       host
     })
+
+    core.info(`\x1b[32m✓ GitLab client initialized successfully\x1b[0m`)
     // Initialize helpers
     this.branches = new BranchHelper(this.gitlab, this.repo, this.config)
     this.issues = new IssueHelper(this.gitlab, this.repo, this.config)
@@ -62,9 +64,6 @@ export class GitLabClient extends BaseClient {
     return host
   }
 
-  /**
-   * Get the unique project ID from GitLab
-   */
   private async getProjectId(): Promise<number> {
     if (this.projectId) {
       core.debug(`Using cached project ID: ${this.projectId}`)
@@ -79,6 +78,7 @@ export class GitLabClient extends BaseClient {
       }
 
       const path = `${this.repo.owner}/${this.repo.repo}`
+      core.info(`Fetching project ID for: ${path}`)
       const project = await this.gitlab.Projects.show(path)
 
       if (!project?.id) {
@@ -97,12 +97,9 @@ export class GitLabClient extends BaseClient {
     }
   }
 
-  /**
-   * Validate access and permissions for the GitLab project
-   */
   async validateAccess(): Promise<void> {
     try {
-      core.startGroup('GitLab Access Validation')
+      core.info('GitLab Access Validation')
 
       // First, get the project ID
       const projectId = await this.getProjectId()
@@ -138,11 +135,11 @@ export class GitLabClient extends BaseClient {
         }
       ]
 
-      // Validate repository access and permissions
-      await this.validatePermissions(
+      await PermissionValidator.validatePlatformPermissions(
         'gitlab',
+        permissionChecks,
         this.config.gitlab.sync,
-        permissionChecks
+        `${this.repo.owner}/${this.repo.repo}`
       )
 
       core.info(

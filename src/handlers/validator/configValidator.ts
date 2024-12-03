@@ -1,9 +1,9 @@
 import { Config } from '@/src/types'
 import * as core from '@actions/core'
 import { TokenManager } from './tokenManager'
-import { validateTokenPermissions } from './permValidator'
 import { logWarning, ValidationError } from './errors'
 import { getGitHubRepo, getGitLabRepo } from '@/src/utils/repoUtils'
+import { PermissionValidator } from './permValidator'
 
 /**
  * Validates and enhances the configuration with tokens
@@ -109,7 +109,7 @@ export async function validateConfig(config: Config): Promise<Config> {
     // Validate token permissions if tokens are present
     try {
       if (updatedConfig.github.token || updatedConfig.gitlab.token) {
-        await validateTokenPermissions(updatedConfig)
+        await PermissionValidator.validatePermissions(updatedConfig)
       }
     } catch (permError) {
       throw new ValidationError(

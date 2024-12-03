@@ -1,4 +1,3 @@
-// src/structures/github/GitHub.ts
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 import {
@@ -21,6 +20,7 @@ import {
   tagsHelper
 } from './helpers'
 import { ErrorCodes } from '@/src/utils/errorCodes'
+import { PermissionValidator } from '@/src/handlers/validator'
 
 export class GitHubClient extends BaseClient {
   private octokit
@@ -73,13 +73,15 @@ export class GitHubClient extends BaseClient {
 
       // Verify repository access first
       await this.octokit.rest.repos.get({ ...this.repo })
-      core.info(`\x1b[32m✓ Repository access verified\x1b[0m`)
 
-      await this.validatePermissions(
+      await PermissionValidator.validatePlatformPermissions(
         'github',
+        permissionChecks,
         this.config.github.sync,
-        permissionChecks
+        `${this.repo.owner}/${this.repo.repo}`
       )
+
+      core.info('\x1b[32m✓ GitHub Repository Access Verified\x1b[0m')
     } catch (error) {
       throw new Error(
         `${ErrorCodes.EGHUB}: ${error instanceof Error ? error.message : String(error)}`

@@ -8,6 +8,7 @@ import { getActionInput, logConfigDetails } from './inputs'
 import { processConfig } from './reason'
 import { validateConfig } from './validator'
 import { ErrorCodes } from '../utils/errorCodes'
+import { mergeWithDefaults } from '../utils/configMerger'
 
 export async function loadConfig(): Promise<Config> {
   // Log the start of config loading with a colorful group
@@ -17,6 +18,7 @@ export async function loadConfig(): Promise<Config> {
   try {
     const CONFIG_PATH = getActionInput('CONFIG_PATH', false)
     const configPath = CONFIG_PATH || '.github/sync-config.yml'
+    const defaultConfig = getDefaultConfig()
 
     // Log configuration path
     if (CONFIG_PATH) {
@@ -30,10 +32,10 @@ export async function loadConfig(): Promise<Config> {
       core.info(
         `\x1b[33m⚠️ ${ErrorCodes.EFS01}: Using default configuration.\x1b[0m`
       )
-      const defaultConfig = await validateConfig(getDefaultConfig())
-      logConfigDetails(defaultConfig)
+      const validatedConfig = await validateConfig(defaultConfig)
+      logConfigDetails(validatedConfig)
       core.endGroup()
-      return defaultConfig
+      return validatedConfig
     }
 
     const configContent = fs.readFileSync(configPath, 'utf8')
@@ -45,6 +47,7 @@ export async function loadConfig(): Promise<Config> {
         `\x1b[33m⚠️ ${ErrorCodes.ECFG02}: Empty configuration file.\x1b[0m`
       )
     }
+
     let parsedConfig: Record<string, unknown>
 
     try {
@@ -69,7 +72,6 @@ export async function loadConfig(): Promise<Config> {
     // If parsed config is null or empty
     if (!parsedConfig || Object.keys(parsedConfig).length === 0) {
       core.endGroup()
-
       core.setFailed('\x1b[33m⚠️ Empty or invalid configuration.\x1b[0m')
     }
 
@@ -77,8 +79,11 @@ export async function loadConfig(): Promise<Config> {
     const reasonedConfig = processConfig(parsedConfig)
 
     try {
-      // Validate the parsed config
-      let config = ConfigSchema.parse(reasonedConfig)
+      // Merge user config with defaults
+      const mergedConfig = mergeWithDefaults(reasonedConfig, defaultConfig)
+
+      // Validate the merged config
+      let config = ConfigSchema.parse(mergedConfig)
 
       // Validate and augment tokens
       const validatedConfig = await validateConfig(config)

@@ -45,6 +45,7 @@ runs:
             "@actions/github": "^6.0.0",
             "@gitbeaker/rest": "^41.3.0",
             "@octokit/rest": "^21.0.2",
+            "deepmerge": "^4.3.1",
             "js-yaml": "^4.1.0",
             "zod": "^3.23.8"
           }
@@ -56,25 +57,6 @@ runs:
         # Install only action-specific dependencies
         bun install
 
-    - name: Restore Original Project Dependencies
-      shell: bash
-      run: |
-        # Restore original package.json if backup exists
-        if [ -f package.json.original-backup ]; then
-          mv package.json.original-backup package.json
-        else
-          # If no original exists, remove action's package.json
-          rm package.json
-        fi
-
-        # Restore original bun.lockb if backup exists
-        if [ -f bun.lockb.original-backup ]; then
-          mv bun.lockb.original-backup bun.lockb
-        else
-          # If no original exists, remove action's bun.lockb
-          rm -f bun.lockb
-        fi
-
     - name: Run Advanced Git Sync
       shell: bash
       env:
@@ -82,6 +64,13 @@ runs:
         INPUT_GITLAB_TOKEN: ${{ inputs.GITLAB_TOKEN }}
         INPUT_CONFIG_PATH: ${{ inputs.CONFIG_PATH }}
       run: bun run ${{ github.action_path }}/dist/index.js
+
+    - name: Run Cleanup
+      if: always()
+      shell: bash
+      run: |
+        # Run cleanup script even if previous steps fail
+        bun run ${{ github.action_path }}/scripts/postjob.js
 
 branding:
   icon: "git-branch"

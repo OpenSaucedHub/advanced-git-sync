@@ -15365,6 +15365,147 @@ if ($defineProperty) {
 
 /***/ }),
 
+/***/ 2569:
+/***/ ((module) => {
+
+"use strict";
+
+
+var isMergeableObject = function isMergeableObject(value) {
+	return isNonNullObject(value)
+		&& !isSpecial(value)
+};
+
+function isNonNullObject(value) {
+	return !!value && typeof value === 'object'
+}
+
+function isSpecial(value) {
+	var stringValue = Object.prototype.toString.call(value);
+
+	return stringValue === '[object RegExp]'
+		|| stringValue === '[object Date]'
+		|| isReactElement(value)
+}
+
+// see https://github.com/facebook/react/blob/b5ac963fb791d1298e7f396236383bc955f916c1/src/isomorphic/classic/element/ReactElement.js#L21-L25
+var canUseSymbol = typeof Symbol === 'function' && Symbol.for;
+var REACT_ELEMENT_TYPE = canUseSymbol ? Symbol.for('react.element') : 0xeac7;
+
+function isReactElement(value) {
+	return value.$$typeof === REACT_ELEMENT_TYPE
+}
+
+function emptyTarget(val) {
+	return Array.isArray(val) ? [] : {}
+}
+
+function cloneUnlessOtherwiseSpecified(value, options) {
+	return (options.clone !== false && options.isMergeableObject(value))
+		? deepmerge(emptyTarget(value), value, options)
+		: value
+}
+
+function defaultArrayMerge(target, source, options) {
+	return target.concat(source).map(function(element) {
+		return cloneUnlessOtherwiseSpecified(element, options)
+	})
+}
+
+function getMergeFunction(key, options) {
+	if (!options.customMerge) {
+		return deepmerge
+	}
+	var customMerge = options.customMerge(key);
+	return typeof customMerge === 'function' ? customMerge : deepmerge
+}
+
+function getEnumerableOwnPropertySymbols(target) {
+	return Object.getOwnPropertySymbols
+		? Object.getOwnPropertySymbols(target).filter(function(symbol) {
+			return Object.propertyIsEnumerable.call(target, symbol)
+		})
+		: []
+}
+
+function getKeys(target) {
+	return Object.keys(target).concat(getEnumerableOwnPropertySymbols(target))
+}
+
+function propertyIsOnObject(object, property) {
+	try {
+		return property in object
+	} catch(_) {
+		return false
+	}
+}
+
+// Protects from prototype poisoning and unexpected merging up the prototype chain.
+function propertyIsUnsafe(target, key) {
+	return propertyIsOnObject(target, key) // Properties are safe to merge if they don't exist in the target yet,
+		&& !(Object.hasOwnProperty.call(target, key) // unsafe if they exist up the prototype chain,
+			&& Object.propertyIsEnumerable.call(target, key)) // and also unsafe if they're nonenumerable.
+}
+
+function mergeObject(target, source, options) {
+	var destination = {};
+	if (options.isMergeableObject(target)) {
+		getKeys(target).forEach(function(key) {
+			destination[key] = cloneUnlessOtherwiseSpecified(target[key], options);
+		});
+	}
+	getKeys(source).forEach(function(key) {
+		if (propertyIsUnsafe(target, key)) {
+			return
+		}
+
+		if (propertyIsOnObject(target, key) && options.isMergeableObject(source[key])) {
+			destination[key] = getMergeFunction(key, options)(target[key], source[key], options);
+		} else {
+			destination[key] = cloneUnlessOtherwiseSpecified(source[key], options);
+		}
+	});
+	return destination
+}
+
+function deepmerge(target, source, options) {
+	options = options || {};
+	options.arrayMerge = options.arrayMerge || defaultArrayMerge;
+	options.isMergeableObject = options.isMergeableObject || isMergeableObject;
+	// cloneUnlessOtherwiseSpecified is added to `options` so that custom arrayMerge()
+	// implementations can use it. The caller may not replace it.
+	options.cloneUnlessOtherwiseSpecified = cloneUnlessOtherwiseSpecified;
+
+	var sourceIsArray = Array.isArray(source);
+	var targetIsArray = Array.isArray(target);
+	var sourceAndTargetTypesMatch = sourceIsArray === targetIsArray;
+
+	if (!sourceAndTargetTypesMatch) {
+		return cloneUnlessOtherwiseSpecified(source, options)
+	} else if (sourceIsArray) {
+		return options.arrayMerge(target, source, options)
+	} else {
+		return mergeObject(target, source, options)
+	}
+}
+
+deepmerge.all = function deepmergeAll(array, options) {
+	if (!Array.isArray(array)) {
+		throw new Error('first argument should be an array')
+	}
+
+	return array.reduce(function(prev, next) {
+		return deepmerge(prev, next, options)
+	}, {})
+};
+
+var deepmerge_1 = deepmerge;
+
+module.exports = deepmerge_1;
+
+
+/***/ }),
+
 /***/ 1316:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -16045,6 +16186,7 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 
 var GetIntrinsic = __nccwpck_require__(470);
 
+/** @type {import('.')} */
 var $gOPD = GetIntrinsic('%Object.getOwnPropertyDescriptor%', true);
 
 if ($gOPD) {
@@ -16102,13 +16244,13 @@ var test = {
 	foo: {}
 };
 
-var $Object = Object;
+// @ts-expect-error: TS errors on an inherited property for some reason
+var result = { __proto__: test }.foo === test.foo
+	&& !(test instanceof Object);
 
 /** @type {import('.')} */
 module.exports = function hasProto() {
-	// @ts-expect-error: TS errors on an inherited property for some reason
-	return { __proto__: test }.foo === test.foo
-		&& !(test instanceof $Object);
+	return result;
 };
 
 
@@ -16123,6 +16265,7 @@ module.exports = function hasProto() {
 var origSymbol = typeof Symbol !== 'undefined' && Symbol;
 var hasSymbolSham = __nccwpck_require__(1114);
 
+/** @type {import('.')} */
 module.exports = function hasNativeSymbols() {
 	if (typeof origSymbol !== 'function') { return false; }
 	if (typeof Symbol !== 'function') { return false; }
@@ -16141,11 +16284,13 @@ module.exports = function hasNativeSymbols() {
 "use strict";
 
 
+/** @type {import('./shams')} */
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
 module.exports = function hasSymbols() {
 	if (typeof Symbol !== 'function' || typeof Object.getOwnPropertySymbols !== 'function') { return false; }
 	if (typeof Symbol.iterator === 'symbol') { return true; }
 
+	/** @type {{ [k in symbol]?: unknown }} */
 	var obj = {};
 	var sym = Symbol('test');
 	var symObj = Object(sym);
@@ -16164,7 +16309,7 @@ module.exports = function hasSymbols() {
 
 	var symVal = 42;
 	obj[sym] = symVal;
-	for (sym in obj) { return false; } // eslint-disable-line no-restricted-syntax, no-unreachable-loop
+	for (var _ in obj) { return false; } // eslint-disable-line no-restricted-syntax, no-unreachable-loop
 	if (typeof Object.keys === 'function' && Object.keys(obj).length !== 0) { return false; }
 
 	if (typeof Object.getOwnPropertyNames === 'function' && Object.getOwnPropertyNames(obj).length !== 0) { return false; }
@@ -16175,7 +16320,8 @@ module.exports = function hasSymbols() {
 	if (!Object.prototype.propertyIsEnumerable.call(obj, sym)) { return false; }
 
 	if (typeof Object.getOwnPropertyDescriptor === 'function') {
-		var descriptor = Object.getOwnPropertyDescriptor(obj, sym);
+		// eslint-disable-next-line no-extra-parens
+		var descriptor = /** @type {PropertyDescriptor} */ (Object.getOwnPropertyDescriptor(obj, sym));
 		if (descriptor.value !== symVal || descriptor.enumerable !== true) { return false; }
 	}
 
@@ -55058,6 +55204,7 @@ const inputs_1 = __nccwpck_require__(8864);
 const reason_1 = __nccwpck_require__(6721);
 const validator_1 = __nccwpck_require__(4460);
 const errorCodes_1 = __nccwpck_require__(9481);
+const configMerger_1 = __nccwpck_require__(4325);
 async function loadConfig() {
     // Log the start of config loading with a colorful group
     core.startGroup('🔍 Configuration Loading');
@@ -55065,6 +55212,7 @@ async function loadConfig() {
     try {
         const CONFIG_PATH = (0, inputs_1.getActionInput)('CONFIG_PATH', false);
         const configPath = CONFIG_PATH || '.github/sync-config.yml';
+        const defaultConfig = (0, defaults_1.getDefaultConfig)();
         // Log configuration path
         if (CONFIG_PATH) {
             core.info(`\x1b[36m⚠️ Using custom configuration file: ${CONFIG_PATH}\x1b[0m`);
@@ -55072,10 +55220,10 @@ async function loadConfig() {
         // If config file doesn't exist, use default configuration
         if (!fs.existsSync(configPath)) {
             core.info(`\x1b[33m⚠️ ${errorCodes_1.ErrorCodes.EFS01}: Using default configuration.\x1b[0m`);
-            const defaultConfig = await (0, validator_1.validateConfig)((0, defaults_1.getDefaultConfig)());
-            (0, inputs_1.logConfigDetails)(defaultConfig);
+            const validatedConfig = await (0, validator_1.validateConfig)(defaultConfig);
+            (0, inputs_1.logConfigDetails)(validatedConfig);
             core.endGroup();
-            return defaultConfig;
+            return validatedConfig;
         }
         const configContent = fs.readFileSync(configPath, 'utf8');
         // If config file is empty or just whitespace
@@ -55109,8 +55257,10 @@ async function loadConfig() {
         // Process the config, converting boolean-like fields
         const reasonedConfig = (0, reason_1.processConfig)(parsedConfig);
         try {
-            // Validate the parsed config
-            let config = types_1.ConfigSchema.parse(reasonedConfig);
+            // Merge user config with defaults
+            const mergedConfig = (0, configMerger_1.mergeWithDefaults)(reasonedConfig, defaultConfig);
+            // Validate the merged config
+            let config = types_1.ConfigSchema.parse(mergedConfig);
             // Validate and augment tokens
             const validatedConfig = await (0, validator_1.validateConfig)(config);
             // Log configuration details (with tokens hidden)
@@ -55312,9 +55462,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.validateConfig = validateConfig;
 const core = __importStar(__nccwpck_require__(7484));
 const tokenManager_1 = __nccwpck_require__(6514);
-const permValidator_1 = __nccwpck_require__(9132);
 const errors_1 = __nccwpck_require__(1253);
 const repoUtils_1 = __nccwpck_require__(9600);
+const permValidator_1 = __nccwpck_require__(9132);
 /**
  * Validates and enhances the configuration with tokens
  */
@@ -55376,7 +55526,7 @@ async function validateConfig(config) {
         // Validate token permissions if tokens are present
         try {
             if (updatedConfig.github.token || updatedConfig.gitlab.token) {
-                await (0, permValidator_1.validateTokenPermissions)(updatedConfig);
+                await permValidator_1.PermissionValidator.validatePermissions(updatedConfig);
             }
         }
         catch (permError) {
@@ -55566,40 +55716,56 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.validateTokenPermissions = validateTokenPermissions;
+exports.PermissionValidator = void 0;
 const errorCodes_1 = __nccwpck_require__(9481);
 const core = __importStar(__nccwpck_require__(7484));
-const clientManager_1 = __nccwpck_require__(5188);
-async function validateTokenPermissions(config) {
-    try {
-        if (config.github.enabled && config.github.token) {
-            const githubClient = clientManager_1.ClientManager.getGitHubClient(config);
-            try {
+const GitHub_js_1 = __nccwpck_require__(4821);
+const GitLab_js_1 = __nccwpck_require__(741);
+class PermissionValidator {
+    /**
+     * Validates permissions for a specific platform
+     */
+    static async validatePlatformPermissions(platform, checks, sync, repoInfo) {
+        core.info(`🔍 ${platform.toUpperCase()} Permissions Validation`);
+        core.info(`\x1b[36mValidating ${platform} permissions for: ${repoInfo}\x1b[0m`);
+        for (const check of checks) {
+            if (sync?.[check.feature]?.enabled) {
+                try {
+                    await check.check();
+                    core.info(`\x1b[32m✓ ${check.feature} permissions verified\x1b[0m`);
+                }
+                catch {
+                    const errorMessage = `${platform}: ${check.warningMessage}`;
+                    core.setFailed(`\x1b[31m✖ ${errorMessage}\x1b[0m`);
+                    throw new Error(errorMessage);
+                }
+            }
+        }
+        core.endGroup();
+    }
+    /**
+     * Validates permissions for both GitHub and GitLab
+     */
+    static async validatePermissions(config) {
+        try {
+            if (config.github.enabled && config.github.token) {
+                const githubClient = new GitHub_js_1.GitHubClient(config);
                 await githubClient.validateAccess();
             }
-            catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
-                throw new Error(`${errorCodes_1.ErrorCodes.EGHUB}: ${message}`);
-            }
-        }
-        if (config.gitlab.enabled && config.gitlab.token) {
-            const gitlabClient = clientManager_1.ClientManager.getGitLabClient(config);
-            try {
+            if (config.gitlab.enabled && config.gitlab.token) {
+                const gitlabClient = new GitLab_js_1.GitLabClient(config);
                 await gitlabClient.validateAccess();
             }
-            catch (error) {
-                const message = error instanceof Error ? error.message : String(error);
-                throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: ${message}`);
-            }
+            core.info('\x1b[32m✓ Permission validation completed successfully\x1b[0m');
         }
-        core.info('\x1b[32m✓ Permission validation completed successfully\x1b[0m');
-    }
-    catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        core.setFailed(message);
-        throw error;
+        catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            core.setFailed(message);
+            throw new Error(`${errorCodes_1.ErrorCodes.EPERM1}: ${message}`);
+        }
     }
 }
+exports.PermissionValidator = PermissionValidator;
 
 
 /***/ }),
@@ -55848,46 +56014,12 @@ run();
 /***/ }),
 
 /***/ 574:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.BaseClient = void 0;
-const core = __importStar(__nccwpck_require__(7484));
 class BaseClient {
     config;
     repo;
@@ -55898,24 +56030,6 @@ class BaseClient {
         if (!config.gitlab?.projectId && (!repo.owner || !repo.repo)) {
             throw new Error('Either projectId or repository information must be provided');
         }
-    }
-    async validatePermissions(platform, sync, checks) {
-        core.info(`🔍 ${platform.toUpperCase()} Permissions Validation`);
-        core.info(`\x1b[36mValidating ${platform} permissions for: ${this.repo.owner}/${this.repo.repo}\x1b[0m`);
-        for (const check of checks) {
-            if (sync?.[check.feature]?.enabled) {
-                try {
-                    await check.check();
-                    core.info(`\x1b[32m✓ ${check.feature} permissions verified\x1b[0m`);
-                }
-                catch {
-                    const errorMessage = `${platform}: ${check.warningMessage}`;
-                    core.setFailed(`\x1b[31m✖ ${errorMessage}\x1b[0m`);
-                    throw new Error(errorMessage);
-                }
-            }
-        }
-        core.endGroup();
     }
 }
 exports.BaseClient = BaseClient;
@@ -56039,12 +56153,12 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitHubClient = void 0;
-// src/structures/github/GitHub.ts
 const github = __importStar(__nccwpck_require__(3228));
 const core = __importStar(__nccwpck_require__(7484));
 const baseClient_1 = __nccwpck_require__(574);
 const helpers_1 = __nccwpck_require__(6170);
 const errorCodes_1 = __nccwpck_require__(9481);
+const validator_1 = __nccwpck_require__(4460);
 class GitHubClient extends baseClient_1.BaseClient {
     octokit;
     branches;
@@ -56088,8 +56202,8 @@ class GitHubClient extends baseClient_1.BaseClient {
             ];
             // Verify repository access first
             await this.octokit.rest.repos.get({ ...this.repo });
-            core.info(`\x1b[32m✓ Repository access verified\x1b[0m`);
-            await this.validatePermissions('github', this.config.github.sync, permissionChecks);
+            await validator_1.PermissionValidator.validatePlatformPermissions('github', permissionChecks, this.config.github.sync, `${this.repo.owner}/${this.repo.repo}`);
+            core.info('\x1b[32m✓ GitHub Repository Access Verified\x1b[0m');
         }
         catch (error) {
             throw new Error(`${errorCodes_1.ErrorCodes.EGHUB}: ${error instanceof Error ? error.message : String(error)}`);
@@ -57000,12 +57114,12 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitLabClient = void 0;
-// src/structures/gitlab/GitLab.ts
 const core = __importStar(__nccwpck_require__(7484));
 const rest_1 = __nccwpck_require__(4630);
 const helpers_1 = __nccwpck_require__(3682);
 const baseClient_1 = __nccwpck_require__(574);
 const errorCodes_1 = __nccwpck_require__(9481);
+const validator_1 = __nccwpck_require__(4460);
 class GitLabClient extends baseClient_1.BaseClient {
     gitlab;
     branches;
@@ -57021,11 +57135,12 @@ class GitLabClient extends baseClient_1.BaseClient {
         }
         // Simplify host handling
         const host = this.formatHostUrl(config.gitlab.url || 'gitlab.com');
-        core.info(`🦊 Initializing GitLab client for host: ${host}`);
+        core.info(`Initializing GitLab client for host: ${host}`);
         this.gitlab = new rest_1.Gitlab({
             token: config.gitlab.token,
             host
         });
+        core.info(`\x1b[32m✓ GitLab client initialized successfully\x1b[0m`);
         // Initialize helpers
         this.branches = new helpers_1.BranchHelper(this.gitlab, this.repo, this.config);
         this.issues = new helpers_1.IssueHelper(this.gitlab, this.repo, this.config);
@@ -57043,9 +57158,6 @@ class GitLabClient extends baseClient_1.BaseClient {
         }
         return host;
     }
-    /**
-     * Get the unique project ID from GitLab
-     */
     async getProjectId() {
         if (this.projectId) {
             core.debug(`Using cached project ID: ${this.projectId}`);
@@ -57058,6 +57170,7 @@ class GitLabClient extends baseClient_1.BaseClient {
                 return this.projectId;
             }
             const path = `${this.repo.owner}/${this.repo.repo}`;
+            core.info(`Fetching project ID for: ${path}`);
             const project = await this.gitlab.Projects.show(path);
             if (!project?.id) {
                 throw new Error('Project ID not found in response');
@@ -57070,12 +57183,9 @@ class GitLabClient extends baseClient_1.BaseClient {
             throw new Error(`Failed to fetch project ID for ${this.repo.owner}/${this.repo.repo}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
-    /**
-     * Validate access and permissions for the GitLab project
-     */
     async validateAccess() {
         try {
-            core.startGroup('GitLab Access Validation');
+            core.info('GitLab Access Validation');
             // First, get the project ID
             const projectId = await this.getProjectId();
             core.info(`\x1b[32m✓ Validating access using Project ID: ${projectId}\x1b[0m`);
@@ -57106,8 +57216,7 @@ class GitLabClient extends baseClient_1.BaseClient {
                     warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
                 }
             ];
-            // Validate repository access and permissions
-            await this.validatePermissions('gitlab', this.config.gitlab.sync, permissionChecks);
+            await validator_1.PermissionValidator.validatePlatformPermissions('gitlab', permissionChecks, this.config.gitlab.sync, `${this.repo.owner}/${this.repo.repo}`);
             core.info(`\x1b[32m✓ GitLab Project Access Verified: ${this.repo.owner}/${this.repo.repo}; Project ID: ${projectId}\x1b[0m`);
             core.endGroup();
         }
@@ -58536,6 +58645,36 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 __exportStar(__nccwpck_require__(8602), exports);
 __exportStar(__nccwpck_require__(7004), exports);
 __exportStar(__nccwpck_require__(2857), exports);
+
+
+/***/ }),
+
+/***/ 4325:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.mergeWithDefaults = mergeWithDefaults;
+const deepmerge_1 = __importDefault(__nccwpck_require__(2569));
+/**
+ * Merges user config with default config while preserving user inputs
+ * @param userConfig Partial user configuration
+ * @param defaultConfig Complete default configuration
+ * @returns Merged configuration
+ */
+function mergeWithDefaults(userConfig, defaultConfig) {
+    // Custom merge array function to handle arrays in config
+    const mergeArray = (target, source) => source;
+    return (0, deepmerge_1.default)(defaultConfig, userConfig, {
+        arrayMerge: mergeArray,
+        // Clone objects to avoid mutations
+        clone: true
+    });
+}
 
 
 /***/ }),

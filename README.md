@@ -155,7 +155,6 @@ github:
 > - Tags syncing is automatically enabled if releases syncing is enabled to avoid orphaning
 >   releases.
 > - labels can be either a string or an array of strings.
-> - If `projectId` is provided, `username` and `repo` are not required.
 
 ## Accepted Configuration
 

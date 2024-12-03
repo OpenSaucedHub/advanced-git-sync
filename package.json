@@ -37,6 +37,7 @@
     "@actions/github": "^6.0.0",
     "@gitbeaker/rest": "^41.3.0",
     "@octokit/rest": "^21.0.2",
+    "deepmerge": "^4.3.1",
     "js-yaml": "^4.1.0",
     "zod": "^3.23.8"
   },

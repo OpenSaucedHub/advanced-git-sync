@@ -1,6 +1,4 @@
-// src/structures/baseClient.ts
-import { Config, PermissionCheck, Repository, IClient } from '../types'
-import * as core from '@actions/core'
+import { Config, Repository, IClient } from '../types'
 
 export abstract class BaseClient implements IClient {
   public config: Config
@@ -16,32 +14,6 @@ export abstract class BaseClient implements IClient {
         'Either projectId or repository information must be provided'
       )
     }
-  }
-
-  protected async validatePermissions(
-    platform: 'github' | 'gitlab',
-    sync: any,
-    checks: PermissionCheck[]
-  ): Promise<void> {
-    core.info(`🔍 ${platform.toUpperCase()} Permissions Validation`)
-    core.info(
-      `\x1b[36mValidating ${platform} permissions for: ${this.repo.owner}/${this.repo.repo}\x1b[0m`
-    )
-
-    for (const check of checks) {
-      if (sync?.[check.feature as keyof typeof sync]?.enabled) {
-        try {
-          await check.check()
-          core.info(`\x1b[32m✓ ${check.feature} permissions verified\x1b[0m`)
-        } catch {
-          const errorMessage = `${platform}: ${check.warningMessage}`
-          core.setFailed(`\x1b[31m✖ ${errorMessage}\x1b[0m`)
-          throw new Error(errorMessage)
-        }
-      }
-    }
-
-    core.endGroup()
   }
 
   abstract validateAccess(): Promise<void>

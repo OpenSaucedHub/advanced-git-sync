@@ -11,13 +11,7 @@ export declare class GitLabClient extends BaseClient {
     private projectId;
     constructor(config: Config, repo?: Repository);
     private formatHostUrl;
-    /**
-     * Get the unique project ID from GitLab
-     */
     private getProjectId;
-    /**
-     * Validate access and permissions for the GitLab project
-     */
     validateAccess(): Promise<void>;
     /**
      * Get repository information
