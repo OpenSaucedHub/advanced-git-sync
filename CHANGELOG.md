@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.0.11](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.10...v1.0.11) (2024-12-03)
+
+
+
+## [1.0.11](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.10...v1.0.11) (2024-12-03)
+
+### Bug Fixes
+
+* simplify GitLabClient host URL handling and improve project ID retrieval logic ([0437006](https://github.com/OpenSaucedHub/advanced-git-sync/commit/04370065023261c5450ad8951b9962e3d4370047))
+
 # [v1.0.10](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.9...v1.0.10) (2024-12-03)
 
 ## [1.0.10](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.9...v1.0.10) (2024-12-03)
