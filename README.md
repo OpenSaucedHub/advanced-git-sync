@@ -96,8 +96,6 @@ github:
 
 ### GitLab Configuration (`gitlab`)
 
-### GitLab Configuration (`gitlab`)
-
 | Option      | Description                   | Required | Default           |
 | ----------- | ----------------------------- | -------- | ----------------- |
 | `enabled`   | Enable GitLab synchronization | No       | true              |

@@ -2,16 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.1.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.11...v1.1.0) (2024-12-03)
-
-
 
 ## [1.1.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.11...v1.1.0) (2024-12-03)
 
 ### Features
 
-* add deepmerge dependency and implement config merging functionality ([2e7a49a](https://github.com/OpenSaucedHub/advanced-git-sync/commit/2e7a49a2876601914673111987d4c1573d3c3ac6))
+- add deepmerge dependency and implement config merging functionality
+  ([2e7a49a](https://github.com/OpenSaucedHub/advanced-git-sync/commit/2e7a49a2876601914673111987d4c1573d3c3ac6))
 
 # [v1.0.11](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.10...v1.0.11) (2024-12-03)
 

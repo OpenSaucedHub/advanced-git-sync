@@ -65,12 +65,10 @@ runs:
         INPUT_CONFIG_PATH: ${{ inputs.CONFIG_PATH }}
       run: bun run ${{ github.action_path }}/dist/index.js
 
-    - name: Run Cleanup
+    - name: Post-Job Cleanup
       if: always()
       shell: bash
-      run: |
-        # Run cleanup script even if previous steps fail
-        bun run ${{ github.action_path }}/scripts/postjob.js
+      run: bun ${{ github.action_path }}/scripts/postjob.js
 
 branding:
   icon: "git-branch"
