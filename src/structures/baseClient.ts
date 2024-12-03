@@ -9,6 +9,13 @@ export abstract class BaseClient implements IClient {
   constructor(config: Config, repo: Repository) {
     this.config = config
     this.repo = repo
+
+    // Validate either projectId or repo information is present
+    if (!config.gitlab?.projectId && (!repo.owner || !repo.repo)) {
+      throw new Error(
+        'Either projectId or repository information must be provided'
+      )
+    }
   }
 
   protected async validatePermissions(

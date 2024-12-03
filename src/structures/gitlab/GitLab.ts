@@ -33,12 +33,11 @@ export class GitLabClient extends BaseClient {
 
     this.gitlab = new Gitlab({
       token: config.gitlab.token,
-      host
-      // rejectUnauthorized: false // Add this if dealing with self-signed certificates
+      host,
+      prefixUrl: `${host}/api/v4`, // Explicitly set base URL with version
+      rejectUnauthorized: false
     })
-    core.info(
-      `\x1b[32m✓ GitLab Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`
-    )
+
     // Initialize helpers
     this.branches = new BranchHelper(this.gitlab, this.repo, this.config)
     this.issues = new IssueHelper(this.gitlab, this.repo, this.config)
@@ -49,6 +48,7 @@ export class GitLabClient extends BaseClient {
     )
     this.release = new ReleaseHelper(this.gitlab, this.repo, this.config)
     this.tags = new TagHelper(this.gitlab, this.repo, this.config)
+    this.projectId = config.gitlab.projectId || null
   }
 
   /**
@@ -56,57 +56,49 @@ export class GitLabClient extends BaseClient {
    * @returns Promise<number> The unique project ID
    */
   private async getProjectId(): Promise<number> {
-    if (this.projectId) return this.projectId
+    // Return cached project ID if available
+    if (this.projectId) {
+      core.debug(`Using cached project ID: ${this.projectId}`)
+      return this.projectId
+    }
 
     const projectPath = `${this.repo.owner}/${this.repo.repo}`
     core.info(`📂 Attempting to fetch project ID for: ${projectPath}`)
 
     try {
-      // First try with URL encoded path
-      const encodedPath = encodeURIComponent(projectPath)
-      core.debug(`Encoded project path: ${encodedPath}`)
+      if (this.config.gitlab.projectId) {
+        // Use provided project ID
+        this.projectId = this.config.gitlab.projectId
+        core.info(
+          `\x1b[32m✓ Using configured project ID: ${this.projectId}\x1b[0m`
+        )
+      } else {
+        // Fetch project ID from GitLab API
+        const project = await this.gitlab.Projects.show(
+          projectPath.replace('/', '%2F')
+        )
 
-      const project = await this.gitlab.Projects.show(encodedPath)
+        if (!project?.id) {
+          throw new Error('Project ID not found in response')
+        }
 
-      if (!project?.id) {
-        throw new Error('Project ID not found in response')
+        this.projectId = project.id
+
+        // Store the project ID in config for reuse
+        if (this.config.gitlab) {
+          this.config.gitlab.projectId = this.projectId
+        }
+
+        core.info(`\x1b[32m✓ Project ID retrieved: ${this.projectId}\x1b[0m`)
       }
-
-      this.projectId = project.id
-      core.info(`\x1b[32m✓ Project ID retrieved: ${this.projectId}\x1b[0m`)
 
       return this.projectId
     } catch (error) {
-      // Enhanced error logging
       core.error('Failed to retrieve GitLab project ID')
       core.error(`Project path: ${projectPath}`)
       core.error(
         `Error details: ${error instanceof Error ? error.message : String(error)}`
       )
-
-      // Try alternative method using search
-      try {
-        core.info('Attempting alternative project lookup method...')
-        const projects = await this.gitlab.Projects.search(this.repo.repo)
-        const matchingProject = projects.find(
-          p =>
-            p.path_with_namespace === projectPath ||
-            p.path_with_namespace === projectPath.toLowerCase()
-        )
-
-        if (matchingProject?.id) {
-          this.projectId = matchingProject.id
-          core.info(
-            `\x1b[32m✓ Project ID retrieved using alternative method: ${this.projectId}\x1b[0m`
-          )
-          return this.projectId
-        }
-      } catch (searchError) {
-        core.error('Alternative lookup method also failed')
-        core.error(
-          `Search error: ${searchError instanceof Error ? searchError.message : String(searchError)}`
-        )
-      }
 
       throw new Error(`${ErrorCodes.EGLAB}: Unable to fetch project details. Please verify:
         1. The project path "${projectPath}" is correct

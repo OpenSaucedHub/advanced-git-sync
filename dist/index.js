@@ -55894,6 +55894,10 @@ class BaseClient {
     constructor(config, repo) {
         this.config = config;
         this.repo = repo;
+        // Validate either projectId or repo information is present
+        if (!config.gitlab?.projectId && (!repo.owner || !repo.repo)) {
+            throw new Error('Either projectId or repository information must be provided');
+        }
     }
     async validatePermissions(platform, sync, checks) {
         core.info(`🔍 ${platform.toUpperCase()} Permissions Validation`);
@@ -55977,7 +55981,15 @@ class ClientManager {
     static getGitLabClient(config) {
         if (!this.gitlabClient) {
             core.startGroup('🦊 GitLab Client Initialization');
+            // Log initialization mode
+            if (config.gitlab?.projectId) {
+                core.info(`Initializing GitLab client with project ID: ${config.gitlab.projectId}`);
+            }
+            else {
+                core.info(`Initializing GitLab client with repository: ${config.gitlab?.username || ''}/${config.gitlab?.repo || ''}`);
+            }
             this.gitlabClient = new GitLab_1.GitLabClient(config, (0, repoUtils_1.getGitLabRepo)(config));
+            core.endGroup();
         }
         return this.gitlabClient;
     }
@@ -57010,59 +57022,55 @@ class GitLabClient extends baseClient_1.BaseClient {
         core.info(`🦊 Initializing GitLab client for host: ${host}`);
         this.gitlab = new rest_1.Gitlab({
             token: config.gitlab.token,
-            host
-            // rejectUnauthorized: false // Add this if dealing with self-signed certificates
+            host,
+            prefixUrl: `${host}/api/v4`, // Explicitly set base URL with version
+            rejectUnauthorized: false
         });
-        core.info(`\x1b[32m✓ GitLab Client Initialized: ${this.repo.owner}/${this.repo.repo}\x1b[0m`);
         // Initialize helpers
         this.branches = new helpers_1.BranchHelper(this.gitlab, this.repo, this.config);
         this.issues = new helpers_1.IssueHelper(this.gitlab, this.repo, this.config);
         this.pullRequest = new helpers_1.PullRequestHelper(this.gitlab, this.repo, this.config);
         this.release = new helpers_1.ReleaseHelper(this.gitlab, this.repo, this.config);
         this.tags = new helpers_1.TagHelper(this.gitlab, this.repo, this.config);
+        this.projectId = config.gitlab.projectId || null;
     }
     /**
      * Get the unique project ID from GitLab
      * @returns Promise<number> The unique project ID
      */
     async getProjectId() {
-        if (this.projectId)
+        // Return cached project ID if available
+        if (this.projectId) {
+            core.debug(`Using cached project ID: ${this.projectId}`);
             return this.projectId;
+        }
         const projectPath = `${this.repo.owner}/${this.repo.repo}`;
         core.info(`📂 Attempting to fetch project ID for: ${projectPath}`);
         try {
-            // First try with URL encoded path
-            const encodedPath = encodeURIComponent(projectPath);
-            core.debug(`Encoded project path: ${encodedPath}`);
-            const project = await this.gitlab.Projects.show(encodedPath);
-            if (!project?.id) {
-                throw new Error('Project ID not found in response');
+            if (this.config.gitlab.projectId) {
+                // Use provided project ID
+                this.projectId = this.config.gitlab.projectId;
+                core.info(`\x1b[32m✓ Using configured project ID: ${this.projectId}\x1b[0m`);
             }
-            this.projectId = project.id;
-            core.info(`\x1b[32m✓ Project ID retrieved: ${this.projectId}\x1b[0m`);
+            else {
+                // Fetch project ID from GitLab API
+                const project = await this.gitlab.Projects.show(projectPath.replace('/', '%2F'));
+                if (!project?.id) {
+                    throw new Error('Project ID not found in response');
+                }
+                this.projectId = project.id;
+                // Store the project ID in config for reuse
+                if (this.config.gitlab) {
+                    this.config.gitlab.projectId = this.projectId;
+                }
+                core.info(`\x1b[32m✓ Project ID retrieved: ${this.projectId}\x1b[0m`);
+            }
             return this.projectId;
         }
         catch (error) {
-            // Enhanced error logging
             core.error('Failed to retrieve GitLab project ID');
             core.error(`Project path: ${projectPath}`);
             core.error(`Error details: ${error instanceof Error ? error.message : String(error)}`);
-            // Try alternative method using search
-            try {
-                core.info('Attempting alternative project lookup method...');
-                const projects = await this.gitlab.Projects.search(this.repo.repo);
-                const matchingProject = projects.find(p => p.path_with_namespace === projectPath ||
-                    p.path_with_namespace === projectPath.toLowerCase());
-                if (matchingProject?.id) {
-                    this.projectId = matchingProject.id;
-                    core.info(`\x1b[32m✓ Project ID retrieved using alternative method: ${this.projectId}\x1b[0m`);
-                    return this.projectId;
-                }
-            }
-            catch (searchError) {
-                core.error('Alternative lookup method also failed');
-                core.error(`Search error: ${searchError instanceof Error ? searchError.message : String(searchError)}`);
-            }
             throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: Unable to fetch project details. Please verify:
         1. The project path "${projectPath}" is correct
         2. The GitLab token has sufficient permissions
@@ -58489,6 +58497,7 @@ exports.SyncConfigSchema = zod_1.z.object({
 });
 exports.GitlabConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
+    projectId: zod_1.z.number().optional().nullable(),
     url: zod_1.z.string().optional(),
     token: zod_1.z.string().optional(),
     username: zod_1.z.string().optional(),
@@ -58697,6 +58706,11 @@ function getGitHubRepo(config) {
 }
 function getGitLabRepo(config) {
     const context = github.context;
+    // Return empty repository if projectId is provided
+    if (config.gitlab?.projectId) {
+        return { owner: '', repo: '' };
+    }
+    // Otherwise use username/repo
     return {
         owner: config.gitlab.username || context.repo.owner,
         repo: config.gitlab.repo || context.repo.repo

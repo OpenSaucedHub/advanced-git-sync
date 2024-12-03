@@ -48,7 +48,7 @@ jobs:
         uses: actions/checkout@v4.2.2
 
       - name: Sync with GitLab
-        uses: OpenSaucedHub/advanced-git-sync@v1.0.9
+        uses: OpenSaucedHub/advanced-git-sync@v1.0.8
         with:
           CONFIG_PATH: .github/sync-config.yml # optional, defaults to .github/sync-config.yml
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }} # optional, unless you want to sync to GitLab
@@ -62,7 +62,8 @@ jobs:
 # When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub TO GitLab
 gitlab:
   enabled: true
-  username: # Optional, defaults to GitHub repo owner
+  projectId: # recommended, if present, you do not need username/repo and url
+  # username: # Optional, defaults to GitHub repo owner
 
 # When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab TO GitHub
 github:
@@ -87,12 +88,15 @@ github:
 
 ### GitLab Configuration (`gitlab`)
 
-| Option     | Description                   | Required | Default           |
-| ---------- | ----------------------------- | -------- | ----------------- |
-| `enabled`  | Enable GitLab synchronization | No       | true              |
-| `url`      | GitLab instance URL           | No       | gitlab.com        |
-| `username` | GitLab username               | No       | GitHub repo owner |
-| `repo`     | GitLab repository name        | No       | GitHub repo name  |
+### GitLab Configuration (`gitlab`)
+
+| Option      | Description                   | Required | Default           |
+| ----------- | ----------------------------- | -------- | ----------------- |
+| `enabled`   | Enable GitLab synchronization | No       | true              |
+| `url`       | GitLab instance URL           | No       | gitlab.com        |
+| `username`  | GitLab username               | No       | GitHub repo owner |
+| `repo`      | GitLab repository name        | No       | GitHub repo name  |
+| `projectId` | GitLab project ID             | No       | Auto-detected     |
 
 ### GitHub Configuration (`github`)
 

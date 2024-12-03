@@ -29,6 +29,7 @@ export const SyncConfigSchema = z.object({
 
 export const GitlabConfigSchema = z.object({
   enabled: z.boolean(),
+  projectId: z.number().optional().nullable(),
   url: z.string().optional(),
   token: z.string().optional(),
   username: z.string().optional(),

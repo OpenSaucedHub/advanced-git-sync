@@ -2,6 +2,7 @@
 # When you have gitlab.sync.[entity].enabled: true, it means those entities w "synced FROM GitHub" TO GitLab
 gitlab:
   enabled: true
+  projectId: # recommended, if present, you do not need the following fields
   url: "gitlab.com" # Optional, defaults to gitlab.com
   username: vikshan # Optional, defaults to GitHub repo owner
   repo: devcontainers # Optional, defaults to GitHub repo name

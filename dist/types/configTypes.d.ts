@@ -139,6 +139,7 @@ export declare const SyncConfigSchema: z.ZodObject<{
 }>;
 export declare const GitlabConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
+    projectId: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
     url: z.ZodOptional<z.ZodString>;
     token: z.ZodOptional<z.ZodString>;
     username: z.ZodOptional<z.ZodString>;
@@ -244,6 +245,7 @@ export declare const GitlabConfigSchema: z.ZodObject<{
     }>>;
 }, "strip", z.ZodTypeAny, {
     enabled: boolean;
+    projectId?: number | null | undefined;
     url?: string | undefined;
     token?: string | undefined;
     username?: string | undefined;
@@ -273,6 +275,7 @@ export declare const GitlabConfigSchema: z.ZodObject<{
     } | undefined;
 }, {
     enabled: boolean;
+    projectId?: number | null | undefined;
     url?: string | undefined;
     token?: string | undefined;
     username?: string | undefined;
@@ -465,6 +468,7 @@ export declare const GithubConfigSchema: z.ZodObject<{
 export declare const ConfigSchema: z.ZodObject<{
     gitlab: z.ZodObject<{
         enabled: z.ZodBoolean;
+        projectId: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
         url: z.ZodOptional<z.ZodString>;
         token: z.ZodOptional<z.ZodString>;
         username: z.ZodOptional<z.ZodString>;
@@ -570,6 +574,7 @@ export declare const ConfigSchema: z.ZodObject<{
         }>>;
     }, "strip", z.ZodTypeAny, {
         enabled: boolean;
+        projectId?: number | null | undefined;
         url?: string | undefined;
         token?: string | undefined;
         username?: string | undefined;
@@ -599,6 +604,7 @@ export declare const ConfigSchema: z.ZodObject<{
         } | undefined;
     }, {
         enabled: boolean;
+        projectId?: number | null | undefined;
         url?: string | undefined;
         token?: string | undefined;
         username?: string | undefined;
@@ -791,6 +797,7 @@ export declare const ConfigSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     gitlab: {
         enabled: boolean;
+        projectId?: number | null | undefined;
         url?: string | undefined;
         token?: string | undefined;
         username?: string | undefined;
@@ -851,6 +858,7 @@ export declare const ConfigSchema: z.ZodObject<{
 }, {
     gitlab: {
         enabled: boolean;
+        projectId?: number | null | undefined;
         url?: string | undefined;
         token?: string | undefined;
         username?: string | undefined;
