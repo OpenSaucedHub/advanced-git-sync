@@ -1,16 +1,12 @@
 import { PullRequest, Config, Repository } from '@/src/types'
 import * as core from '@actions/core'
 
-export class PullRequestHelper {
+export class mergeRequestHelper {
   constructor(
     private gitlab: any,
-    private repo: Repository,
-    private config: Config
+    private config: Config,
+    private getProjectId: () => Promise<number>
   ) {}
-
-  private get projectPath(): string {
-    return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`)
-  }
 
   async syncPullRequests(): Promise<PullRequest[]> {
     if (!this.config.github.sync?.pullRequests.enabled) {
@@ -20,8 +16,9 @@ export class PullRequestHelper {
     try {
       core.info('\x1b[36m🔀 Fetching GitLab Merge Requests...\x1b[0m')
 
+      const projectId = await this.getProjectId()
       const mrs = await this.gitlab.MergeRequests.all({
-        projectId: this.projectPath,
+        projectId,
         scope: 'all'
       })
 
@@ -38,7 +35,7 @@ export class PullRequestHelper {
             state: string
           }) => {
             const comments = await this.gitlab.MergeRequestNotes.all(
-              this.projectPath,
+              projectId,
               mr.iid
             )
 
@@ -90,8 +87,9 @@ export class PullRequestHelper {
 
   async createPullRequest(pr: PullRequest): Promise<void> {
     try {
+      const projectId = await this.getProjectId()
       const mr = await this.gitlab.MergeRequests.create(
-        this.projectPath,
+        projectId,
         pr.sourceBranch,
         pr.targetBranch,
         pr.title,
@@ -104,7 +102,7 @@ export class PullRequestHelper {
       if (pr.comments) {
         for (const comment of pr.comments) {
           await this.gitlab.MergeRequestNotes.create(
-            this.projectPath,
+            projectId,
             mr.iid,
             comment.body
           )
@@ -119,7 +117,8 @@ export class PullRequestHelper {
 
   async updatePullRequest(number: number, pr: PullRequest): Promise<void> {
     try {
-      await this.gitlab.MergeRequests.edit(this.projectPath, number, {
+      const projectId = await this.getProjectId()
+      await this.gitlab.MergeRequests.edit(projectId, number, {
         title: pr.title,
         description: pr.description,
         stateEvent: pr.state === 'closed' ? 'close' : 'reopen',
@@ -134,7 +133,8 @@ export class PullRequestHelper {
 
   async closePullRequest(number: number): Promise<void> {
     try {
-      await this.gitlab.MergeRequests.edit(this.projectPath, number, {
+      const projectId = await this.getProjectId()
+      await this.gitlab.MergeRequests.edit(projectId, number, {
         stateEvent: 'close'
       })
     } catch (error) {

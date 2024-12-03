@@ -1,5 +1,5 @@
 import { Repository, Config, Issue, Comment, PullRequest, Release, ReleaseAsset, Tag, IClient } from '@/src/types';
-import { branchHelper, pullRequestHelper, issueHelper, releaseHelper, tagsHelper } from './helpers';
+import { branchHelper, pullRequestHelper, issueHelper, releaseHelper, tagsHelper, permsHelper } from './helpers';
 export declare class GitHubClient implements IClient {
     config: Config;
     repo: Repository;
@@ -9,6 +9,7 @@ export declare class GitHubClient implements IClient {
     issue: issueHelper;
     release: releaseHelper;
     tags: tagsHelper;
+    permsHelper: permsHelper;
     constructor(config: Config, repo: Repository);
     getRepoInfo(): {
         url: string;

@@ -13,7 +13,8 @@
     "lint": "eslint src/**/*.ts",
     "f": "prettier --write \"**/*.*\"",
     "prepare": "husky",
-    "test": "jest"
+    "test": "jest",
+    "s": "bun src/index.ts"
   },
   "keywords": [
     "github",

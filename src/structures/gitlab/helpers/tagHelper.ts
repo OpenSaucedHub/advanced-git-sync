@@ -4,13 +4,9 @@ import * as core from '@actions/core'
 export class TagHelper {
   constructor(
     private gitlab: any,
-    private repo: Repository,
-    private config: Config
+    private config: Config,
+    private getProjectId: () => Promise<number>
   ) {}
-
-  private get projectPath(): string {
-    return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`)
-  }
 
   async syncTags(): Promise<Tag[]> {
     if (!this.config.github.sync?.tags.enabled) {
@@ -20,7 +16,9 @@ export class TagHelper {
     try {
       core.info('\x1b[36m🏷 Fetching GitLab Tags...\x1b[0m')
 
-      const tags = await this.gitlab.Tags.all(this.projectPath)
+      const projectId = await this.getProjectId()
+      const tags = await this.gitlab.Tags.all(projectId)
+
       const processedTags = tags.map(
         (tag: {
           name: string
@@ -44,7 +42,8 @@ export class TagHelper {
 
   async createTag(tag: Tag): Promise<void> {
     try {
-      await this.gitlab.Tags.create(this.projectPath, tag.name, tag.commitSha)
+      const projectId = await this.getProjectId()
+      await this.gitlab.Tags.create(projectId, tag.name, tag.commitSha)
     } catch (error) {
       throw new Error(
         `Failed to create tag ${tag.name}: ${
@@ -56,7 +55,8 @@ export class TagHelper {
 
   async updateTag(tag: Tag): Promise<void> {
     try {
-      await this.gitlab.Tags.remove(this.projectPath, tag.name)
+      const projectId = await this.getProjectId()
+      await this.gitlab.Tags.remove(projectId, tag.name)
       await this.createTag(tag)
     } catch (error) {
       throw new Error(

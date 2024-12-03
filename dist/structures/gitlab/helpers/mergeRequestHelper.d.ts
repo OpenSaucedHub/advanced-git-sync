@@ -1,10 +1,9 @@
-import { PullRequest, Config, Repository } from '@/src/types';
-export declare class PullRequestHelper {
+import { PullRequest, Config } from '@/src/types';
+export declare class mergeRequestHelper {
     private gitlab;
-    private repo;
     private config;
-    constructor(gitlab: any, repo: Repository, config: Config);
-    private get projectPath();
+    private getProjectId;
+    constructor(gitlab: any, config: Config, getProjectId: () => Promise<number>);
     syncPullRequests(): Promise<PullRequest[]>;
     createPullRequest(pr: PullRequest): Promise<void>;
     updatePullRequest(number: number, pr: PullRequest): Promise<void>;

@@ -13,9 +13,6 @@ export class ClientManager {
     if (!this.githubClient) {
       core.startGroup('🐱 GitHub Client Initialization')
       this.githubClient = new GitHubClient(config, getGitHubRepo(config))
-      core.info(
-        `\x1b[32m✓ GitHub Client Initialized: ${this.githubClient.repo.owner}/${this.githubClient.repo.repo}\x1b[0m`
-      )
     }
     return this.githubClient
   }
@@ -36,6 +33,7 @@ export class ClientManager {
       }
 
       this.gitlabClient = new GitLabClient(config, getGitLabRepo(config))
+
       core.endGroup()
     }
     return this.gitlabClient

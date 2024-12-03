@@ -3,11 +3,11 @@ export declare class ReleaseHelper {
     private gitlab;
     private repo;
     private config;
-    constructor(gitlab: any, repo: Repository, config: Config);
-    private get projectPath();
+    private getProjectId;
+    constructor(gitlab: any, repo: Repository, config: Config, getProjectId: () => Promise<number>);
     syncReleases(): Promise<Release[]>;
     createRelease(release: Release): Promise<void>;
     updateRelease(release: Release): Promise<void>;
-    downloadReleaseAsset(releaseId: string, asset: ReleaseAsset): Promise<Buffer>;
     uploadReleaseAsset(releaseId: string, asset: ReleaseAsset): Promise<void>;
+    downloadReleaseAsset(releaseId: string, asset: ReleaseAsset): Promise<Buffer>;
 }

@@ -1,10 +1,9 @@
-import { Tag, Config, Repository } from '@/src/types';
+import { Tag, Config } from '@/src/types';
 export declare class TagHelper {
     private gitlab;
-    private repo;
     private config;
-    constructor(gitlab: any, repo: Repository, config: Config);
-    private get projectPath();
+    private getProjectId;
+    constructor(gitlab: any, config: Config, getProjectId: () => Promise<number>);
     syncTags(): Promise<Tag[]>;
     createTag(tag: Tag): Promise<void>;
     updateTag(tag: Tag): Promise<void>;

@@ -55127,26 +55127,27 @@ function getActionInput(name, required = false) {
 function logConfigDetails(config, hideTokens = true) {
     // Create a deep copy to avoid mutating the original config
     const safeConfig = JSON.parse(JSON.stringify(config));
-    // Log warning if tokens are present
-    if (safeConfig.gitlab?.token) {
-        core.warning('GitLab token detected in configuration. Ensure the repository is private!');
-    }
-    if (safeConfig.github?.token) {
-        core.warning('GitHub token detected in configuration. Ensure the repository is private!');
-    }
     // Start a group for configuration loading logging
     core.startGroup('📋 Configuration Details');
     // Log the safe configuration with color and emojis
     core.info(`\x1b[36m Platform Configuration:\x1b[0m`);
     core.info(`  \x1b[34m🦊 GitLab Enabled:\x1b[0m ${safeConfig.gitlab?.enabled || false}`);
     core.info(`  \x1b[34m🐱 GitHub Enabled:\x1b[0m ${safeConfig.github?.enabled || false}`);
-    // Log sync options with color
     core.info(`\x1b[36m🔄 Sync Options:\x1b[0m`);
-    const syncOptions = JSON.stringify(safeConfig.sync || {}, null, 2)
-        .split('\n')
-        .map(line => `  \x1b[90m${line}\x1b[0m`)
-        .join('\n');
-    core.info(syncOptions);
+    if (safeConfig.gitlab?.sync) {
+        core.info(`  \x1b[34m🦊 GitLab Sync:\x1b[0m`);
+        core.info(JSON.stringify(safeConfig.gitlab.sync, null, 2)
+            .split('\n')
+            .map(line => `    \x1b[90m${line}\x1b[0m`)
+            .join('\n'));
+    }
+    if (safeConfig.github?.sync) {
+        core.info(`  \x1b[34m🐱 GitHub Sync:\x1b[0m`);
+        core.info(JSON.stringify(safeConfig.github.sync, null, 2)
+            .split('\n')
+            .map(line => `    \x1b[90m${line}\x1b[0m`)
+            .join('\n'));
+    }
     // End the group for configuration loading logging
     core.endGroup();
 }
@@ -55857,10 +55858,16 @@ async function run() {
         core.info('\x1b[90m--------------------------------------------\x1b[0m');
         // Load configuration
         const config = await (0, config_1.getConfig)();
-        core.info(`\x1b[32m✓ Configuration loaded successfully\x1b[0m`);
         // Use ClientManager to get client instances
         const githubClient = clientManager_1.ClientManager.getGitHubClient(config);
         const gitlabClient = clientManager_1.ClientManager.getGitLabClient(config);
+        // validate permissions
+        if (config.github.enabled) {
+            await githubClient.validateAccess();
+        }
+        if (config.gitlab.enabled) {
+            await gitlabClient.validateAccess();
+        }
         if (config.github.enabled && config.gitlab.enabled) {
             core.info('\x1b[36m🔄 Starting bi-directional sync between GitHub and GitLab\x1b[0m');
             // Sync tracking
@@ -56021,7 +56028,6 @@ class ClientManager {
         if (!this.githubClient) {
             core.startGroup('🐱 GitHub Client Initialization');
             this.githubClient = new GitHub_1.GitHubClient(config, (0, repoUtils_1.getGitHubRepo)(config));
-            core.info(`\x1b[32m✓ GitHub Client Initialized: ${this.githubClient.repo.owner}/${this.githubClient.repo.repo}\x1b[0m`);
         }
         return this.githubClient;
     }
@@ -56090,8 +56096,6 @@ exports.GitHubClient = void 0;
 const github = __importStar(__nccwpck_require__(3228));
 const core = __importStar(__nccwpck_require__(7484));
 const helpers_1 = __nccwpck_require__(6170);
-const errorCodes_1 = __nccwpck_require__(9481);
-const validator_1 = __nccwpck_require__(4460);
 class GitHubClient {
     config;
     repo;
@@ -56101,6 +56105,7 @@ class GitHubClient {
     issue;
     release;
     tags;
+    permsHelper;
     constructor(config, repo) {
         this.config = config;
         this.repo = repo;
@@ -56110,6 +56115,8 @@ class GitHubClient {
         this.issue = new helpers_1.issueHelper(this.octokit, this.repo, this.config);
         this.release = new helpers_1.releaseHelper(this.octokit, this.repo, this.config);
         this.tags = new helpers_1.tagsHelper(this.octokit, this.repo, this.config);
+        this.permsHelper = new helpers_1.permsHelper(this.octokit, this.repo, this.config);
+        core.info(`\x1b[32m✓ GitHub Client Initialized: ${repo.owner}/${repo.repo}\x1b[0m`);
     }
     getRepoInfo() {
         return {
@@ -56118,33 +56125,7 @@ class GitHubClient {
         };
     }
     async validateAccess() {
-        try {
-            const permissionChecks = [
-                {
-                    feature: 'issues',
-                    check: () => this.octokit.rest.issues.listForRepo({ ...this.repo }),
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
-                },
-                {
-                    feature: 'pullRequests',
-                    check: () => this.octokit.rest.pulls.list({ ...this.repo }),
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Pull requests read/write permissions missing`
-                },
-                {
-                    feature: 'releases',
-                    check: () => this.octokit.rest.repos.listReleases({ ...this.repo }),
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
-                }
-            ];
-            // Verify repository access first
-            await this.octokit.rest.repos.get({ ...this.repo });
-            await validator_1.PermissionValidator.validatePlatformPermissions('github', permissionChecks, this.config.github.sync, // or gitlab.sync
-            `${this.repo.owner}/${this.repo.repo}`);
-            core.info('\x1b[32m✓ Repository Access Verified\x1b[0m');
-        }
-        catch (error) {
-            throw new Error(`${errorCodes_1.ErrorCodes.EGHUB}: ${error instanceof Error ? error.message : String(error)}`);
-        }
+        return this.permsHelper.validateAccess();
     }
     // Delegate branch operations to branchHelper
     async syncBranches() {
@@ -56275,12 +56256,13 @@ class branchHelper {
             // Colorful console log for fetching branches
             core.info('\x1b[36m🌿 Fetching GitHub Branches...\x1b[0m');
             // Fetch branches from GitHub, respecting protected branch configuration
+            // Remove the protected filter from the initial fetch to get all branches
             const { data: branches } = await this.octokit.rest.repos.listBranches({
-                ...this.repo,
-                protected: this.config.gitlab.sync?.branches.protected
+                ...this.repo
             });
-            // Transform GitHub branch data to custom Branch interface
-            const processedBranches = branches.map((branch) => ({
+            const processedBranches = branches
+                .filter((branch) => this.config.gitlab.sync?.branches.protected || !branch.protected)
+                .map((branch) => ({
                 name: branch.name,
                 sha: branch.commit.sha,
                 protected: branch.protected
@@ -56355,6 +56337,7 @@ __exportStar(__nccwpck_require__(5062), exports);
 __exportStar(__nccwpck_require__(3913), exports);
 __exportStar(__nccwpck_require__(4539), exports);
 __exportStar(__nccwpck_require__(3689), exports);
+__exportStar(__nccwpck_require__(5537), exports);
 
 
 /***/ }),
@@ -56522,6 +56505,93 @@ class issueHelper {
     }
 }
 exports.issueHelper = issueHelper;
+
+
+/***/ }),
+
+/***/ 5537:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.permsHelper = void 0;
+const validator_1 = __nccwpck_require__(4460);
+const errorCodes_1 = __nccwpck_require__(9481);
+const core = __importStar(__nccwpck_require__(7484));
+class permsHelper {
+    octokit;
+    repo;
+    config;
+    constructor(octokit, repo, config) {
+        this.octokit = octokit;
+        this.repo = repo;
+        this.config = config;
+    }
+    async validateAccess() {
+        try {
+            const permissionChecks = [
+                {
+                    feature: 'issues',
+                    check: () => this.octokit.rest.issues.listForRepo({ ...this.repo }),
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
+                },
+                {
+                    feature: 'pullRequests',
+                    check: () => this.octokit.rest.pulls.list({ ...this.repo }),
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Pull requests read/write permissions missing`
+                },
+                {
+                    feature: 'releases',
+                    check: () => this.octokit.rest.repos.listReleases({ ...this.repo }),
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
+                }
+            ];
+            // Verify repository access first
+            await this.octokit.rest.repos.get({ ...this.repo });
+            await validator_1.PermissionValidator.validatePlatformPermissions('github', permissionChecks, this.config.github.sync, // or gitlab.sync
+            `${this.repo.owner}/${this.repo.repo}`);
+            core.info('\x1b[32m✓ Repository Access Verified\x1b[0m');
+        }
+        catch (error) {
+            throw new Error(`${errorCodes_1.ErrorCodes.EGHUB}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+}
+exports.permsHelper = permsHelper;
 
 
 /***/ }),
@@ -57055,7 +57125,6 @@ const core = __importStar(__nccwpck_require__(7484));
 const rest_1 = __nccwpck_require__(4630);
 const helpers_1 = __nccwpck_require__(3682);
 const errorCodes_1 = __nccwpck_require__(9481);
-const validator_1 = __nccwpck_require__(4460);
 class GitLabClient {
     config;
     repo;
@@ -57066,6 +57135,7 @@ class GitLabClient {
     release;
     tags;
     projectId = null;
+    permsHelper;
     constructor(config, repo) {
         this.config = config;
         this.repo = repo;
@@ -57075,7 +57145,7 @@ class GitLabClient {
         if (this.config.gitlab.sync?.issues) {
             if (!this.config.gitlab.projectId &&
                 (!this.repo.owner || !this.repo.repo)) {
-                throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: GitLab issue sync requires either projectId or owner/repo combination`);
+                throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: GitLab issue sync requires owner/repo combination`);
             }
         }
         const host = this.formatHostUrl(config.gitlab.url || 'gitlab.com');
@@ -57084,13 +57154,15 @@ class GitLabClient {
             token: config.gitlab.token,
             host
         });
-        core.info(`\x1b[32m✓ GitLab client initialized successfully\x1b[0m`);
-        this.branches = new helpers_1.BranchHelper(this.gitlab, this.repo, this.config);
+        // Initialize helpers with a method to get projectId
+        this.branches = new helpers_1.BranchHelper(this.gitlab, this.config, () => this.getProjectId());
         this.issues = new helpers_1.IssueHelper(this.gitlab, this.repo, this.config);
-        this.pullRequest = new helpers_1.PullRequestHelper(this.gitlab, this.repo, this.config);
-        this.release = new helpers_1.ReleaseHelper(this.gitlab, this.repo, this.config);
-        this.tags = new helpers_1.TagHelper(this.gitlab, this.repo, this.config);
+        this.pullRequest = new helpers_1.mergeRequestHelper(this.gitlab, this.config, () => this.getProjectId());
+        this.permsHelper = new helpers_1.permsHelper(this.gitlab, this.repo, this.config, () => this.getProjectId());
+        this.release = new helpers_1.ReleaseHelper(this.gitlab, this.repo, this.config, () => this.getProjectId());
+        this.tags = new helpers_1.TagHelper(this.gitlab, this.config, () => this.getProjectId());
         this.projectId = config.gitlab.projectId || null;
+        core.info(`\x1b[32m✓ GitLab client initialized successfully\x1b[0m`);
     }
     formatHostUrl(host) {
         host = host.replace(/\/+$/, '');
@@ -57101,13 +57173,11 @@ class GitLabClient {
     }
     async getProjectId() {
         if (this.projectId) {
-            core.debug(`Using cached project ID: ${this.projectId}`);
             return this.projectId;
         }
         try {
             if (this.config.gitlab?.projectId) {
                 this.projectId = this.config.gitlab.projectId;
-                core.info(`Using configured project ID: ${this.projectId}`);
                 return this.projectId;
             }
             const path = `${this.repo.owner}/${this.repo.repo}`;
@@ -57124,45 +57194,6 @@ class GitLabClient {
             throw new Error(`Failed to fetch project ID for ${this.repo.owner}/${this.repo.repo}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
-    async validateAccess() {
-        try {
-            core.info('GitLab Access Validation');
-            const projectId = await this.getProjectId();
-            core.info(`\x1b[32m✓ Validating access using Project ID: ${projectId}\x1b[0m`);
-            const permissionChecks = [
-                {
-                    feature: 'issues',
-                    check: async () => {
-                        const issues = await this.gitlab.Issues.all({ projectId });
-                        return Array.isArray(issues);
-                    },
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
-                },
-                {
-                    feature: 'mergeRequests',
-                    check: async () => {
-                        const mrs = await this.gitlab.MergeRequests.all({ projectId });
-                        return Array.isArray(mrs);
-                    },
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Merge requests read/write permissions missing`
-                },
-                {
-                    feature: 'releases',
-                    check: async () => {
-                        const releases = await this.gitlab.ProjectReleases.all(projectId);
-                        return Array.isArray(releases);
-                    },
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
-                }
-            ];
-            await validator_1.PermissionValidator.validatePlatformPermissions('gitlab', permissionChecks, this.config.gitlab.sync, `${this.repo.owner}/${this.repo.repo}`);
-            core.info(`\x1b[32m✓ GitLab Project Access Verified: ${this.repo.owner}/${this.repo.repo}; Project ID: ${projectId}\x1b[0m`);
-        }
-        catch (error) {
-            core.error('GitLab access validation failed');
-            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
     /**
      * Get repository information
      * @returns Repository details including URL
@@ -57172,6 +57203,9 @@ class GitLabClient {
             ...this.repo,
             url: `${this.config.gitlab.url || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
         };
+    }
+    async validateAccess() {
+        return this.permsHelper.validateAccess();
     }
     // Delegate to branch helper
     async syncBranches() {
@@ -57287,15 +57321,12 @@ exports.BranchHelper = void 0;
 const core = __importStar(__nccwpck_require__(7484));
 class BranchHelper {
     gitlab;
-    repo;
     config;
-    constructor(gitlab, repo, config) {
+    getProjectId;
+    constructor(gitlab, config, getProjectId) {
         this.gitlab = gitlab;
-        this.repo = repo;
         this.config = config;
-    }
-    get projectPath() {
-        return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`);
+        this.getProjectId = getProjectId;
     }
     async sync() {
         if (!this.config.github.sync?.branches.enabled) {
@@ -57303,7 +57334,9 @@ class BranchHelper {
         }
         try {
             core.info('\x1b[36m🌿 Fetching GitLab Branches...\x1b[0m');
-            const branches = await this.gitlab.Branches.all(this.projectPath);
+            // Get identifier - either project ID or path
+            const projectId = await this.getProjectId();
+            const branches = await this.gitlab.Branches.all(projectId);
             const processedBranches = branches.map((branch) => ({
                 name: branch.name,
                 sha: branch.commit.id,
@@ -57319,7 +57352,8 @@ class BranchHelper {
     }
     async create(name, commitSha) {
         try {
-            await this.gitlab.Branches.create(this.projectPath, name, commitSha);
+            const projectId = await this.getProjectId();
+            await this.gitlab.Branches.create(projectId, name, commitSha);
         }
         catch (error) {
             throw new Error(`Failed to create branch ${name}: ${error instanceof Error ? error.message : String(error)}`);
@@ -57327,8 +57361,9 @@ class BranchHelper {
     }
     async update(name, commitSha) {
         try {
-            await this.gitlab.Branches.remove(this.projectPath, name);
-            await this.gitlab.Branches.create(this.projectPath, name, commitSha);
+            const projectId = await this.getProjectId();
+            await this.gitlab.Branches.remove(projectId, name);
+            await this.gitlab.Branches.create(projectId, name, commitSha);
         }
         catch (error) {
             throw new Error(`Failed to update branch ${name}: ${error instanceof Error ? error.message : String(error)}`);
@@ -57362,9 +57397,10 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 __exportStar(__nccwpck_require__(8244), exports);
 __exportStar(__nccwpck_require__(9617), exports);
-__exportStar(__nccwpck_require__(606), exports);
+__exportStar(__nccwpck_require__(409), exports);
 __exportStar(__nccwpck_require__(515), exports);
 __exportStar(__nccwpck_require__(5374), exports);
+__exportStar(__nccwpck_require__(425), exports);
 
 
 /***/ }),
@@ -57420,7 +57456,7 @@ class IssueHelper {
         this.config = config;
     }
     get projectPath() {
-        return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`);
+        return `${this.repo.owner}/${this.repo.repo}`;
     }
     async syncIssues() {
         if (!this.config.github.sync?.issues.enabled) {
@@ -57429,8 +57465,7 @@ class IssueHelper {
         try {
             core.info('\x1b[36m❗ Fetching GitLab Issues...\x1b[0m');
             const issues = await this.gitlab.Issues.all({
-                projectId: this.projectPath,
-                state: 'all'
+                projectPath: this.projectPath
             });
             const processedIssues = issues.map((issue) => ({
                 title: issue.title,
@@ -57509,7 +57544,7 @@ exports.IssueHelper = IssueHelper;
 
 /***/ }),
 
-/***/ 606:
+/***/ 409:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -57548,19 +57583,16 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PullRequestHelper = void 0;
+exports.mergeRequestHelper = void 0;
 const core = __importStar(__nccwpck_require__(7484));
-class PullRequestHelper {
+class mergeRequestHelper {
     gitlab;
-    repo;
     config;
-    constructor(gitlab, repo, config) {
+    getProjectId;
+    constructor(gitlab, config, getProjectId) {
         this.gitlab = gitlab;
-        this.repo = repo;
         this.config = config;
-    }
-    get projectPath() {
-        return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`);
+        this.getProjectId = getProjectId;
     }
     async syncPullRequests() {
         if (!this.config.github.sync?.pullRequests.enabled) {
@@ -57568,12 +57600,13 @@ class PullRequestHelper {
         }
         try {
             core.info('\x1b[36m🔀 Fetching GitLab Merge Requests...\x1b[0m');
+            const projectId = await this.getProjectId();
             const mrs = await this.gitlab.MergeRequests.all({
-                projectId: this.projectPath,
+                projectId,
                 scope: 'all'
             });
             const processedPRs = await Promise.all(mrs.map(async (mr) => {
-                const comments = await this.gitlab.MergeRequestNotes.all(this.projectPath, mr.iid);
+                const comments = await this.gitlab.MergeRequestNotes.all(projectId, mr.iid);
                 return {
                     id: mr.id,
                     number: mr.iid,
@@ -57608,13 +57641,14 @@ class PullRequestHelper {
     }
     async createPullRequest(pr) {
         try {
-            const mr = await this.gitlab.MergeRequests.create(this.projectPath, pr.sourceBranch, pr.targetBranch, pr.title, {
+            const projectId = await this.getProjectId();
+            const mr = await this.gitlab.MergeRequests.create(projectId, pr.sourceBranch, pr.targetBranch, pr.title, {
                 description: pr.description,
                 labels: pr.labels.join(',')
             });
             if (pr.comments) {
                 for (const comment of pr.comments) {
-                    await this.gitlab.MergeRequestNotes.create(this.projectPath, mr.iid, comment.body);
+                    await this.gitlab.MergeRequestNotes.create(projectId, mr.iid, comment.body);
                 }
             }
         }
@@ -57624,7 +57658,8 @@ class PullRequestHelper {
     }
     async updatePullRequest(number, pr) {
         try {
-            await this.gitlab.MergeRequests.edit(this.projectPath, number, {
+            const projectId = await this.getProjectId();
+            await this.gitlab.MergeRequests.edit(projectId, number, {
                 title: pr.title,
                 description: pr.description,
                 stateEvent: pr.state === 'closed' ? 'close' : 'reopen',
@@ -57637,7 +57672,8 @@ class PullRequestHelper {
     }
     async closePullRequest(number) {
         try {
-            await this.gitlab.MergeRequests.edit(this.projectPath, number, {
+            const projectId = await this.getProjectId();
+            await this.gitlab.MergeRequests.edit(projectId, number, {
                 stateEvent: 'close'
             });
         }
@@ -57646,7 +57682,106 @@ class PullRequestHelper {
         }
     }
 }
-exports.PullRequestHelper = PullRequestHelper;
+exports.mergeRequestHelper = mergeRequestHelper;
+
+
+/***/ }),
+
+/***/ 425:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.permsHelper = void 0;
+const validator_1 = __nccwpck_require__(4460);
+const errorCodes_1 = __nccwpck_require__(9481);
+const core = __importStar(__nccwpck_require__(7484));
+class permsHelper {
+    gitlab;
+    repo;
+    config;
+    getProjectId;
+    constructor(gitlab, repo, config, projectIdGetter) {
+        this.gitlab = gitlab;
+        this.repo = repo;
+        this.config = config;
+        this.getProjectId = projectIdGetter;
+    }
+    async validateAccess() {
+        try {
+            core.info('GitLab Access Validation');
+            const projectId = await this.getProjectId();
+            core.info(`\x1b[32m✓ Validating access using Project ID: ${projectId}\x1b[0m`);
+            const permissionChecks = [
+                {
+                    feature: 'issues',
+                    check: async () => {
+                        const issues = await this.gitlab.Issues.all({ projectId });
+                        return Array.isArray(issues);
+                    },
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
+                },
+                {
+                    feature: 'mergeRequests',
+                    check: async () => {
+                        const mrs = await this.gitlab.MergeRequests.all({ projectId });
+                        return Array.isArray(mrs);
+                    },
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Merge requests read/write permissions missing`
+                },
+                {
+                    feature: 'releases',
+                    check: async () => {
+                        const releases = await this.gitlab.ProjectReleases.all(projectId);
+                        return Array.isArray(releases);
+                    },
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
+                }
+            ];
+            await validator_1.PermissionValidator.validatePlatformPermissions('gitlab', permissionChecks, this.config.gitlab.sync, `${this.repo.owner}/${this.repo.repo}`);
+            core.info(`\x1b[32m✓ GitLab Project Access Verified: ${this.repo.owner}/${this.repo.repo}; Project ID: ${projectId}\x1b[0m`);
+        }
+        catch (error) {
+            core.error('GitLab access validation failed');
+            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+}
+exports.permsHelper = permsHelper;
 
 
 /***/ }),
@@ -57696,21 +57831,21 @@ class ReleaseHelper {
     gitlab;
     repo;
     config;
-    constructor(gitlab, repo, config) {
+    getProjectId;
+    constructor(gitlab, repo, config, getProjectId) {
         this.gitlab = gitlab;
         this.repo = repo;
         this.config = config;
-    }
-    get projectPath() {
-        return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`);
+        this.getProjectId = getProjectId;
     }
     async syncReleases() {
         if (!this.config.github.sync?.releases.enabled) {
             return [];
         }
         try {
-            core.info('\x1b[36m🏷️ Fetching GitLab Releases...\x1b[0m');
-            const releases = await this.gitlab.ProjectReleases.all(this.projectPath);
+            core.info('\x1b[36m🏷️ Fetching GitLab ProjectReleases...\x1b[0m');
+            const projectId = await this.getProjectId();
+            const releases = await this.gitlab.ProjectReleases.all(projectId);
             const processedReleases = releases.map((release) => ({
                 id: release.tag_name,
                 tag: release.tag_name,
@@ -57727,17 +57862,18 @@ class ReleaseHelper {
                     contentType: asset.link_type || 'application/octet-stream'
                 }))
             }));
-            core.info(`\x1b[32m✓ Releases Fetched: ${processedReleases.length} releases\x1b[0m`);
+            core.info(`\x1b[32m✓ ProjectReleases Fetched: ${processedReleases.length} releases\x1b[0m`);
             return processedReleases;
         }
         catch (error) {
-            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Releases: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab ProjectReleases: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
         }
     }
     async createRelease(release) {
         try {
-            const createdRelease = await this.gitlab.ProjectReleases.create(this.projectPath, {
+            const projectId = await this.getProjectId();
+            const createdRelease = await this.gitlab.ProjectReleases.create(projectId, {
                 tag_name: release.tag,
                 name: release.name,
                 description: release.body,
@@ -57751,7 +57887,8 @@ class ReleaseHelper {
     }
     async updateRelease(release) {
         try {
-            await this.gitlab.ProjectReleases.edit(this.projectPath, release.tag, {
+            const projectId = await this.getProjectId();
+            await this.gitlab.ProjectReleases.update(projectId, release.tag, {
                 name: release.name,
                 description: release.body
             });
@@ -57760,6 +57897,20 @@ class ReleaseHelper {
             throw new Error(`Failed to update release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
+    async uploadReleaseAsset(releaseId, asset) {
+        try {
+            const projectId = await this.getProjectId();
+            await this.gitlab.ReleaseLinks.create(projectId, releaseId, {
+                name: asset.name,
+                url: asset.url,
+                link_type: asset.contentType
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to upload asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    // downloadReleaseAsset remains unchanged as it uses direct fetch
     async downloadReleaseAsset(releaseId, asset) {
         try {
             const response = await fetch(asset.url);
@@ -57771,16 +57922,6 @@ class ReleaseHelper {
         }
         catch (error) {
             throw new Error(`Failed to download asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async uploadReleaseAsset(releaseId, asset) {
-        try {
-            await this.gitlab.ReleaseLinks.create(this.projectPath, releaseId, asset.name, asset.url, {
-                linkType: asset.contentType
-            });
-        }
-        catch (error) {
-            throw new Error(`Failed to upload asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }
@@ -57832,15 +57973,12 @@ exports.TagHelper = void 0;
 const core = __importStar(__nccwpck_require__(7484));
 class TagHelper {
     gitlab;
-    repo;
     config;
-    constructor(gitlab, repo, config) {
+    getProjectId;
+    constructor(gitlab, config, getProjectId) {
         this.gitlab = gitlab;
-        this.repo = repo;
         this.config = config;
-    }
-    get projectPath() {
-        return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`);
+        this.getProjectId = getProjectId;
     }
     async syncTags() {
         if (!this.config.github.sync?.tags.enabled) {
@@ -57848,7 +57986,8 @@ class TagHelper {
         }
         try {
             core.info('\x1b[36m🏷 Fetching GitLab Tags...\x1b[0m');
-            const tags = await this.gitlab.Tags.all(this.projectPath);
+            const projectId = await this.getProjectId();
+            const tags = await this.gitlab.Tags.all(projectId);
             const processedTags = tags.map((tag) => ({
                 name: tag.name,
                 createdAt: tag.commit.created_at,
@@ -57864,7 +58003,8 @@ class TagHelper {
     }
     async createTag(tag) {
         try {
-            await this.gitlab.Tags.create(this.projectPath, tag.name, tag.commitSha);
+            const projectId = await this.getProjectId();
+            await this.gitlab.Tags.create(projectId, tag.name, tag.commitSha);
         }
         catch (error) {
             throw new Error(`Failed to create tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
@@ -57872,7 +58012,8 @@ class TagHelper {
     }
     async updateTag(tag) {
         try {
-            await this.gitlab.Tags.remove(this.projectPath, tag.name);
+            const projectId = await this.getProjectId();
+            await this.gitlab.Tags.remove(projectId, tag.name);
             await this.createTag(tag);
         }
         catch (error) {

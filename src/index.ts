@@ -16,11 +16,18 @@ async function run(): Promise<void> {
 
     // Load configuration
     const config = await getConfig()
-    core.info(`\x1b[32m✓ Configuration loaded successfully\x1b[0m`)
 
     // Use ClientManager to get client instances
     const githubClient = ClientManager.getGitHubClient(config)
     const gitlabClient = ClientManager.getGitLabClient(config)
+
+    // validate permissions
+    if (config.github.enabled) {
+      await githubClient.validateAccess()
+    }
+    if (config.gitlab.enabled) {
+      await gitlabClient.validateAccess()
+    }
 
     if (config.github.enabled && config.gitlab.enabled) {
       core.info(

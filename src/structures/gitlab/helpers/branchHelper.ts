@@ -4,13 +4,9 @@ import * as core from '@actions/core'
 export class BranchHelper {
   constructor(
     private gitlab: any,
-    private repo: Repository,
-    private config: Config
+    private config: Config,
+    private getProjectId: () => Promise<number>
   ) {}
-
-  private get projectPath(): string {
-    return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`)
-  }
 
   async sync(): Promise<Branch[]> {
     if (!this.config.github.sync?.branches.enabled) {
@@ -20,7 +16,11 @@ export class BranchHelper {
     try {
       core.info('\x1b[36m🌿 Fetching GitLab Branches...\x1b[0m')
 
-      const branches = await this.gitlab.Branches.all(this.projectPath)
+      // Get identifier - either project ID or path
+      const projectId = await this.getProjectId()
+
+      const branches = await this.gitlab.Branches.all(projectId)
+
       const processedBranches = branches.map(
         (branch: {
           name: string
@@ -47,7 +47,8 @@ export class BranchHelper {
 
   async create(name: string, commitSha: string): Promise<void> {
     try {
-      await this.gitlab.Branches.create(this.projectPath, name, commitSha)
+      const projectId = await this.getProjectId()
+      await this.gitlab.Branches.create(projectId, name, commitSha)
     } catch (error) {
       throw new Error(
         `Failed to create branch ${name}: ${
@@ -59,8 +60,9 @@ export class BranchHelper {
 
   async update(name: string, commitSha: string): Promise<void> {
     try {
-      await this.gitlab.Branches.remove(this.projectPath, name)
-      await this.gitlab.Branches.create(this.projectPath, name, commitSha)
+      const projectId = await this.getProjectId()
+      await this.gitlab.Branches.remove(projectId, name)
+      await this.gitlab.Branches.create(projectId, name, commitSha)
     } catch (error) {
       throw new Error(
         `Failed to update branch ${name}: ${

@@ -19,23 +19,30 @@ export class branchHelper {
       core.info('\x1b[36m🌿 Fetching GitHub Branches...\x1b[0m')
 
       // Fetch branches from GitHub, respecting protected branch configuration
+      // Remove the protected filter from the initial fetch to get all branches
       const { data: branches } = await this.octokit.rest.repos.listBranches({
-        ...this.repo,
-        protected: this.config.gitlab.sync?.branches.protected
+        ...this.repo
       })
 
-      // Transform GitHub branch data to custom Branch interface
-      const processedBranches: Branch[] = branches.map(
-        (branch: {
-          name: string
-          commit: { sha: string }
-          protected: boolean
-        }) => ({
+      // Then filter the branches based on the config
+      interface GitHubBranch {
+        name: string
+        commit: {
+          sha: string
+        }
+        protected: boolean
+      }
+
+      const processedBranches: Branch[] = branches
+        .filter(
+          (branch: GitHubBranch) =>
+            this.config.gitlab.sync?.branches.protected || !branch.protected
+        )
+        .map((branch: GitHubBranch) => ({
           name: branch.name,
           sha: branch.commit.sha,
           protected: branch.protected
-        })
-      )
+        }))
 
       // Log successful branch fetch
       core.info(

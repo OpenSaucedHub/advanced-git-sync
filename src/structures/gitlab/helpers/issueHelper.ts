@@ -10,7 +10,7 @@ export class IssueHelper {
   ) {}
 
   private get projectPath(): string {
-    return encodeURIComponent(`${this.repo.owner}/${this.repo.repo}`)
+    return `${this.repo.owner}/${this.repo.repo}`
   }
 
   async syncIssues(): Promise<Issue[]> {
@@ -22,8 +22,7 @@ export class IssueHelper {
       core.info('\x1b[36m❗ Fetching GitLab Issues...\x1b[0m')
 
       const issues = await this.gitlab.Issues.all({
-        projectId: this.projectPath,
-        state: 'all'
+        projectPath: this.projectPath
       })
 
       const processedIssues = issues.map((issue: IssueSchema) => ({
@@ -93,9 +92,7 @@ export class IssueHelper {
       })
     } catch (error) {
       throw new Error(
-        `Failed to create issue "${issue.title}": ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to create issue "${issue.title}": ${error instanceof Error ? error.message : String(error)}`
       )
     }
   }
@@ -110,9 +107,7 @@ export class IssueHelper {
       })
     } catch (error) {
       throw new Error(
-        `Failed to update issue #${issueNumber}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to update issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`
       )
     }
   }
@@ -129,9 +124,7 @@ export class IssueHelper {
       )
     } catch (error) {
       throw new Error(
-        `Failed to create comment on issue #${issueNumber}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Failed to create comment on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`
       )
     }
   }

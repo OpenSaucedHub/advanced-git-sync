@@ -4,9 +4,10 @@ import { Repository, Config, PermissionCheck, IClient } from '../../types'
 import {
   BranchHelper,
   IssueHelper,
-  PullRequestHelper,
+  mergeRequestHelper,
   ReleaseHelper,
-  TagHelper
+  TagHelper,
+  permsHelper
 } from './helpers'
 import { ErrorCodes } from '@/src/utils/errorCodes'
 import { PermissionValidator } from '@/src/handlers/validator'
@@ -17,10 +18,11 @@ export class GitLabClient implements IClient {
   private gitlab
   public branches: BranchHelper
   public issues: IssueHelper
-  public pullRequest: PullRequestHelper
+  public pullRequest: mergeRequestHelper
   public release: ReleaseHelper
   public tags: TagHelper
   private projectId: number | null = null
+  private permsHelper: permsHelper
 
   constructor(config: Config, repo: Repository) {
     this.config = config
@@ -36,7 +38,7 @@ export class GitLabClient implements IClient {
         (!this.repo.owner || !this.repo.repo)
       ) {
         throw new Error(
-          `${ErrorCodes.EGLAB}: GitLab issue sync requires either projectId or owner/repo combination`
+          `${ErrorCodes.EGLAB}: GitLab issue sync requires owner/repo combination`
         )
       }
     }
@@ -48,19 +50,29 @@ export class GitLabClient implements IClient {
       token: config.gitlab.token,
       host
     })
-
-    core.info(`\x1b[32m✓ GitLab client initialized successfully\x1b[0m`)
-
-    this.branches = new BranchHelper(this.gitlab, this.repo, this.config)
+    // Initialize helpers with a method to get projectId
+    this.branches = new BranchHelper(this.gitlab, this.config, () =>
+      this.getProjectId()
+    )
     this.issues = new IssueHelper(this.gitlab, this.repo, this.config)
-    this.pullRequest = new PullRequestHelper(
+    this.pullRequest = new mergeRequestHelper(this.gitlab, this.config, () =>
+      this.getProjectId()
+    )
+    this.permsHelper = new permsHelper(
       this.gitlab,
       this.repo,
-      this.config
+      this.config,
+      () => this.getProjectId()
     )
-    this.release = new ReleaseHelper(this.gitlab, this.repo, this.config)
-    this.tags = new TagHelper(this.gitlab, this.repo, this.config)
+    this.release = new ReleaseHelper(this.gitlab, this.repo, this.config, () =>
+      this.getProjectId()
+    )
+    this.tags = new TagHelper(this.gitlab, this.config, () =>
+      this.getProjectId()
+    )
     this.projectId = config.gitlab.projectId || null
+
+    core.info(`\x1b[32m✓ GitLab client initialized successfully\x1b[0m`)
   }
 
   private formatHostUrl(host: string): string {
@@ -73,14 +85,12 @@ export class GitLabClient implements IClient {
 
   private async getProjectId(): Promise<number> {
     if (this.projectId) {
-      core.debug(`Using cached project ID: ${this.projectId}`)
       return this.projectId
     }
 
     try {
       if (this.config.gitlab?.projectId) {
         this.projectId = this.config.gitlab.projectId
-        core.info(`Using configured project ID: ${this.projectId}`)
         return this.projectId
       }
 
@@ -104,60 +114,6 @@ export class GitLabClient implements IClient {
     }
   }
 
-  async validateAccess(): Promise<void> {
-    try {
-      core.info('GitLab Access Validation')
-
-      const projectId = await this.getProjectId()
-      core.info(
-        `\x1b[32m✓ Validating access using Project ID: ${projectId}\x1b[0m`
-      )
-
-      const permissionChecks: PermissionCheck[] = [
-        {
-          feature: 'issues',
-          check: async () => {
-            const issues = await this.gitlab.Issues.all({ projectId })
-            return Array.isArray(issues)
-          },
-          warningMessage: `${ErrorCodes.EPERM2}: Issues read/write permissions missing`
-        },
-        {
-          feature: 'mergeRequests',
-          check: async () => {
-            const mrs = await this.gitlab.MergeRequests.all({ projectId })
-            return Array.isArray(mrs)
-          },
-          warningMessage: `${ErrorCodes.EPERM3}: Merge requests read/write permissions missing`
-        },
-        {
-          feature: 'releases',
-          check: async () => {
-            const releases = await this.gitlab.ProjectReleases.all(projectId)
-            return Array.isArray(releases)
-          },
-          warningMessage: `${ErrorCodes.EPERM4}: Releases read/write permissions missing`
-        }
-      ]
-
-      await PermissionValidator.validatePlatformPermissions(
-        'gitlab',
-        permissionChecks,
-        this.config.gitlab.sync,
-        `${this.repo.owner}/${this.repo.repo}`
-      )
-
-      core.info(
-        `\x1b[32m✓ GitLab Project Access Verified: ${this.repo.owner}/${this.repo.repo}; Project ID: ${projectId}\x1b[0m`
-      )
-    } catch (error) {
-      core.error('GitLab access validation failed')
-      throw new Error(
-        `${ErrorCodes.EGLAB}: ${error instanceof Error ? error.message : String(error)}`
-      )
-    }
-  }
-
   /**
    * Get repository information
    * @returns Repository details including URL
@@ -167,6 +123,10 @@ export class GitLabClient implements IClient {
       ...this.repo,
       url: `${this.config.gitlab.url || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
     }
+  }
+
+  async validateAccess(): Promise<void> {
+    return this.permsHelper.validateAccess()
   }
 
   // Delegate to branch helper

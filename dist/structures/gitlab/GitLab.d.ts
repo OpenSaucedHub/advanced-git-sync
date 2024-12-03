@@ -1,19 +1,19 @@
 import { Repository, Config, IClient } from '../../types';
-import { BranchHelper, IssueHelper, PullRequestHelper, ReleaseHelper, TagHelper } from './helpers';
+import { BranchHelper, IssueHelper, mergeRequestHelper, ReleaseHelper, TagHelper } from './helpers';
 export declare class GitLabClient implements IClient {
     config: Config;
     repo: Repository;
     private gitlab;
     branches: BranchHelper;
     issues: IssueHelper;
-    pullRequest: PullRequestHelper;
+    pullRequest: mergeRequestHelper;
     release: ReleaseHelper;
     tags: TagHelper;
     private projectId;
+    private permsHelper;
     constructor(config: Config, repo: Repository);
     private formatHostUrl;
     private getProjectId;
-    validateAccess(): Promise<void>;
     /**
      * Get repository information
      * @returns Repository details including URL
@@ -23,6 +23,7 @@ export declare class GitLabClient implements IClient {
         owner: string;
         repo: string;
     };
+    validateAccess(): Promise<void>;
     syncBranches(): Promise<import("../../types").Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;
     updateBranch(name: string, commitSha: string): Promise<void>;
