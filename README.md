@@ -56,7 +56,7 @@ jobs:
         uses: actions/checkout@v4.2.2
 
       - name: Sync with GitLab
-        uses: OpenSaucedHub/advanced-git-sync@v1.1.0
+        uses: OpenSaucedHub/advanced-git-sync@v1.1.1
         with:
           CONFIG_PATH: .github/sync-config.yml # optional, defaults to .github/sync-config.yml
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }} # optional, unless you want to sync to GitLab
