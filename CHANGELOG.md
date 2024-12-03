@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.1.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.1...v1.1.2) (2024-12-03)
+
+
+
+## [1.1.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.1...v1.1.2) (2024-12-03)
+
+### Bug Fixes
+
+* remove BaseClient class and update GitHub/GitLab clients to implement IClient directly ([25e6789](https://github.com/OpenSaucedHub/advanced-git-sync/commit/25e67892a29a2221ea53b08e566d08326fc41f39))
+
 # [v1.1.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.0...v1.1.1) (2024-12-03)
 
 ## [1.1.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.0...v1.1.1) (2024-12-03)
