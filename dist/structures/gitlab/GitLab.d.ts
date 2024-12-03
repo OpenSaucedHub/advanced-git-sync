@@ -10,9 +10,9 @@ export declare class GitLabClient extends BaseClient {
     tags: TagHelper;
     private projectId;
     constructor(config: Config, repo?: Repository);
+    private formatHostUrl;
     /**
      * Get the unique project ID from GitLab
-     * @returns Promise<number> The unique project ID
      */
     private getProjectId;
     /**

@@ -1,3 +1,11 @@
+<div align="center">
+
+[![wakatime](https://wakatime.com/badge/github/OpenSaucedHub/advanced-git-sync.svg)](https://wakatime.com/badge/github/OpenSaucedHub/advanced-git-sync)
+[![Releases](https://github.com/OpenSaucedHub/advanced-git-sync/actions/workflows/release.yml/badge.svg)](https://github.com/OpenSaucedHub/advanced-git-sync/actions/workflows/release.yml)
+[![CLA Assistant](https://github.com/OpenSaucedHub/advanced-git-sync/actions/workflows/cla.yml/badge.svg)](https://github.com/OpenSaucedHub/advanced-git-sync/actions/workflows/cla.yml)
+
+</div>
+
 # GitHub GitLab Sync Action
 
 A powerful GitHub Action that provides bi-directional synchronization between GitHub and GitLab
@@ -62,7 +70,7 @@ jobs:
 # When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub TO GitLab
 gitlab:
   enabled: true
-  projectId: # recommended, if present, you do not need username/repo and url
+  projectId: # recommended, if present, you do not need username and repo
   # username: # Optional, defaults to GitHub repo owner
 
 # When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab TO GitHub
@@ -97,6 +105,10 @@ github:
 | `username`  | GitLab username               | No       | GitHub repo owner |
 | `repo`      | GitLab repository name        | No       | GitHub repo name  |
 | `projectId` | GitLab project ID             | No       | Auto-detected     |
+
+> [!TIP]
+>
+> - If `projectId` is provided, `username` and `repo` are not required.
 
 ### GitHub Configuration (`github`)
 
@@ -143,6 +155,7 @@ github:
 > - Tags syncing is automatically enabled if releases syncing is enabled to avoid orphaning
 >   releases.
 > - labels can be either a string or an array of strings.
+> - If `projectId` is provided, `username` and `repo` are not required.
 
 ## Accepted Configuration
 
@@ -155,6 +168,7 @@ set it to `false`.
 gitlab:
   enabled: true
   url: 'gitlab.com' # Optional, defaults to gitlab.com
+  projectId: # optional, but recommended if present, you do not need username and repo
   username: # Optional, defaults to GitHub repo owner
   repo: # Optional, defaults to GitHub repo name
   sync:

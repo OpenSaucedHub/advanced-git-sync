@@ -57000,6 +57000,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitLabClient = void 0;
+// src/structures/gitlab/GitLab.ts
 const core = __importStar(__nccwpck_require__(7484));
 const rest_1 = __nccwpck_require__(4630);
 const helpers_1 = __nccwpck_require__(3682);
@@ -57018,13 +57019,12 @@ class GitLabClient extends baseClient_1.BaseClient {
         if (!config.gitlab?.token) {
             throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: GitLab token is required`);
         }
-        const host = config.gitlab.url || 'https://gitlab.com';
+        // Simplify host handling
+        const host = this.formatHostUrl(config.gitlab.url || 'gitlab.com');
         core.info(`🦊 Initializing GitLab client for host: ${host}`);
         this.gitlab = new rest_1.Gitlab({
             token: config.gitlab.token,
-            host,
-            prefixUrl: `${host}/api/v4`, // Explicitly set base URL with version
-            rejectUnauthorized: false
+            host
         });
         // Initialize helpers
         this.branches = new helpers_1.BranchHelper(this.gitlab, this.repo, this.config);
@@ -57034,47 +57034,40 @@ class GitLabClient extends baseClient_1.BaseClient {
         this.tags = new helpers_1.TagHelper(this.gitlab, this.repo, this.config);
         this.projectId = config.gitlab.projectId || null;
     }
+    formatHostUrl(host) {
+        // Remove trailing slashes
+        host = host.replace(/\/+$/, '');
+        // Add https:// if protocol is missing
+        if (!host.startsWith('http://') && !host.startsWith('https://')) {
+            host = `https://${host}`;
+        }
+        return host;
+    }
     /**
      * Get the unique project ID from GitLab
-     * @returns Promise<number> The unique project ID
      */
     async getProjectId() {
-        // Return cached project ID if available
         if (this.projectId) {
             core.debug(`Using cached project ID: ${this.projectId}`);
             return this.projectId;
         }
-        const projectPath = `${this.repo.owner}/${this.repo.repo}`;
-        core.info(`📂 Attempting to fetch project ID for: ${projectPath}`);
         try {
-            if (this.config.gitlab.projectId) {
-                // Use provided project ID
+            if (this.config.gitlab?.projectId) {
                 this.projectId = this.config.gitlab.projectId;
-                core.info(`\x1b[32m✓ Using configured project ID: ${this.projectId}\x1b[0m`);
+                core.info(`Using configured project ID: ${this.projectId}`);
+                return this.projectId;
             }
-            else {
-                // Fetch project ID from GitLab API
-                const project = await this.gitlab.Projects.show(projectPath.replace('/', '%2F'));
-                if (!project?.id) {
-                    throw new Error('Project ID not found in response');
-                }
-                this.projectId = project.id;
-                // Store the project ID in config for reuse
-                if (this.config.gitlab) {
-                    this.config.gitlab.projectId = this.projectId;
-                }
-                core.info(`\x1b[32m✓ Project ID retrieved: ${this.projectId}\x1b[0m`);
+            const path = `${this.repo.owner}/${this.repo.repo}`;
+            const project = await this.gitlab.Projects.show(path);
+            if (!project?.id) {
+                throw new Error('Project ID not found in response');
             }
+            this.projectId = project.id;
+            core.info(`Project ID retrieved: ${this.projectId}`);
             return this.projectId;
         }
         catch (error) {
-            core.error('Failed to retrieve GitLab project ID');
-            core.error(`Project path: ${projectPath}`);
-            core.error(`Error details: ${error instanceof Error ? error.message : String(error)}`);
-            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: Unable to fetch project details. Please verify:
-        1. The project path "${projectPath}" is correct
-        2. The GitLab token has sufficient permissions
-        3. The project exists and is accessible`);
+            throw new Error(`Failed to fetch project ID for ${this.repo.owner}/${this.repo.repo}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
     /**
