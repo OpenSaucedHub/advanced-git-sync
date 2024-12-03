@@ -1,9 +1,9 @@
+// src/handlers/validator/configValidator.ts
 import { Config } from '@/src/types'
 import * as core from '@actions/core'
 import { TokenManager } from './tokenManager'
 import { logWarning, ValidationError } from './errors'
 import { getGitHubRepo, getGitLabRepo } from '@/src/utils/repoUtils'
-import { PermissionValidator } from './permValidator'
 
 /**
  * Validates and enhances the configuration with tokens
@@ -102,26 +102,6 @@ export async function validateConfig(config: Config): Promise<Config> {
         {
           errorCount: errors.length,
           errors: errors.map(e => e.message)
-        }
-      )
-    }
-
-    // Validate token permissions if tokens are present
-    try {
-      if (updatedConfig.github.token || updatedConfig.gitlab.token) {
-        await PermissionValidator.validatePermissions(updatedConfig)
-      }
-    } catch (permError) {
-      throw new ValidationError(
-        'EPERM1',
-        'Token permission validation failed',
-        {
-          originalError:
-            permError instanceof Error ? permError.message : String(permError),
-          platforms: [
-            ...(updatedConfig.github.token ? ['GitHub'] : []),
-            ...(updatedConfig.gitlab.token ? ['GitLab'] : [])
-          ]
         }
       )
     }

@@ -55464,7 +55464,6 @@ const core = __importStar(__nccwpck_require__(7484));
 const tokenManager_1 = __nccwpck_require__(6514);
 const errors_1 = __nccwpck_require__(1253);
 const repoUtils_1 = __nccwpck_require__(9600);
-const permValidator_1 = __nccwpck_require__(9132);
 /**
  * Validates and enhances the configuration with tokens
  */
@@ -55521,21 +55520,6 @@ async function validateConfig(config) {
             throw new errors_1.ValidationError('EVAL01', 'Multiple validation errors occurred', {
                 errorCount: errors.length,
                 errors: errors.map(e => e.message)
-            });
-        }
-        // Validate token permissions if tokens are present
-        try {
-            if (updatedConfig.github.token || updatedConfig.gitlab.token) {
-                await permValidator_1.PermissionValidator.validatePermissions(updatedConfig);
-            }
-        }
-        catch (permError) {
-            throw new errors_1.ValidationError('EPERM1', 'Token permission validation failed', {
-                originalError: permError instanceof Error ? permError.message : String(permError),
-                platforms: [
-                    ...(updatedConfig.github.token ? ['GitHub'] : []),
-                    ...(updatedConfig.gitlab.token ? ['GitLab'] : [])
-                ]
             });
         }
         return updatedConfig;
@@ -55717,16 +55701,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PermissionValidator = void 0;
-const errorCodes_1 = __nccwpck_require__(9481);
 const core = __importStar(__nccwpck_require__(7484));
-const GitHub_js_1 = __nccwpck_require__(4821);
-const GitLab_js_1 = __nccwpck_require__(741);
 class PermissionValidator {
-    /**
-     * Validates permissions for a specific platform
-     */
     static async validatePlatformPermissions(platform, checks, sync, repoInfo) {
-        core.info(`🔍 ${platform.toUpperCase()} Permissions Validation`);
+        core.startGroup(`🔍 ${platform.toUpperCase()} Permissions Validation`);
         core.info(`\x1b[36mValidating ${platform} permissions for: ${repoInfo}\x1b[0m`);
         for (const check of checks) {
             if (sync?.[check.feature]?.enabled) {
@@ -55742,27 +55720,6 @@ class PermissionValidator {
             }
         }
         core.endGroup();
-    }
-    /**
-     * Validates permissions for both GitHub and GitLab
-     */
-    static async validatePermissions(config) {
-        try {
-            if (config.github.enabled && config.github.token) {
-                const githubClient = new GitHub_js_1.GitHubClient(config);
-                await githubClient.validateAccess();
-            }
-            if (config.gitlab.enabled && config.gitlab.token) {
-                const gitlabClient = new GitLab_js_1.GitLabClient(config);
-                await gitlabClient.validateAccess();
-            }
-            core.info('\x1b[32m✓ Permission validation completed successfully\x1b[0m');
-        }
-        catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            core.setFailed(message);
-            throw new Error(`${errorCodes_1.ErrorCodes.EPERM1}: ${message}`);
-        }
     }
 }
 exports.PermissionValidator = PermissionValidator;
@@ -56013,26 +55970,6 @@ run();
 
 /***/ }),
 
-/***/ 574:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.BaseClient = void 0;
-class BaseClient {
-    config;
-    repo;
-    constructor(config, repo) {
-        this.config = config;
-        this.repo = repo;
-    }
-}
-exports.BaseClient = BaseClient;
-
-
-/***/ }),
-
 /***/ 5188:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -56149,13 +56086,15 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitHubClient = void 0;
+// src/structures/github/GitHub.ts
 const github = __importStar(__nccwpck_require__(3228));
 const core = __importStar(__nccwpck_require__(7484));
-const baseClient_1 = __nccwpck_require__(574);
 const helpers_1 = __nccwpck_require__(6170);
 const errorCodes_1 = __nccwpck_require__(9481);
 const validator_1 = __nccwpck_require__(4460);
-class GitHubClient extends baseClient_1.BaseClient {
+class GitHubClient {
+    config;
+    repo;
     octokit;
     branches;
     pullRequest;
@@ -56163,7 +56102,8 @@ class GitHubClient extends baseClient_1.BaseClient {
     release;
     tags;
     constructor(config, repo) {
-        super(config, repo || { owner: '', repo: '' });
+        this.config = config;
+        this.repo = repo;
         this.octokit = github.getOctokit(config.github.token);
         this.branches = new helpers_1.branchHelper(this.octokit, this.repo, this.config);
         this.pullRequest = new helpers_1.pullRequestHelper(this.octokit, this.repo, this.config);
@@ -56198,8 +56138,9 @@ class GitHubClient extends baseClient_1.BaseClient {
             ];
             // Verify repository access first
             await this.octokit.rest.repos.get({ ...this.repo });
-            await validator_1.PermissionValidator.validatePlatformPermissions('github', permissionChecks, this.config.github.sync, `${this.repo.owner}/${this.repo.repo}`);
-            core.info('\x1b[32m✓ GitHub Repository Access Verified\x1b[0m');
+            await validator_1.PermissionValidator.validatePlatformPermissions('github', permissionChecks, this.config.github.sync, // or gitlab.sync
+            `${this.repo.owner}/${this.repo.repo}`);
+            core.info('\x1b[32m✓ Repository Access Verified\x1b[0m');
         }
         catch (error) {
             throw new Error(`${errorCodes_1.ErrorCodes.EGHUB}: ${error instanceof Error ? error.message : String(error)}`);
@@ -57113,10 +57054,11 @@ exports.GitLabClient = void 0;
 const core = __importStar(__nccwpck_require__(7484));
 const rest_1 = __nccwpck_require__(4630);
 const helpers_1 = __nccwpck_require__(3682);
-const baseClient_1 = __nccwpck_require__(574);
 const errorCodes_1 = __nccwpck_require__(9481);
 const validator_1 = __nccwpck_require__(4460);
-class GitLabClient extends baseClient_1.BaseClient {
+class GitLabClient {
+    config;
+    repo;
     gitlab;
     branches;
     issues;
@@ -57125,11 +57067,17 @@ class GitLabClient extends baseClient_1.BaseClient {
     tags;
     projectId = null;
     constructor(config, repo) {
-        super(config, repo || { owner: '', repo: '' });
+        this.config = config;
+        this.repo = repo;
         if (!config.gitlab?.token) {
             throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: GitLab token is required`);
         }
-        // Simplify host handling
+        if (this.config.gitlab.sync?.issues) {
+            if (!this.config.gitlab.projectId &&
+                (!this.repo.owner || !this.repo.repo)) {
+                throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: GitLab issue sync requires either projectId or owner/repo combination`);
+            }
+        }
         const host = this.formatHostUrl(config.gitlab.url || 'gitlab.com');
         core.info(`Initializing GitLab client for host: ${host}`);
         this.gitlab = new rest_1.Gitlab({
@@ -57137,7 +57085,6 @@ class GitLabClient extends baseClient_1.BaseClient {
             host
         });
         core.info(`\x1b[32m✓ GitLab client initialized successfully\x1b[0m`);
-        // Initialize helpers
         this.branches = new helpers_1.BranchHelper(this.gitlab, this.repo, this.config);
         this.issues = new helpers_1.IssueHelper(this.gitlab, this.repo, this.config);
         this.pullRequest = new helpers_1.PullRequestHelper(this.gitlab, this.repo, this.config);
@@ -57146,9 +57093,7 @@ class GitLabClient extends baseClient_1.BaseClient {
         this.projectId = config.gitlab.projectId || null;
     }
     formatHostUrl(host) {
-        // Remove trailing slashes
         host = host.replace(/\/+$/, '');
-        // Add https:// if protocol is missing
         if (!host.startsWith('http://') && !host.startsWith('https://')) {
             host = `https://${host}`;
         }
@@ -57182,10 +57127,8 @@ class GitLabClient extends baseClient_1.BaseClient {
     async validateAccess() {
         try {
             core.info('GitLab Access Validation');
-            // First, get the project ID
             const projectId = await this.getProjectId();
             core.info(`\x1b[32m✓ Validating access using Project ID: ${projectId}\x1b[0m`);
-            // Define permission checks specific to GitLab
             const permissionChecks = [
                 {
                     feature: 'issues',
@@ -57214,7 +57157,6 @@ class GitLabClient extends baseClient_1.BaseClient {
             ];
             await validator_1.PermissionValidator.validatePlatformPermissions('gitlab', permissionChecks, this.config.gitlab.sync, `${this.repo.owner}/${this.repo.repo}`);
             core.info(`\x1b[32m✓ GitLab Project Access Verified: ${this.repo.owner}/${this.repo.repo}; Project ID: ${projectId}\x1b[0m`);
-            core.endGroup();
         }
         catch (error) {
             core.error('GitLab access validation failed');

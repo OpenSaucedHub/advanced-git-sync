@@ -1,3 +1,4 @@
+// src/structures/github/GitHub.ts
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 import {
@@ -9,9 +10,9 @@ import {
   Release,
   ReleaseAsset,
   Tag,
-  PermissionCheck
+  PermissionCheck,
+  IClient
 } from '@/src/types'
-import { BaseClient } from '../baseClient'
 import {
   branchHelper,
   pullRequestHelper,
@@ -22,7 +23,9 @@ import {
 import { ErrorCodes } from '@/src/utils/errorCodes'
 import { PermissionValidator } from '@/src/handlers/validator'
 
-export class GitHubClient extends BaseClient {
+export class GitHubClient implements IClient {
+  public config: Config
+  public repo: Repository
   private octokit
   public branches: branchHelper
   public pullRequest: pullRequestHelper
@@ -30,8 +33,9 @@ export class GitHubClient extends BaseClient {
   public release: releaseHelper
   public tags: tagsHelper
 
-  constructor(config: Config, repo?: Repository) {
-    super(config, repo || { owner: '', repo: '' })
+  constructor(config: Config, repo: Repository) {
+    this.config = config
+    this.repo = repo
     this.octokit = github.getOctokit(config.github.token!)
     this.branches = new branchHelper(this.octokit, this.repo, this.config)
     this.pullRequest = new pullRequestHelper(
@@ -77,11 +81,11 @@ export class GitHubClient extends BaseClient {
       await PermissionValidator.validatePlatformPermissions(
         'github',
         permissionChecks,
-        this.config.github.sync,
+        this.config.github.sync, // or gitlab.sync
         `${this.repo.owner}/${this.repo.repo}`
       )
 
-      core.info('\x1b[32m✓ GitHub Repository Access Verified\x1b[0m')
+      core.info('\x1b[32m✓ Repository Access Verified\x1b[0m')
     } catch (error) {
       throw new Error(
         `${ErrorCodes.EGHUB}: ${error instanceof Error ? error.message : String(error)}`

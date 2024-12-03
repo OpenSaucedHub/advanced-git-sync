@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import { Gitlab } from '@gitbeaker/rest'
-import { Repository, Config, PermissionCheck } from '@/src/types'
+import { Repository, Config, PermissionCheck, IClient } from '../../types'
 import {
   BranchHelper,
   IssueHelper,
@@ -8,28 +8,39 @@ import {
   ReleaseHelper,
   TagHelper
 } from './helpers'
-import { BaseClient } from '../baseClient'
 import { ErrorCodes } from '@/src/utils/errorCodes'
 import { PermissionValidator } from '@/src/handlers/validator'
 
-export class GitLabClient extends BaseClient {
+export class GitLabClient implements IClient {
+  public config: Config
+  public repo: Repository
   private gitlab
   public branches: BranchHelper
   public issues: IssueHelper
   public pullRequest: PullRequestHelper
   public release: ReleaseHelper
   public tags: TagHelper
-
   private projectId: number | null = null
 
-  constructor(config: Config, repo?: Repository) {
-    super(config, repo || { owner: '', repo: '' })
+  constructor(config: Config, repo: Repository) {
+    this.config = config
+    this.repo = repo
 
     if (!config.gitlab?.token) {
       throw new Error(`${ErrorCodes.EGLAB}: GitLab token is required`)
     }
 
-    // Simplify host handling
+    if (this.config.gitlab.sync?.issues) {
+      if (
+        !this.config.gitlab.projectId &&
+        (!this.repo.owner || !this.repo.repo)
+      ) {
+        throw new Error(
+          `${ErrorCodes.EGLAB}: GitLab issue sync requires either projectId or owner/repo combination`
+        )
+      }
+    }
+
     const host = this.formatHostUrl(config.gitlab.url || 'gitlab.com')
     core.info(`Initializing GitLab client for host: ${host}`)
 
@@ -39,7 +50,7 @@ export class GitLabClient extends BaseClient {
     })
 
     core.info(`\x1b[32m✓ GitLab client initialized successfully\x1b[0m`)
-    // Initialize helpers
+
     this.branches = new BranchHelper(this.gitlab, this.repo, this.config)
     this.issues = new IssueHelper(this.gitlab, this.repo, this.config)
     this.pullRequest = new PullRequestHelper(
@@ -53,14 +64,10 @@ export class GitLabClient extends BaseClient {
   }
 
   private formatHostUrl(host: string): string {
-    // Remove trailing slashes
     host = host.replace(/\/+$/, '')
-
-    // Add https:// if protocol is missing
     if (!host.startsWith('http://') && !host.startsWith('https://')) {
       host = `https://${host}`
     }
-
     return host
   }
 
@@ -101,13 +108,11 @@ export class GitLabClient extends BaseClient {
     try {
       core.info('GitLab Access Validation')
 
-      // First, get the project ID
       const projectId = await this.getProjectId()
       core.info(
         `\x1b[32m✓ Validating access using Project ID: ${projectId}\x1b[0m`
       )
 
-      // Define permission checks specific to GitLab
       const permissionChecks: PermissionCheck[] = [
         {
           feature: 'issues',
@@ -145,8 +150,6 @@ export class GitLabClient extends BaseClient {
       core.info(
         `\x1b[32m✓ GitLab Project Access Verified: ${this.repo.owner}/${this.repo.repo}; Project ID: ${projectId}\x1b[0m`
       )
-
-      core.endGroup()
     } catch (error) {
       core.error('GitLab access validation failed')
       throw new Error(

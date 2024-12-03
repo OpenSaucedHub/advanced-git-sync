@@ -1,14 +1,15 @@
-import { Repository, Config, Issue, Comment, PullRequest, Release, ReleaseAsset, Tag } from '@/src/types';
-import { BaseClient } from '../baseClient';
+import { Repository, Config, Issue, Comment, PullRequest, Release, ReleaseAsset, Tag, IClient } from '@/src/types';
 import { branchHelper, pullRequestHelper, issueHelper, releaseHelper, tagsHelper } from './helpers';
-export declare class GitHubClient extends BaseClient {
+export declare class GitHubClient implements IClient {
+    config: Config;
+    repo: Repository;
     private octokit;
     branches: branchHelper;
     pullRequest: pullRequestHelper;
     issue: issueHelper;
     release: releaseHelper;
     tags: tagsHelper;
-    constructor(config: Config, repo?: Repository);
+    constructor(config: Config, repo: Repository);
     getRepoInfo(): {
         url: string;
         owner: string;

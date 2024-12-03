@@ -2,16 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.1.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.0...v1.1.1) (2024-12-03)
-
-
 
 ## [1.1.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.0...v1.1.1) (2024-12-03)
 
 ### Bug Fixes
 
-* update CHANGELOG and README for clarity; remove redundant validation in BaseClient constructor ([5e84a63](https://github.com/OpenSaucedHub/advanced-git-sync/commit/5e84a63bb49e3ddf562b88abaf8f96611511a666))
+- update CHANGELOG and README for clarity; remove redundant validation in BaseClient constructor
+  ([5e84a63](https://github.com/OpenSaucedHub/advanced-git-sync/commit/5e84a63bb49e3ddf562b88abaf8f96611511a666))
 
 # [v1.1.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.0.11...v1.1.0) (2024-12-03)
 

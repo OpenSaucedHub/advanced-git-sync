@@ -1,20 +1,15 @@
-import { PermissionCheck, Config } from '@/src/types'
-import { ErrorCodes } from '@/src/utils/errorCodes'
+// src/handlers/validator/permValidator.ts
+import { PermissionCheck } from '@/src/types'
 import * as core from '@actions/core'
-import { GitHubClient } from '../../structures/github/GitHub.js'
-import { GitLabClient } from '../../structures/gitlab/GitLab.js'
 
 export class PermissionValidator {
-  /**
-   * Validates permissions for a specific platform
-   */
   static async validatePlatformPermissions(
     platform: 'github' | 'gitlab',
     checks: PermissionCheck[],
     sync: any,
     repoInfo: string
   ): Promise<void> {
-    core.info(`🔍 ${platform.toUpperCase()} Permissions Validation`)
+    core.startGroup(`🔍 ${platform.toUpperCase()} Permissions Validation`)
     core.info(
       `\x1b[36mValidating ${platform} permissions for: ${repoInfo}\x1b[0m`
     )
@@ -33,28 +28,5 @@ export class PermissionValidator {
     }
 
     core.endGroup()
-  }
-
-  /**
-   * Validates permissions for both GitHub and GitLab
-   */
-  static async validatePermissions(config: Config): Promise<void> {
-    try {
-      if (config.github.enabled && config.github.token) {
-        const githubClient = new GitHubClient(config)
-        await githubClient.validateAccess()
-      }
-
-      if (config.gitlab.enabled && config.gitlab.token) {
-        const gitlabClient = new GitLabClient(config)
-        await gitlabClient.validateAccess()
-      }
-
-      core.info('\x1b[32m✓ Permission validation completed successfully\x1b[0m')
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      core.setFailed(message)
-      throw new Error(`${ErrorCodes.EPERM1}: ${message}`)
-    }
   }
 }
