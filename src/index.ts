@@ -2,7 +2,7 @@
 
 import * as core from '@actions/core'
 import { getConfig } from './config'
-import { syncBranches } from './sync/brancheSync'
+import { syncBranches } from './sync/branchSync'
 import { syncPullRequests } from './sync/prSync'
 import { syncIssues } from './sync/issueSync'
 import { syncReleases, syncTags } from './sync/releaseSync'

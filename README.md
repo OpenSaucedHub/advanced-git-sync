@@ -70,8 +70,8 @@ jobs:
 # When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub TO GitLab
 gitlab:
   enabled: true
-  projectId: # recommended, if present, you do not need username and repo
-  # username: # Optional, defaults to GitHub repo owner
+  projectId: # recommended, if present, you do not need owner and repo
+  # owner: # Optional, defaults to GitHub repo owner
 
 # When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab TO GitHub
 github:
@@ -99,22 +99,22 @@ github:
 | Option      | Description                   | Required | Default           |
 | ----------- | ----------------------------- | -------- | ----------------- |
 | `enabled`   | Enable GitLab synchronization | No       | true              |
-| `url`       | GitLab instance URL           | No       | gitlab.com        |
-| `username`  | GitLab username               | No       | GitHub repo owner |
+| `host`      | GitLab instance URL           | No       | gitlab.com        |
+| `owner`     | GitLab owner                  | No       | GitHub repo owner |
 | `repo`      | GitLab repository name        | No       | GitHub repo name  |
 | `projectId` | GitLab project ID             | No       | Auto-detected     |
 
 > [!TIP]
 >
-> - If `projectId` is provided, `username` and `repo` are not required.
+> - If `projectId` is provided, `owner` and `repo` are not required.
 
 ### GitHub Configuration (`github`)
 
-| Option     | Description                   | Required | Default        |
-| ---------- | ----------------------------- | -------- | -------------- |
-| `enabled`  | Enable GitHub synchronization | No       | true           |
-| `username` | GitHub username               | No       | GitHub context |
-| `repo`     | GitHub repository name        | No       | GitHub context |
+| Option    | Description                   | Required | Default        |
+| --------- | ----------------------------- | -------- | -------------- |
+| `enabled` | Enable GitHub synchronization | No       | true           |
+| `owner`   | GitHub owner                  | No       | GitHub context |
+| `repo`    | GitHub repository name        | No       | GitHub context |
 
 ### Sync Configuration
 
@@ -164,9 +164,9 @@ set it to `false`.
 # When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub TO GitLab
 gitlab:
   enabled: true
-  url: 'gitlab.com' # Optional, defaults to gitlab.com
-  projectId: # optional, but recommended if present, you do not need username and repo
-  username: # Optional, defaults to GitHub repo owner
+  host: 'gitlab.com' # Optional, defaults to gitlab.com
+  projectId: # optional, but recommended if present, you do not need owner and repo
+  owner: # Optional, defaults to GitHub repo owner
   repo: # Optional, defaults to GitHub repo name
   sync:
     branches:
@@ -193,7 +193,7 @@ gitlab:
 # When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab TO GitHub
 github:
   enabled: true
-  username: # Optional, defaults to GitHub username
+  owner: # Optional, defaults to GitHub owner
   repo: # Optional, defaults to GitHub repo name
   sync:
     branches:

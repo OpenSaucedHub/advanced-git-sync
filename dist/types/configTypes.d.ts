@@ -140,9 +140,9 @@ export declare const SyncConfigSchema: z.ZodObject<{
 export declare const GitlabConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     projectId: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
-    url: z.ZodOptional<z.ZodString>;
+    host: z.ZodOptional<z.ZodString>;
     token: z.ZodOptional<z.ZodString>;
-    username: z.ZodOptional<z.ZodString>;
+    owner: z.ZodOptional<z.ZodString>;
     repo: z.ZodOptional<z.ZodString>;
     sync: z.ZodOptional<z.ZodObject<{
         branches: z.ZodObject<{
@@ -246,9 +246,9 @@ export declare const GitlabConfigSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     enabled: boolean;
     projectId?: number | null | undefined;
-    url?: string | undefined;
+    host?: string | undefined;
     token?: string | undefined;
-    username?: string | undefined;
+    owner?: string | undefined;
     repo?: string | undefined;
     sync?: {
         branches: {
@@ -276,9 +276,9 @@ export declare const GitlabConfigSchema: z.ZodObject<{
 }, {
     enabled: boolean;
     projectId?: number | null | undefined;
-    url?: string | undefined;
+    host?: string | undefined;
     token?: string | undefined;
-    username?: string | undefined;
+    owner?: string | undefined;
     repo?: string | undefined;
     sync?: {
         branches: {
@@ -307,7 +307,7 @@ export declare const GitlabConfigSchema: z.ZodObject<{
 export declare const GithubConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     token: z.ZodOptional<z.ZodString>;
-    username: z.ZodOptional<z.ZodString>;
+    owner: z.ZodOptional<z.ZodString>;
     repo: z.ZodOptional<z.ZodString>;
     sync: z.ZodOptional<z.ZodObject<{
         branches: z.ZodObject<{
@@ -411,7 +411,7 @@ export declare const GithubConfigSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     enabled: boolean;
     token?: string | undefined;
-    username?: string | undefined;
+    owner?: string | undefined;
     repo?: string | undefined;
     sync?: {
         branches: {
@@ -439,7 +439,7 @@ export declare const GithubConfigSchema: z.ZodObject<{
 }, {
     enabled: boolean;
     token?: string | undefined;
-    username?: string | undefined;
+    owner?: string | undefined;
     repo?: string | undefined;
     sync?: {
         branches: {
@@ -469,9 +469,9 @@ export declare const ConfigSchema: z.ZodObject<{
     gitlab: z.ZodObject<{
         enabled: z.ZodBoolean;
         projectId: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
-        url: z.ZodOptional<z.ZodString>;
+        host: z.ZodOptional<z.ZodString>;
         token: z.ZodOptional<z.ZodString>;
-        username: z.ZodOptional<z.ZodString>;
+        owner: z.ZodOptional<z.ZodString>;
         repo: z.ZodOptional<z.ZodString>;
         sync: z.ZodOptional<z.ZodObject<{
             branches: z.ZodObject<{
@@ -575,9 +575,9 @@ export declare const ConfigSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         enabled: boolean;
         projectId?: number | null | undefined;
-        url?: string | undefined;
+        host?: string | undefined;
         token?: string | undefined;
-        username?: string | undefined;
+        owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
             branches: {
@@ -605,9 +605,9 @@ export declare const ConfigSchema: z.ZodObject<{
     }, {
         enabled: boolean;
         projectId?: number | null | undefined;
-        url?: string | undefined;
+        host?: string | undefined;
         token?: string | undefined;
-        username?: string | undefined;
+        owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
             branches: {
@@ -636,7 +636,7 @@ export declare const ConfigSchema: z.ZodObject<{
     github: z.ZodObject<{
         enabled: z.ZodBoolean;
         token: z.ZodOptional<z.ZodString>;
-        username: z.ZodOptional<z.ZodString>;
+        owner: z.ZodOptional<z.ZodString>;
         repo: z.ZodOptional<z.ZodString>;
         sync: z.ZodOptional<z.ZodObject<{
             branches: z.ZodObject<{
@@ -740,7 +740,7 @@ export declare const ConfigSchema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         enabled: boolean;
         token?: string | undefined;
-        username?: string | undefined;
+        owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
             branches: {
@@ -768,7 +768,7 @@ export declare const ConfigSchema: z.ZodObject<{
     }, {
         enabled: boolean;
         token?: string | undefined;
-        username?: string | undefined;
+        owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
             branches: {
@@ -798,9 +798,9 @@ export declare const ConfigSchema: z.ZodObject<{
     gitlab: {
         enabled: boolean;
         projectId?: number | null | undefined;
-        url?: string | undefined;
+        host?: string | undefined;
         token?: string | undefined;
-        username?: string | undefined;
+        owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
             branches: {
@@ -829,7 +829,7 @@ export declare const ConfigSchema: z.ZodObject<{
     github: {
         enabled: boolean;
         token?: string | undefined;
-        username?: string | undefined;
+        owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
             branches: {
@@ -859,9 +859,9 @@ export declare const ConfigSchema: z.ZodObject<{
     gitlab: {
         enabled: boolean;
         projectId?: number | null | undefined;
-        url?: string | undefined;
+        host?: string | undefined;
         token?: string | undefined;
-        username?: string | undefined;
+        owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
             branches: {
@@ -890,7 +890,7 @@ export declare const ConfigSchema: z.ZodObject<{
     github: {
         enabled: boolean;
         token?: string | undefined;
-        username?: string | undefined;
+        owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
             branches: {

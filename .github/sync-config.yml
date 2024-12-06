@@ -3,8 +3,8 @@
 gitlab:
   enabled: true
   projectId: # recommended, if present, you do not need the following fields
-  url: "gitlab.com" # Optional, defaults to gitlab.com
-  username: vikshan # Optional, defaults to GitHub repo owner
+  host: "gitlab.com" # Optional, defaults to gitlab.com
+  owner: vikshan # Optional, defaults to GitHub repo owner
   repo: devcontainers # Optional, defaults to GitHub repo name
   sync:
     branches:
@@ -31,7 +31,7 @@ gitlab:
 # When you have github.sync.[entity].enabled: true, it means those entities will be "synced FROM GitLab" TO GitHub
 github:
   enabled: true
-  username: iamvikshan # Optional, defaults to GitHub username
+  owner: iamvikshan # Optional, defaults to GitHub owner
   repo: devcontainers # Optional, defaults to GitHub repo name
   sync:
     branches:

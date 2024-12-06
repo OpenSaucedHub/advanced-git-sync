@@ -2,16 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.1.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.2...v1.1.3) (2024-12-03)
-
-
 
 ## [1.1.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.2...v1.1.3) (2024-12-03)
 
 ### Bug Fixes
 
-* add permsHelper for GitHub and GitLab clients; update client initialization and permissions validation ([36b8abf](https://github.com/OpenSaucedHub/advanced-git-sync/commit/36b8abf80c56090751768f519fba3d32526345c0))
+- add permsHelper for GitHub and GitLab clients; update client initialization and permissions
+  validation
+  ([36b8abf](https://github.com/OpenSaucedHub/advanced-git-sync/commit/36b8abf80c56090751768f519fba3d32526345c0))
 
 # [v1.1.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.1...v1.1.2) (2024-12-03)
 

@@ -1,11 +1,11 @@
-import { Issue, Comment, Config, Repository } from '@/src/types';
-export declare class IssueHelper {
+import { Issue, Comment, Config } from '@/src/types';
+export declare class gitlabIssueHelper {
     private gitlab;
-    private repo;
     private config;
-    constructor(gitlab: any, repo: Repository, config: Config);
-    private get projectPath();
+    private getProjectId;
+    constructor(gitlab: any, config: Config, getProjectId: () => Promise<number>);
     syncIssues(): Promise<Issue[]>;
+    private processLabels;
     getIssueComments(issueNumber: number): Promise<Comment[]>;
     createIssue(issue: Issue): Promise<void>;
     updateIssue(issueNumber: number, issue: Issue): Promise<void>;

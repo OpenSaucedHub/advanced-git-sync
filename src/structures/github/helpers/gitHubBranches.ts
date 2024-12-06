@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import { Repository, Config, Branch } from '@src/types'
 
-export class branchHelper {
+export class githubBranchHelper {
   constructor(
     private octokit: any,
     private repo: Repository,

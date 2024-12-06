@@ -13,9 +13,9 @@ import {
   IClient
 } from '@/src/types'
 import {
-  branchHelper,
+  githubBranchHelper,
   pullRequestHelper,
-  issueHelper,
+  githubIssueHelper,
   releaseHelper,
   tagsHelper,
   permsHelper
@@ -25,9 +25,9 @@ export class GitHubClient implements IClient {
   public config: Config
   public repo: Repository
   private octokit
-  public branches: branchHelper
+  public branches: githubBranchHelper
   public pullRequest: pullRequestHelper
-  public issue: issueHelper
+  public issue: githubIssueHelper
   public release: releaseHelper
   public tags: tagsHelper
   public permsHelper: permsHelper
@@ -36,13 +36,13 @@ export class GitHubClient implements IClient {
     this.config = config
     this.repo = repo
     this.octokit = github.getOctokit(config.github.token!)
-    this.branches = new branchHelper(this.octokit, this.repo, this.config)
+    this.branches = new githubBranchHelper(this.octokit, this.repo, this.config)
     this.pullRequest = new pullRequestHelper(
       this.octokit,
       this.repo,
       this.config
     )
-    this.issue = new issueHelper(this.octokit, this.repo, this.config)
+    this.issue = new githubIssueHelper(this.octokit, this.repo, this.config)
     this.release = new releaseHelper(this.octokit, this.repo, this.config)
     this.tags = new tagsHelper(this.octokit, this.repo, this.config)
     this.permsHelper = new permsHelper(this.octokit, this.repo, this.config)
@@ -57,12 +57,11 @@ export class GitHubClient implements IClient {
       url: `https://github.com/${this.repo.owner}/${this.repo.repo}`
     }
   }
-
   async validateAccess(): Promise<void> {
     return this.permsHelper.validateAccess()
   }
 
-  // Delegate branch operations to branchHelper
+  // Delegate branch operations to ghBranchHelper
   async syncBranches() {
     return this.branches.sync()
   }

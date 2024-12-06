@@ -15299,6 +15299,101 @@ legacyRestEndpointMethods.VERSION = VERSION;
 
 /***/ }),
 
+/***/ 2639:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var bind = __nccwpck_require__(7564);
+
+var $apply = __nccwpck_require__(3945);
+var $call = __nccwpck_require__(8093);
+var $reflectApply = __nccwpck_require__(1330);
+
+/** @type {import('./actualApply')} */
+module.exports = $reflectApply || bind.call($call, $apply);
+
+
+/***/ }),
+
+/***/ 6002:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var bind = __nccwpck_require__(7564);
+var $apply = __nccwpck_require__(3945);
+var actualApply = __nccwpck_require__(2639);
+
+/** @type {import('./applyBind')} */
+module.exports = function applyBind() {
+	return actualApply(bind, $apply, arguments);
+};
+
+
+/***/ }),
+
+/***/ 3945:
+/***/ ((module) => {
+
+"use strict";
+
+
+/** @type {import('./functionApply')} */
+module.exports = Function.prototype.apply;
+
+
+/***/ }),
+
+/***/ 8093:
+/***/ ((module) => {
+
+"use strict";
+
+
+/** @type {import('./functionCall')} */
+module.exports = Function.prototype.call;
+
+
+/***/ }),
+
+/***/ 8705:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var bind = __nccwpck_require__(7564);
+var $TypeError = __nccwpck_require__(3314);
+
+var $call = __nccwpck_require__(8093);
+var $actualApply = __nccwpck_require__(2639);
+
+/** @type {import('.')} */
+module.exports = function callBindBasic(args) {
+	if (args.length < 1 || typeof args[0] !== 'function') {
+		throw new $TypeError('a function is required');
+	}
+	return $actualApply(bind, $call, args);
+};
+
+
+/***/ }),
+
+/***/ 1330:
+/***/ ((module) => {
+
+"use strict";
+
+
+/** @type {import('./reflectApply')} */
+module.exports = typeof Reflect === 'function' && Reflect.apply;
+
+
+/***/ }),
+
 /***/ 2856:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -15328,32 +15423,21 @@ module.exports = function callBoundIntrinsic(name, allowMissing) {
 "use strict";
 
 
-var bind = __nccwpck_require__(7564);
-var GetIntrinsic = __nccwpck_require__(470);
 var setFunctionLength = __nccwpck_require__(9346);
 
-var $TypeError = __nccwpck_require__(3314);
-var $apply = GetIntrinsic('%Function.prototype.apply%');
-var $call = GetIntrinsic('%Function.prototype.call%');
-var $reflectApply = GetIntrinsic('%Reflect.apply%', true) || bind.call($call, $apply);
-
 var $defineProperty = __nccwpck_require__(9094);
-var $max = GetIntrinsic('%Math.max%');
+
+var callBindBasic = __nccwpck_require__(8705);
+var applyBind = __nccwpck_require__(6002);
 
 module.exports = function callBind(originalFunction) {
-	if (typeof originalFunction !== 'function') {
-		throw new $TypeError('a function is required');
-	}
-	var func = $reflectApply(bind, $call, arguments);
+	var func = callBindBasic(arguments);
+	var adjustedLength = originalFunction.length - (arguments.length - 1);
 	return setFunctionLength(
 		func,
-		1 + $max(0, originalFunction.length - (arguments.length - 1)),
+		1 + (adjustedLength > 0 ? adjustedLength : 0),
 		true
 	);
-};
-
-var applyBind = function applyBind() {
-	return $reflectApply(bind, $apply, arguments);
 };
 
 if ($defineProperty) {
@@ -16178,16 +16262,26 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 
 /***/ }),
 
+/***/ 1174:
+/***/ ((module) => {
+
+"use strict";
+
+
+/** @type {import('./gOPD')} */
+module.exports = Object.getOwnPropertyDescriptor;
+
+
+/***/ }),
+
 /***/ 3170:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
 
-var GetIntrinsic = __nccwpck_require__(470);
-
 /** @type {import('.')} */
-var $gOPD = GetIntrinsic('%Object.getOwnPropertyDescriptor%', true);
+var $gOPD = __nccwpck_require__(1174);
 
 if ($gOPD) {
 	try {
@@ -55846,7 +55940,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(7484));
 const config_1 = __nccwpck_require__(2973);
-const brancheSync_1 = __nccwpck_require__(3019);
+const branchSync_1 = __nccwpck_require__(8536);
 const prSync_1 = __nccwpck_require__(2678);
 const issueSync_1 = __nccwpck_require__(4455);
 const releaseSync_1 = __nccwpck_require__(6389);
@@ -55877,7 +55971,7 @@ async function run() {
                     name: '\x1b[34m🌿 Branches (GitHub → GitLab)\x1b[0m',
                     enabled: config.github.sync?.branches.enabled || false,
                     operation: async () => {
-                        await (0, brancheSync_1.syncBranches)(githubClient, gitlabClient);
+                        await (0, branchSync_1.syncBranches)(githubClient, gitlabClient);
                     }
                 },
                 {
@@ -55913,7 +56007,7 @@ async function run() {
                     name: '\x1b[34m🌿 Branches (GitLab → GitHub)\x1b[0m',
                     enabled: config.gitlab.sync?.branches.enabled || false,
                     operation: async () => {
-                        await (0, brancheSync_1.syncBranches)(gitlabClient, githubClient);
+                        await (0, branchSync_1.syncBranches)(gitlabClient, githubClient);
                     }
                 },
                 {
@@ -56039,7 +56133,7 @@ class ClientManager {
                 core.info(`Initializing GitLab client with project ID: ${config.gitlab.projectId}`);
             }
             else {
-                core.info(`Initializing GitLab client with repository: ${config.gitlab?.username || ''}/${config.gitlab?.repo || ''}`);
+                core.info(`Initializing GitLab client with repository: ${config.gitlab?.owner || ''}/${config.gitlab?.repo || ''}`);
             }
             this.gitlabClient = new GitLab_1.GitLabClient(config, (0, repoUtils_1.getGitLabRepo)(config));
             core.endGroup();
@@ -56110,9 +56204,9 @@ class GitHubClient {
         this.config = config;
         this.repo = repo;
         this.octokit = github.getOctokit(config.github.token);
-        this.branches = new helpers_1.branchHelper(this.octokit, this.repo, this.config);
+        this.branches = new helpers_1.githubBranchHelper(this.octokit, this.repo, this.config);
         this.pullRequest = new helpers_1.pullRequestHelper(this.octokit, this.repo, this.config);
-        this.issue = new helpers_1.issueHelper(this.octokit, this.repo, this.config);
+        this.issue = new helpers_1.githubIssueHelper(this.octokit, this.repo, this.config);
         this.release = new helpers_1.releaseHelper(this.octokit, this.repo, this.config);
         this.tags = new helpers_1.tagsHelper(this.octokit, this.repo, this.config);
         this.permsHelper = new helpers_1.permsHelper(this.octokit, this.repo, this.config);
@@ -56127,7 +56221,7 @@ class GitHubClient {
     async validateAccess() {
         return this.permsHelper.validateAccess();
     }
-    // Delegate branch operations to branchHelper
+    // Delegate branch operations to ghBranchHelper
     async syncBranches() {
         return this.branches.sync();
     }
@@ -56197,7 +56291,7 @@ exports.GitHubClient = GitHubClient;
 
 /***/ }),
 
-/***/ 7852:
+/***/ 3787:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -56236,9 +56330,9 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.branchHelper = void 0;
+exports.githubBranchHelper = void 0;
 const core = __importStar(__nccwpck_require__(7484));
-class branchHelper {
+class githubBranchHelper {
     octokit;
     repo;
     config;
@@ -56307,42 +56401,12 @@ class branchHelper {
         }
     }
 }
-exports.branchHelper = branchHelper;
+exports.githubBranchHelper = githubBranchHelper;
 
 
 /***/ }),
 
-/***/ 6170:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-__exportStar(__nccwpck_require__(7852), exports);
-__exportStar(__nccwpck_require__(5062), exports);
-__exportStar(__nccwpck_require__(3913), exports);
-__exportStar(__nccwpck_require__(4539), exports);
-__exportStar(__nccwpck_require__(3689), exports);
-__exportStar(__nccwpck_require__(5537), exports);
-
-
-/***/ }),
-
-/***/ 3913:
+/***/ 8967:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -56381,9 +56445,9 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.issueHelper = void 0;
+exports.githubIssueHelper = void 0;
 const core = __importStar(__nccwpck_require__(7484));
-class issueHelper {
+class githubIssueHelper {
     octokit;
     repo;
     config;
@@ -56398,26 +56462,23 @@ class issueHelper {
         }
         try {
             core.info('\x1b[36m❗ Fetching GitHub Issues...\x1b[0m');
-            // Add owner and repo parameters to fetch only repository-specific issues
             const { data: issues } = await this.octokit.rest.issues.listForRepo({
                 ...this.repo,
                 state: 'all',
                 per_page: 100
             });
-            // Process and transform issues, excluding pull requests
             const processedIssues = issues
                 .filter((issue) => !issue.pull_request)
                 .map((issue) => ({
                 title: issue.title,
                 body: issue.body || '',
                 labels: [
-                    ...issue.labels,
+                    ...this.processLabels(issue.labels),
                     ...(this.config.gitlab.sync?.issues.labels ?? [])
                 ],
                 number: issue.number,
                 state: issue.state
             }));
-            // Log successful issue fetch
             core.info(`\x1b[32m✓ Issues Fetched: ${processedIssues.length} total issues\x1b[0m`);
             return processedIssues;
         }
@@ -56426,72 +56487,76 @@ class issueHelper {
             return [];
         }
     }
+    processLabels(labels) {
+        // First deduplicate and flatten the labels
+        const processedLabels = new Set(labels
+            .map(label => {
+            if (typeof label === 'string')
+                return label;
+            if (typeof label === 'object' && label !== null && 'name' in label) {
+                return label.name;
+            }
+            return '';
+        })
+            .filter(Boolean));
+        // Convert back to array and remove any empty strings
+        return Array.from(processedLabels).filter(label => label.length > 0);
+    }
     async getIssueComments(issueNumber) {
-        // Check if comment sync is enabled
         if (!this.config.gitlab.sync?.issues.syncComments) {
             core.info('\x1b[33m⚠️ Issue Comments Sync Disabled\x1b[0m');
             return [];
         }
         try {
-            // Colorful console log for fetching comments
             core.info(`\x1b[36m💬 Fetching Comments for Issue #${issueNumber}...\x1b[0m`);
-            // Fetch comments for a specific issue
             const { data: comments } = await this.octokit.rest.issues.listComments({
                 ...this.repo,
                 issue_number: issueNumber
             });
-            // Process and transform comments
             const processedComments = comments.map((comment) => ({
                 id: comment.id,
                 body: comment.body || '',
                 createdAt: comment.created_at,
                 author: comment.user?.login || 'unknown'
             }));
-            // Log successful comment fetch
             core.info(`\x1b[32m✓ Comments Fetched: ${processedComments.length} comments\x1b[0m`);
             return processedComments;
         }
         catch (error) {
-            // Error handling with colorful console warning
             core.warning(`\x1b[31m❌ Failed to Fetch GitHub Issue Comments: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
         }
     }
     async createIssue(issue) {
         try {
-            // Create a new issue using the provided issue details
             await this.octokit.rest.issues.create({
                 ...this.repo,
                 title: issue.title,
                 body: issue.body,
-                labels: issue.labels
+                labels: this.processLabels(issue.labels)
             });
         }
         catch (error) {
-            // Throw a descriptive error if issue creation fails
             throw new Error(`Failed to create issue "${issue.title}": ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     async updateIssue(issueNumber, issue) {
         try {
-            // Update an existing issue with the provided details
             await this.octokit.rest.issues.update({
                 ...this.repo,
                 issue_number: issueNumber,
                 title: issue.title,
                 body: issue.body,
-                labels: issue.labels,
+                labels: this.processLabels(issue.labels),
                 state: issue.state
             });
         }
         catch (error) {
-            // Throw a descriptive error if issue update fails
             throw new Error(`Failed to update issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     async createIssueComment(issueNumber, comment) {
         try {
-            // Create a new comment on a specific issue
             await this.octokit.rest.issues.createComment({
                 ...this.repo,
                 issue_number: issueNumber,
@@ -56499,12 +56564,41 @@ class issueHelper {
             });
         }
         catch (error) {
-            // Throw a descriptive error if comment creation fails
             throw new Error(`Failed to create comment on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }
-exports.issueHelper = issueHelper;
+exports.githubIssueHelper = githubIssueHelper;
+
+
+/***/ }),
+
+/***/ 6170:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(3787), exports);
+__exportStar(__nccwpck_require__(8098), exports);
+__exportStar(__nccwpck_require__(8967), exports);
+__exportStar(__nccwpck_require__(4539), exports);
+__exportStar(__nccwpck_require__(3689), exports);
+__exportStar(__nccwpck_require__(5537), exports);
 
 
 /***/ }),
@@ -56596,7 +56690,7 @@ exports.permsHelper = permsHelper;
 
 /***/ }),
 
-/***/ 5062:
+/***/ 8098:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -56987,55 +57081,35 @@ class tagsHelper {
         }
         try {
             core.info('\x1b[36m🏷 Fetching GitHub Tags...\x1b[0m');
+            // First get list of tags
             const { data: tags } = await this.octokit.rest.repos.listTags({
                 ...this.repo
             });
-            // Get tag creation times from refs
+            // Process tags with proper error handling
             const processedTags = await Promise.all(tags.map(async (tag) => {
                 try {
-                    // First, try to get the ref
-                    const { data: ref } = await this.octokit.rest.git
-                        .getRef({
+                    // Get ref details first
+                    const { data: refData } = await this.octokit.rest.git.getRef({
                         ...this.repo,
                         ref: `tags/${tag.name}`
-                    })
-                        .catch((error) => {
-                        // Log the error but continue
-                        core.warning(`\x1b[33m⚠️ Could not fetch ref for tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
-                        return { data: { object: { sha: tag.commit.sha } } };
                     });
-                    // Try to get tag details, but fall back to commit details if fails
-                    try {
-                        const { data: tagData } = await this.octokit.rest.git.getTag({
-                            ...this.repo,
-                            tag_sha: ref.object.sha
-                        });
-                        return {
-                            name: tag.name,
-                            createdAt: tagData.tagger?.date || new Date().toISOString(),
-                            commitSha: tag.commit.sha
-                        };
-                    }
-                    catch (error) {
-                        // If getting tag details fails, fall back to commit details
-                        core.warning(`\x1b[33m⚠️ Failed to get tag details for ${tag.name}: ${error instanceof Error ? error.message : String(error)}, falling back to commit details\x1b[0m`);
-                        const { data: commit } = await this.octokit.rest.git.getCommit({
-                            ...this.repo,
-                            commit_sha: tag.commit.sha
-                        });
-                        return {
-                            name: tag.name,
-                            createdAt: commit.author.date,
-                            commitSha: tag.commit.sha
-                        };
-                    }
-                }
-                catch (error) {
-                    core.warning(`\x1b[31m❌ Failed to process tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
-                    // Absolute fallback - use basic tag information
+                    // Get commit details for timestamp
+                    const { data: commitData } = await this.octokit.rest.git.getCommit({
+                        ...this.repo,
+                        commit_sha: refData.object.sha
+                    });
                     return {
                         name: tag.name,
-                        createdAt: new Date().toISOString(), // Fallback to current time
+                        createdAt: commitData.author.date,
+                        commitSha: tag.commit.sha
+                    };
+                }
+                catch (error) {
+                    core.warning(`\x1b[33m⚠️ Failed to process tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+                    // Fallback to basic tag info
+                    return {
+                        name: tag.name,
+                        createdAt: new Date().toISOString(),
                         commitSha: tag.commit.sha
                     };
                 }
@@ -57131,7 +57205,7 @@ class GitLabClient {
     gitlab;
     branches;
     issues;
-    pullRequest;
+    mergeRequest;
     release;
     tags;
     projectId = null;
@@ -57142,22 +57216,16 @@ class GitLabClient {
         if (!config.gitlab?.token) {
             throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: GitLab token is required`);
         }
-        if (this.config.gitlab.sync?.issues) {
-            if (!this.config.gitlab.projectId &&
-                (!this.repo.owner || !this.repo.repo)) {
-                throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: GitLab issue sync requires owner/repo combination`);
-            }
-        }
-        const host = this.formatHostUrl(config.gitlab.url || 'gitlab.com');
+        const host = this.formatHostUrl(config.gitlab.host || 'gitlab.com');
         core.info(`Initializing GitLab client for host: ${host}`);
         this.gitlab = new rest_1.Gitlab({
             token: config.gitlab.token,
             host
         });
         // Initialize helpers with a method to get projectId
-        this.branches = new helpers_1.BranchHelper(this.gitlab, this.config, () => this.getProjectId());
-        this.issues = new helpers_1.IssueHelper(this.gitlab, this.repo, this.config);
-        this.pullRequest = new helpers_1.mergeRequestHelper(this.gitlab, this.config, () => this.getProjectId());
+        this.branches = new helpers_1.gitlabBranchHelper(this.gitlab, this.config, () => this.getProjectId());
+        this.issues = new helpers_1.gitlabIssueHelper(this.gitlab, this.config, () => this.getProjectId());
+        this.mergeRequest = new helpers_1.mergeRequestHelper(this.gitlab, this.config, () => this.getProjectId());
         this.permsHelper = new helpers_1.permsHelper(this.gitlab, this.repo, this.config, () => this.getProjectId());
         this.release = new helpers_1.ReleaseHelper(this.gitlab, this.repo, this.config, () => this.getProjectId());
         this.tags = new helpers_1.TagHelper(this.gitlab, this.config, () => this.getProjectId());
@@ -57201,7 +57269,7 @@ class GitLabClient {
     getRepoInfo() {
         return {
             ...this.repo,
-            url: `${this.config.gitlab.url || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
+            url: `${this.config.gitlab.host || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
         };
     }
     async validateAccess() {
@@ -57219,16 +57287,16 @@ class GitLabClient {
     }
     // Delegate to pull request helper
     async syncPullRequests() {
-        return this.pullRequest.syncPullRequests();
+        return this.mergeRequest.syncPullRequests();
     }
     async createPullRequest(pr) {
-        return this.pullRequest.createPullRequest(pr);
+        return this.mergeRequest.createPullRequest(pr);
     }
     async updatePullRequest(number, pr) {
-        return this.pullRequest.updatePullRequest(number, pr);
+        return this.mergeRequest.updatePullRequest(number, pr);
     }
     async closePullRequest(number) {
-        return this.pullRequest.closePullRequest(number);
+        return this.mergeRequest.closePullRequest(number);
     }
     // Delegate to issue helper
     async syncIssues() {
@@ -57278,7 +57346,158 @@ exports.GitLabClient = GitLabClient;
 
 /***/ }),
 
-/***/ 8244:
+/***/ 7579:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+// src/structures/gitlab/helpers/gitlabBranches.ts
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.gitlabBranchHelper = void 0;
+const core = __importStar(__nccwpck_require__(7484));
+const exec = __importStar(__nccwpck_require__(5236));
+const path = __importStar(__nccwpck_require__(6928));
+const fs = __importStar(__nccwpck_require__(9896));
+class gitlabBranchHelper {
+    gitlab;
+    config;
+    getProjectId;
+    repoPath = null;
+    constructor(gitlab, config, getProjectId) {
+        this.gitlab = gitlab;
+        this.config = config;
+        this.getProjectId = getProjectId;
+    }
+    getRepoPathFromConfig() {
+        if (this.config.gitlab?.projectId) {
+            return null;
+        }
+        const owner = this.config.gitlab.owner;
+        const repo = this.config.gitlab.repo;
+        if (owner && repo) {
+            return `${owner}/${repo}`;
+        }
+        return null;
+    }
+    async sync() {
+        if (!this.config.github.sync?.branches.enabled) {
+            return [];
+        }
+        try {
+            core.info('\x1b[36m🌿 Fetching GitLab Branches...\x1b[0m');
+            const projectId = await this.getProjectId();
+            const branches = await this.gitlab.Branches.all(projectId);
+            // Extract repo path from first branch API URL
+            if (branches.length > 0 && !this.repoPath) {
+                const apiUrl = branches[0]._links?.self || '';
+                const match = apiUrl.match(/projects\/(.+?)\/repository/);
+                if (match) {
+                    this.repoPath = decodeURIComponent(match[1]);
+                    core.debug(`Extracted repo path: ${this.repoPath}`);
+                }
+            }
+            const processedBranches = branches.map((branch) => ({
+                name: branch.name,
+                sha: branch.commit.id,
+                protected: branch.protected
+            }));
+            core.info(`\x1b[32m✓ Branches Fetched: ${processedBranches.length} branches\x1b[0m`);
+            return processedBranches;
+        }
+        catch (error) {
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Branches: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+            return [];
+        }
+    }
+    async update(name, commitSha) {
+        try {
+            // Try getting path from  sync first
+            if (!this.repoPath) {
+                await this.sync();
+            }
+            if (!this.repoPath) {
+                // If still no path, try getting path from config as last resort
+                this.repoPath = this.getRepoPathFromConfig();
+                if (!this.repoPath) {
+                    throw new Error('Could not determine repository path');
+                }
+            }
+            const gitlabUrl = this.config.gitlab.host || 'https://gitlab.com';
+            const repoPath = `${gitlabUrl}/${this.repoPath}.git`;
+            const tmpDir = path.join(process.cwd(), '.tmp-git');
+            if (!fs.existsSync(tmpDir)) {
+                fs.mkdirSync(tmpDir, { recursive: true });
+            }
+            await exec.exec('git', ['init'], { cwd: tmpDir });
+            await exec.exec('git', ['config', 'user.name', 'advanced-git-sync'], {
+                cwd: tmpDir
+            });
+            await exec.exec('git', ['config', 'user.email', 'advanced-git-sync@users.noreply.github.com'], { cwd: tmpDir });
+            const githubUrl = `https://x-access-token:${this.config.github.token}@github.com/${this.config.github.owner}/${this.config.github.repo}.git`;
+            await exec.exec('git', ['remote', 'add', 'gitHub', githubUrl], {
+                cwd: tmpDir
+            });
+            await exec.exec('git', ['fetch', 'gitHub', commitSha], { cwd: tmpDir });
+            const gitlabAuthUrl = `https://oauth2:${this.config.gitlab.token}@${repoPath.replace('https://', '')}`;
+            await exec.exec('git', ['remote', 'add', 'gitlab', gitlabAuthUrl], {
+                cwd: tmpDir
+            });
+            await exec.exec('git', ['push', '-f', 'gitlab', `${commitSha}:refs/heads/${name}`], { cwd: tmpDir });
+            fs.rmSync(tmpDir, { recursive: true, force: true });
+        }
+        catch (error) {
+            throw new Error(`Failed to update branch ${name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async create(name, commitSha) {
+        try {
+            const projectId = await this.getProjectId();
+            await this.gitlab.Branches.create(projectId, name, commitSha);
+        }
+        catch (error) {
+            throw new Error(`Failed to create branch ${name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+}
+exports.gitlabBranchHelper = gitlabBranchHelper;
+
+
+/***/ }),
+
+/***/ 6071:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -57317,9 +57536,9 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.BranchHelper = void 0;
+exports.gitlabIssueHelper = void 0;
 const core = __importStar(__nccwpck_require__(7484));
-class BranchHelper {
+class gitlabIssueHelper {
     gitlab;
     config;
     getProjectId;
@@ -57328,49 +57547,125 @@ class BranchHelper {
         this.config = config;
         this.getProjectId = getProjectId;
     }
-    async sync() {
-        if (!this.config.github.sync?.branches.enabled) {
+    async syncIssues() {
+        if (!this.config.github.sync?.issues.enabled) {
             return [];
         }
         try {
-            core.info('\x1b[36m🌿 Fetching GitLab Branches...\x1b[0m');
-            // Get identifier - either project ID or path
+            core.info('\x1b[36m❗ Fetching GitLab Issues...\x1b[0m');
             const projectId = await this.getProjectId();
-            const branches = await this.gitlab.Branches.all(projectId);
-            const processedBranches = branches.map((branch) => ({
-                name: branch.name,
-                sha: branch.commit.id,
-                protected: branch.protected
+            const issues = await this.gitlab.Issues.all({
+                projectId: projectId
+            });
+            const processedIssues = issues.map((issue) => ({
+                title: issue.title,
+                body: issue.description || '',
+                labels: [
+                    ...this.processLabels(issue.labels),
+                    ...(this.config.github.sync?.issues.labels ?? [])
+                ],
+                number: issue.iid,
+                state: (issue.state === 'opened' ? 'open' : 'closed')
             }));
-            core.info(`\x1b[32m✓ Branches Fetched: ${processedBranches.length} branches\x1b[0m`);
-            return processedBranches;
+            core.info(`\x1b[32m✓ Issues Fetched: ${processedIssues.length} total issues\x1b[0m`);
+            return processedIssues;
         }
         catch (error) {
-            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Branches: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Issues: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
         }
     }
-    async create(name, commitSha) {
+    processLabels(labels) {
+        if (!labels)
+            return [];
+        if (typeof labels === 'string')
+            return labels.split(',').map(l => l.trim());
+        if (Array.isArray(labels)) {
+            return labels
+                .map(label => {
+                if (typeof label === 'string')
+                    return label.trim();
+                if (typeof label === 'object' && label !== null && 'name' in label) {
+                    return label.name.trim();
+                }
+                return '';
+            })
+                .filter(Boolean);
+        }
+        return [];
+    }
+    async getIssueComments(issueNumber) {
+        if (!this.config.github.sync?.issues.syncComments) {
+            return [];
+        }
         try {
+            core.info(`\x1b[36m💬 Fetching Comments for Issue #${issueNumber}...\x1b[0m`);
             const projectId = await this.getProjectId();
-            await this.gitlab.Branches.create(projectId, name, commitSha);
+            const notes = await this.gitlab.IssueNotes.all({
+                projectId: projectId,
+                issueIid: issueNumber
+            });
+            const processedComments = notes.map((note) => ({
+                id: note.id,
+                body: note.body,
+                createdAt: note.created_at,
+                author: note.author.owner
+            }));
+            core.info(`\x1b[32m✓ Comments Fetched: ${processedComments.length} comments\x1b[0m`);
+            return processedComments;
         }
         catch (error) {
-            throw new Error(`Failed to create branch ${name}: ${error instanceof Error ? error.message : String(error)}`);
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Issue Comments: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+            return [];
         }
     }
-    async update(name, commitSha) {
+    async createIssue(issue) {
         try {
             const projectId = await this.getProjectId();
-            await this.gitlab.Branches.remove(projectId, name);
-            await this.gitlab.Branches.create(projectId, name, commitSha);
+            const labels = this.processLabels(issue.labels);
+            await this.gitlab.Issues.create({
+                projectId: projectId,
+                title: issue.title,
+                description: issue.body,
+                labels: labels.join(',')
+            });
         }
         catch (error) {
-            throw new Error(`Failed to update branch ${name}: ${error instanceof Error ? error.message : String(error)}`);
+            throw new Error(`Failed to create issue "${issue.title}": ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateIssue(issueNumber, issue) {
+        try {
+            const projectId = await this.getProjectId();
+            const labels = this.processLabels(issue.labels);
+            await this.gitlab.Issues.edit({
+                projectId: projectId,
+                issueIid: issueNumber,
+                title: issue.title,
+                description: issue.body,
+                labels: labels.join(','),
+                stateEvent: issue.state === 'closed' ? 'close' : 'reopen'
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async createIssueComment(issueNumber, comment) {
+        try {
+            const projectId = await this.getProjectId();
+            await this.gitlab.IssueNotes.create({
+                projectId: projectId,
+                issueIid: issueNumber,
+                body: comment.body
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to create comment on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }
-exports.BranchHelper = BranchHelper;
+exports.gitlabIssueHelper = gitlabIssueHelper;
 
 
 /***/ }),
@@ -57395,9 +57690,9 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-__exportStar(__nccwpck_require__(8244), exports);
-__exportStar(__nccwpck_require__(9617), exports);
-__exportStar(__nccwpck_require__(409), exports);
+__exportStar(__nccwpck_require__(7579), exports);
+__exportStar(__nccwpck_require__(6071), exports);
+__exportStar(__nccwpck_require__(7065), exports);
 __exportStar(__nccwpck_require__(515), exports);
 __exportStar(__nccwpck_require__(5374), exports);
 __exportStar(__nccwpck_require__(425), exports);
@@ -57405,146 +57700,7 @@ __exportStar(__nccwpck_require__(425), exports);
 
 /***/ }),
 
-/***/ 9617:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.IssueHelper = void 0;
-const core = __importStar(__nccwpck_require__(7484));
-class IssueHelper {
-    gitlab;
-    repo;
-    config;
-    constructor(gitlab, repo, config) {
-        this.gitlab = gitlab;
-        this.repo = repo;
-        this.config = config;
-    }
-    get projectPath() {
-        return `${this.repo.owner}/${this.repo.repo}`;
-    }
-    async syncIssues() {
-        if (!this.config.github.sync?.issues.enabled) {
-            return [];
-        }
-        try {
-            core.info('\x1b[36m❗ Fetching GitLab Issues...\x1b[0m');
-            const issues = await this.gitlab.Issues.all({
-                projectPath: this.projectPath
-            });
-            const processedIssues = issues.map((issue) => ({
-                title: issue.title,
-                body: issue.description || '',
-                labels: [
-                    ...(issue.labels || []),
-                    ...(this.config.github.sync?.issues.labels ?? [])
-                ],
-                number: issue.iid,
-                state: (issue.state === 'opened' ? 'open' : 'closed')
-            }));
-            core.info(`\x1b[32m✓ Issues Fetched: ${processedIssues.length} total issues\x1b[0m`);
-            return processedIssues;
-        }
-        catch (error) {
-            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Issues: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
-            return [];
-        }
-    }
-    async getIssueComments(issueNumber) {
-        if (!this.config.github.sync?.issues.syncComments) {
-            return [];
-        }
-        try {
-            core.info(`\x1b[36m💬 Fetching Comments for Issue #${issueNumber}...\x1b[0m`);
-            const notes = await this.gitlab.IssueNotes.all(this.projectPath, issueNumber);
-            const processedComments = notes.map((note) => ({
-                id: note.id,
-                body: note.body,
-                createdAt: note.created_at,
-                author: note.author.username
-            }));
-            core.info(`\x1b[32m✓ Comments Fetched: ${processedComments.length} comments\x1b[0m`);
-            return processedComments;
-        }
-        catch (error) {
-            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Issue Comments: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
-            return [];
-        }
-    }
-    async createIssue(issue) {
-        try {
-            await this.gitlab.Issues.create(this.projectPath, issue.title, {
-                description: issue.body,
-                labels: issue.labels.join(',')
-            });
-        }
-        catch (error) {
-            throw new Error(`Failed to create issue "${issue.title}": ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async updateIssue(issueNumber, issue) {
-        try {
-            await this.gitlab.Issues.edit(this.projectPath, issueNumber, {
-                title: issue.title,
-                description: issue.body,
-                labels: issue.labels.join(','),
-                stateEvent: issue.state === 'closed' ? 'close' : 'reopen'
-            });
-        }
-        catch (error) {
-            throw new Error(`Failed to update issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async createIssueComment(issueNumber, comment) {
-        try {
-            await this.gitlab.IssueNotes.create(this.projectPath, issueNumber, comment.body);
-        }
-        catch (error) {
-            throw new Error(`Failed to create comment on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-}
-exports.IssueHelper = IssueHelper;
-
-
-/***/ }),
-
-/***/ 409:
+/***/ 7065:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -57626,7 +57782,7 @@ class mergeRequestHelper {
                     comments: comments.map((comment) => ({
                         id: comment.id,
                         body: comment.body || '',
-                        author: comment.author.username,
+                        author: comment.author.owner,
                         createdAt: comment.created_at
                     }))
                 };
@@ -57659,12 +57815,31 @@ class mergeRequestHelper {
     async updatePullRequest(number, pr) {
         try {
             const projectId = await this.getProjectId();
-            await this.gitlab.MergeRequests.edit(projectId, number, {
-                title: pr.title,
-                description: pr.description,
-                stateEvent: pr.state === 'closed' ? 'close' : 'reopen',
-                labels: pr.labels.join(',')
-            });
+            if (pr.state === 'merged') {
+                // Try to merge the MR in GitLab
+                try {
+                    await this.gitlab.MergeRequests.merge(projectId, number, {
+                        should_remove_source_branch: true
+                    });
+                    return;
+                }
+                catch (mergeError) {
+                    core.warning(`Failed to merge MR #${number}: ${mergeError instanceof Error ? mergeError.message : String(mergeError)}`);
+                    // If merge fails (e.g., due to missing branch), close it instead
+                    await this.gitlab.MergeRequests.edit(projectId, number, {
+                        stateEvent: 'close'
+                    });
+                }
+            }
+            else {
+                // Handle regular updates
+                await this.gitlab.MergeRequests.edit(projectId, number, {
+                    title: pr.title,
+                    description: pr.description,
+                    stateEvent: pr.state === 'closed' ? 'close' : 'reopen',
+                    labels: pr.labels.join(',')
+                });
+            }
         }
         catch (error) {
             throw new Error(`Failed to update MR: ${error instanceof Error ? error.message : String(error)}`);
@@ -58026,7 +58201,7 @@ exports.TagHelper = TagHelper;
 
 /***/ }),
 
-/***/ 3019:
+/***/ 8536:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -58225,27 +58400,34 @@ function arraysEqual(a, b) {
 }
 function compareIssues(sourceIssues, targetIssues) {
     const comparisons = [];
+    core.info('\nSource Issues:');
+    sourceIssues.forEach(issue => core.info(`- ${issue.title} (${issue.state}) [labels: ${issue.labels.join(', ')}]`));
+    core.info('\nTarget Issues:');
+    targetIssues.forEach(issue => core.info(`- ${issue.title} (${issue.state}) [labels: ${issue.labels.join(', ')}]`));
     for (const sourceIssue of sourceIssues) {
-        // Only look for issues in the current repository
         const targetIssue = targetIssues.find(target => target.title === sourceIssue.title);
         if (!targetIssue) {
-            // Always create issues that don't exist in the target
             comparisons.push({
                 sourceIssue,
                 action: 'create'
             });
-            core.debug(`Issue "${sourceIssue.title}" will be created in target`);
+            core.info(`Will create: "${sourceIssue.title}" (${sourceIssue.state})`);
             continue;
         }
+        // Log detailed comparison for debugging
+        core.debug(`Comparing issue "${sourceIssue.title}":`);
+        core.debug(`- Body match: ${sourceIssue.body === targetIssue.body}`);
+        core.debug(`- State match: ${sourceIssue.state === targetIssue.state}`);
+        core.debug(`- Labels match: ${arraysEqual(sourceIssue.labels, targetIssue.labels)}`);
         if (sourceIssue.body !== targetIssue.body ||
             sourceIssue.state !== targetIssue.state ||
-            !arraysEqual(sourceIssue.labels, targetIssue.labels)) {
+            !arraysEqual(sourceIssue.labels.sort(), targetIssue.labels.sort())) {
             comparisons.push({
                 sourceIssue,
                 targetIssue,
                 action: 'update'
             });
-            core.debug(`Issue "${sourceIssue.title}" will be updated in target`);
+            core.info(`Will update: "${sourceIssue.title}" (${targetIssue.state} → ${sourceIssue.state})`);
         }
         else {
             comparisons.push({
@@ -58253,7 +58435,7 @@ function compareIssues(sourceIssues, targetIssues) {
                 targetIssue,
                 action: 'skip'
             });
-            core.debug(`Issue "${sourceIssue.title}" is up to date`);
+            core.info(`Will skip: "${sourceIssue.title}" (already in sync)`);
         }
     }
     return comparisons;
@@ -58363,6 +58545,13 @@ async function createIssue(target, comparison) {
 async function updateIssue(target, comparison) {
     if (!comparison.targetIssue?.number)
         return;
+    core.debug('Update payload:');
+    core.debug(JSON.stringify({
+        title: comparison.sourceIssue.title,
+        body: comparison.sourceIssue.body,
+        state: comparison.sourceIssue.state,
+        labels: comparison.sourceIssue.labels
+    }, null, 2));
     core.info(`📝 Updating issue "${comparison.sourceIssue.title}"`);
     await target.updateIssue(comparison.targetIssue.number, comparison.sourceIssue);
     core.info(`✓ Updated issue "${comparison.sourceIssue.title}"`);
@@ -58428,29 +58617,47 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.syncPullRequests = syncPullRequests;
 const core = __importStar(__nccwpck_require__(7484));
+function logSyncPlan(sourcePRs, targetPRs) {
+    const toCreate = sourcePRs.filter(sourcePR => !targetPRs.find(pr => pr.title === sourcePR.title)).length;
+    const toUpdate = sourcePRs.filter(sourcePR => {
+        const targetPR = targetPRs.find(pr => pr.title === sourcePR.title);
+        return targetPR && needsUpdate(sourcePR, targetPR);
+    }).length;
+    const toClose = sourcePRs.filter(sourcePR => {
+        const targetPR = targetPRs.find(pr => pr.title === sourcePR.title);
+        return targetPR && sourcePR.state === 'closed' && targetPR.state === 'open';
+    }).length;
+    core.info(`
+📊 Pull Request Sync Plan:
+  - Create: ${toCreate} PRs
+  - Update: ${toUpdate} PRs 
+  - Close: ${toClose} PRs
+  - Skip: ${sourcePRs.length - (toCreate + toUpdate + toClose)} PRs (already in sync)
+`);
+}
 async function syncPullRequests(source, target) {
     try {
         const sourcePRs = await source.syncPullRequests();
-        core.info(`Fetched ${sourcePRs.length} pull requests from source`);
+        core.info(`\nSource PRs:`);
+        sourcePRs.forEach(pr => core.info(`- ${pr.title} (${pr.state})`));
         const targetPRs = await target.syncPullRequests();
-        core.info(`Fetched ${targetPRs.length} pull requests from target`);
+        core.info(`\nTarget PRs:`);
+        targetPRs.forEach(pr => core.info(`- ${pr.title} (${pr.state})`));
+        logSyncPlan(sourcePRs, targetPRs);
         // Process each source PR
         for (const sourcePR of sourcePRs) {
             const targetPR = targetPRs.find(pr => pr.title === sourcePR.title);
             if (!targetPR) {
-                // Create new PR if it doesn't exist in target
-                core.info(`Creating new PR: ${sourcePR.title}`);
+                core.info(`Creating new PR: ${sourcePR.title} (${sourcePR.state})`);
                 await target.createPullRequest(sourcePR);
             }
             else {
-                // Update existing PR if needed
                 if (needsUpdate(sourcePR, targetPR)) {
-                    core.info(`Updating PR: ${sourcePR.title}`);
+                    core.info(`Updating PR: ${sourcePR.title} (${sourcePR.state} → ${targetPR.state})`);
                     await target.updatePullRequest(targetPR.number, sourcePR);
                 }
-                // Handle state changes
                 if (sourcePR.state === 'closed' && targetPR.state === 'open') {
-                    core.info(`Closing PR: ${sourcePR.title}`);
+                    core.info(`Closing PR: ${sourcePR.title} (open → closed)`);
                     await target.closePullRequest(targetPR.number);
                 }
             }
@@ -58679,16 +58886,16 @@ exports.SyncConfigSchema = zod_1.z.object({
 exports.GitlabConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
     projectId: zod_1.z.number().optional().nullable(),
-    url: zod_1.z.string().optional(),
+    host: zod_1.z.string().optional(),
     token: zod_1.z.string().optional(),
-    username: zod_1.z.string().optional(),
+    owner: zod_1.z.string().optional(),
     repo: zod_1.z.string().optional(),
     sync: exports.SyncConfigSchema.optional()
 });
 exports.GithubConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
     token: zod_1.z.string().optional(),
-    username: zod_1.z.string().optional(),
+    owner: zod_1.z.string().optional(),
     repo: zod_1.z.string().optional(),
     sync: exports.SyncConfigSchema.optional()
 });
@@ -58911,7 +59118,7 @@ const github = __importStar(__nccwpck_require__(3228));
 function getGitHubRepo(config) {
     const context = github.context;
     return {
-        owner: config.github.username || context.repo.owner,
+        owner: config.github.owner || context.repo.owner,
         repo: config.github.repo || context.repo.repo
     };
 }
@@ -58921,9 +59128,9 @@ function getGitLabRepo(config) {
     if (config.gitlab?.projectId) {
         return { owner: '', repo: '' };
     }
-    // Otherwise use username/repo
+    // Otherwise use owner/repo
     return {
-        owner: config.gitlab.username || context.repo.owner,
+        owner: config.gitlab.owner || context.repo.owner,
         repo: config.gitlab.repo || context.repo.repo
     };
 }

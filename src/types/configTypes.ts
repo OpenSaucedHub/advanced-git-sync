@@ -30,9 +30,9 @@ export const SyncConfigSchema = z.object({
 export const GitlabConfigSchema = z.object({
   enabled: z.boolean(),
   projectId: z.number().optional().nullable(),
-  url: z.string().optional(),
+  host: z.string().optional(),
   token: z.string().optional(),
-  username: z.string().optional(),
+  owner: z.string().optional(),
   repo: z.string().optional(),
   sync: SyncConfigSchema.optional()
 })
@@ -40,7 +40,7 @@ export const GitlabConfigSchema = z.object({
 export const GithubConfigSchema = z.object({
   enabled: z.boolean(),
   token: z.string().optional(),
-  username: z.string().optional(),
+  owner: z.string().optional(),
   repo: z.string().optional(),
   sync: SyncConfigSchema.optional()
 })

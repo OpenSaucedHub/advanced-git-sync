@@ -15,40 +15,62 @@ export function compareIssues(
 ): IssueComparison[] {
   const comparisons: IssueComparison[] = []
 
+  core.info('\nSource Issues:')
+  sourceIssues.forEach(issue =>
+    core.info(
+      `- ${issue.title} (${issue.state}) [labels: ${issue.labels.join(', ')}]`
+    )
+  )
+
+  core.info('\nTarget Issues:')
+  targetIssues.forEach(issue =>
+    core.info(
+      `- ${issue.title} (${issue.state}) [labels: ${issue.labels.join(', ')}]`
+    )
+  )
+
   for (const sourceIssue of sourceIssues) {
-    // Only look for issues in the current repository
     const targetIssue = targetIssues.find(
       target => target.title === sourceIssue.title
     )
 
     if (!targetIssue) {
-      // Always create issues that don't exist in the target
       comparisons.push({
         sourceIssue,
         action: 'create'
       })
-      core.debug(`Issue "${sourceIssue.title}" will be created in target`)
+      core.info(`Will create: "${sourceIssue.title}" (${sourceIssue.state})`)
       continue
     }
+
+    // Log detailed comparison for debugging
+    core.debug(`Comparing issue "${sourceIssue.title}":`)
+    core.debug(`- Body match: ${sourceIssue.body === targetIssue.body}`)
+    core.debug(`- State match: ${sourceIssue.state === targetIssue.state}`)
+    core.debug(
+      `- Labels match: ${arraysEqual(sourceIssue.labels, targetIssue.labels)}`
+    )
 
     if (
       sourceIssue.body !== targetIssue.body ||
       sourceIssue.state !== targetIssue.state ||
-      !arraysEqual(sourceIssue.labels, targetIssue.labels)
+      !arraysEqual(sourceIssue.labels.sort(), targetIssue.labels.sort())
     ) {
       comparisons.push({
         sourceIssue,
         targetIssue,
         action: 'update'
       })
-      core.debug(`Issue "${sourceIssue.title}" will be updated in target`)
+      core.info(
+        `Will update: "${sourceIssue.title}" (${targetIssue.state} → ${sourceIssue.state})`
+      )
     } else {
       comparisons.push({
         sourceIssue,
         targetIssue,
         action: 'skip'
       })
-      core.debug(`Issue "${sourceIssue.title}" is up to date`)
+      core.info(`Will skip: "${sourceIssue.title}" (already in sync)`)
     }
   }
 
@@ -219,6 +241,20 @@ async function updateIssue(
 ): Promise<void> {
   if (!comparison.targetIssue?.number) return
 
+  core.debug('Update payload:')
+  core.debug(
+    JSON.stringify(
+      {
+        title: comparison.sourceIssue.title,
+        body: comparison.sourceIssue.body,
+        state: comparison.sourceIssue.state,
+        labels: comparison.sourceIssue.labels
+      },
+      null,
+      2
+    )
+  )
+
   core.info(`📝 Updating issue "${comparison.sourceIssue.title}"`)
   await target.updateIssue(
     comparison.targetIssue.number,
@@ -226,7 +262,6 @@ async function updateIssue(
   )
   core.info(`✓ Updated issue "${comparison.sourceIssue.title}"`)
 }
-
 async function createComment(
   target: GitHubClient | GitLabClient,
   issueNumber: number,

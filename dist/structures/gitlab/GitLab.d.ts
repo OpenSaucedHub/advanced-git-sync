@@ -1,12 +1,12 @@
 import { Repository, Config, IClient } from '../../types';
-import { BranchHelper, IssueHelper, mergeRequestHelper, ReleaseHelper, TagHelper } from './helpers';
+import { gitlabBranchHelper, gitlabIssueHelper, mergeRequestHelper, ReleaseHelper, TagHelper } from './helpers';
 export declare class GitLabClient implements IClient {
     config: Config;
     repo: Repository;
     private gitlab;
-    branches: BranchHelper;
-    issues: IssueHelper;
-    pullRequest: mergeRequestHelper;
+    branches: gitlabBranchHelper;
+    issues: gitlabIssueHelper;
+    mergeRequest: mergeRequestHelper;
     release: ReleaseHelper;
     tags: TagHelper;
     private projectId;

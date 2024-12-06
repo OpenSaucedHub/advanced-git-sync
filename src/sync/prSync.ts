@@ -4,35 +4,60 @@ import { GitLabClient } from '../structures/gitlab/GitLab'
 
 import { PullRequest } from '../types'
 
+function logSyncPlan(sourcePRs: PullRequest[], targetPRs: PullRequest[]): void {
+  const toCreate = sourcePRs.filter(
+    sourcePR => !targetPRs.find(pr => pr.title === sourcePR.title)
+  ).length
+  const toUpdate = sourcePRs.filter(sourcePR => {
+    const targetPR = targetPRs.find(pr => pr.title === sourcePR.title)
+    return targetPR && needsUpdate(sourcePR, targetPR)
+  }).length
+  const toClose = sourcePRs.filter(sourcePR => {
+    const targetPR = targetPRs.find(pr => pr.title === sourcePR.title)
+    return targetPR && sourcePR.state === 'closed' && targetPR.state === 'open'
+  }).length
+
+  core.info(`
+📊 Pull Request Sync Plan:
+  - Create: ${toCreate} PRs
+  - Update: ${toUpdate} PRs 
+  - Close: ${toClose} PRs
+  - Skip: ${sourcePRs.length - (toCreate + toUpdate + toClose)} PRs (already in sync)
+`)
+}
+
 export async function syncPullRequests(
   source: GitHubClient | GitLabClient,
   target: GitHubClient | GitLabClient
 ) {
   try {
     const sourcePRs = await source.syncPullRequests()
-    core.info(`Fetched ${sourcePRs.length} pull requests from source`)
+    core.info(`\nSource PRs:`)
+    sourcePRs.forEach(pr => core.info(`- ${pr.title} (${pr.state})`))
 
     const targetPRs = await target.syncPullRequests()
-    core.info(`Fetched ${targetPRs.length} pull requests from target`)
+    core.info(`\nTarget PRs:`)
+    targetPRs.forEach(pr => core.info(`- ${pr.title} (${pr.state})`))
+
+    logSyncPlan(sourcePRs, targetPRs)
 
     // Process each source PR
     for (const sourcePR of sourcePRs) {
       const targetPR = targetPRs.find(pr => pr.title === sourcePR.title)
 
       if (!targetPR) {
-        // Create new PR if it doesn't exist in target
-        core.info(`Creating new PR: ${sourcePR.title}`)
+        core.info(`Creating new PR: ${sourcePR.title} (${sourcePR.state})`)
         await target.createPullRequest(sourcePR)
       } else {
-        // Update existing PR if needed
         if (needsUpdate(sourcePR, targetPR)) {
-          core.info(`Updating PR: ${sourcePR.title}`)
+          core.info(
+            `Updating PR: ${sourcePR.title} (${sourcePR.state} → ${targetPR.state})`
+          )
           await target.updatePullRequest(targetPR.number!, sourcePR)
         }
 
-        // Handle state changes
         if (sourcePR.state === 'closed' && targetPR.state === 'open') {
-          core.info(`Closing PR: ${sourcePR.title}`)
+          core.info(`Closing PR: ${sourcePR.title} (open → closed)`)
           await target.closePullRequest(targetPR.number!)
         }
       }

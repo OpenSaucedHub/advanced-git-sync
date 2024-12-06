@@ -59,12 +59,12 @@ export class mergeRequestHelper {
                 (comment: {
                   id: number
                   body: string
-                  author: { username: string }
+                  author: { owner: string }
                   created_at: string
                 }) => ({
                   id: comment.id,
                   body: comment.body || '',
-                  author: comment.author.username,
+                  author: comment.author.owner,
                   createdAt: comment.created_at
                 })
               )
@@ -118,12 +118,32 @@ export class mergeRequestHelper {
   async updatePullRequest(number: number, pr: PullRequest): Promise<void> {
     try {
       const projectId = await this.getProjectId()
-      await this.gitlab.MergeRequests.edit(projectId, number, {
-        title: pr.title,
-        description: pr.description,
-        stateEvent: pr.state === 'closed' ? 'close' : 'reopen',
-        labels: pr.labels.join(',')
-      })
+
+      if (pr.state === 'merged') {
+        // Try to merge the MR in GitLab
+        try {
+          await this.gitlab.MergeRequests.merge(projectId, number, {
+            should_remove_source_branch: true
+          })
+          return
+        } catch (mergeError: unknown) {
+          core.warning(
+            `Failed to merge MR #${number}: ${mergeError instanceof Error ? mergeError.message : String(mergeError)}`
+          )
+          // If merge fails (e.g., due to missing branch), close it instead
+          await this.gitlab.MergeRequests.edit(projectId, number, {
+            stateEvent: 'close'
+          })
+        }
+      } else {
+        // Handle regular updates
+        await this.gitlab.MergeRequests.edit(projectId, number, {
+          title: pr.title,
+          description: pr.description,
+          stateEvent: pr.state === 'closed' ? 'close' : 'reopen',
+          labels: pr.labels.join(',')
+        })
+      }
     } catch (error) {
       throw new Error(
         `Failed to update MR: ${error instanceof Error ? error.message : String(error)}`

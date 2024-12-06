@@ -28,7 +28,7 @@ export class ClientManager {
         )
       } else {
         core.info(
-          `Initializing GitLab client with repository: ${config.gitlab?.username || ''}/${config.gitlab?.repo || ''}`
+          `Initializing GitLab client with repository: ${config.gitlab?.owner || ''}/${config.gitlab?.repo || ''}`
         )
       }
 

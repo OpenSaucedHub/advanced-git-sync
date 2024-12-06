@@ -1,5 +1,5 @@
 import { Repository, Config, Branch } from '@src/types';
-export declare class branchHelper {
+export declare class githubBranchHelper {
     private octokit;
     private repo;
     private config;

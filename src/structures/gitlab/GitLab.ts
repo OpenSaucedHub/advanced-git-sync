@@ -1,24 +1,23 @@
 import * as core from '@actions/core'
 import { Gitlab } from '@gitbeaker/rest'
-import { Repository, Config, PermissionCheck, IClient } from '../../types'
+import { Repository, Config, IClient } from '../../types'
 import {
-  BranchHelper,
-  IssueHelper,
+  gitlabBranchHelper,
+  gitlabIssueHelper,
   mergeRequestHelper,
   ReleaseHelper,
   TagHelper,
   permsHelper
 } from './helpers'
 import { ErrorCodes } from '@/src/utils/errorCodes'
-import { PermissionValidator } from '@/src/handlers/validator'
 
 export class GitLabClient implements IClient {
   public config: Config
   public repo: Repository
   private gitlab
-  public branches: BranchHelper
-  public issues: IssueHelper
-  public pullRequest: mergeRequestHelper
+  public branches: gitlabBranchHelper
+  public issues: gitlabIssueHelper
+  public mergeRequest: mergeRequestHelper
   public release: ReleaseHelper
   public tags: TagHelper
   private projectId: number | null = null
@@ -27,35 +26,26 @@ export class GitLabClient implements IClient {
   constructor(config: Config, repo: Repository) {
     this.config = config
     this.repo = repo
-
     if (!config.gitlab?.token) {
       throw new Error(`${ErrorCodes.EGLAB}: GitLab token is required`)
     }
 
-    if (this.config.gitlab.sync?.issues) {
-      if (
-        !this.config.gitlab.projectId &&
-        (!this.repo.owner || !this.repo.repo)
-      ) {
-        throw new Error(
-          `${ErrorCodes.EGLAB}: GitLab issue sync requires owner/repo combination`
-        )
-      }
-    }
-
-    const host = this.formatHostUrl(config.gitlab.url || 'gitlab.com')
+    const host = this.formatHostUrl(config.gitlab.host || 'gitlab.com')
     core.info(`Initializing GitLab client for host: ${host}`)
 
     this.gitlab = new Gitlab({
       token: config.gitlab.token,
       host
     })
+
     // Initialize helpers with a method to get projectId
-    this.branches = new BranchHelper(this.gitlab, this.config, () =>
+    this.branches = new gitlabBranchHelper(this.gitlab, this.config, () =>
       this.getProjectId()
     )
-    this.issues = new IssueHelper(this.gitlab, this.repo, this.config)
-    this.pullRequest = new mergeRequestHelper(this.gitlab, this.config, () =>
+    this.issues = new gitlabIssueHelper(this.gitlab, this.config, () =>
+      this.getProjectId()
+    )
+    this.mergeRequest = new mergeRequestHelper(this.gitlab, this.config, () =>
       this.getProjectId()
     )
     this.permsHelper = new permsHelper(
@@ -121,7 +111,7 @@ export class GitLabClient implements IClient {
   getRepoInfo() {
     return {
       ...this.repo,
-      url: `${this.config.gitlab.url || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
+      url: `${this.config.gitlab.host || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
     }
   }
 
@@ -144,19 +134,19 @@ export class GitLabClient implements IClient {
 
   // Delegate to pull request helper
   async syncPullRequests() {
-    return this.pullRequest.syncPullRequests()
+    return this.mergeRequest.syncPullRequests()
   }
 
   async createPullRequest(pr: any) {
-    return this.pullRequest.createPullRequest(pr)
+    return this.mergeRequest.createPullRequest(pr)
   }
 
   async updatePullRequest(number: number, pr: any) {
-    return this.pullRequest.updatePullRequest(number, pr)
+    return this.mergeRequest.updatePullRequest(number, pr)
   }
 
   async closePullRequest(number: number) {
-    return this.pullRequest.closePullRequest(number)
+    return this.mergeRequest.closePullRequest(number)
   }
 
   // Delegate to issue helper

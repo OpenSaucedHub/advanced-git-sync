@@ -5,7 +5,7 @@ import { Repository, Config } from '../types'
 export function getGitHubRepo(config: Config): Repository {
   const context = github.context
   return {
-    owner: config.github.username || context.repo.owner,
+    owner: config.github.owner || context.repo.owner,
     repo: config.github.repo || context.repo.repo
   }
 }
@@ -18,9 +18,9 @@ export function getGitLabRepo(config: Config): Repository {
     return { owner: '', repo: '' }
   }
 
-  // Otherwise use username/repo
+  // Otherwise use owner/repo
   return {
-    owner: config.gitlab.username || context.repo.owner,
+    owner: config.gitlab.owner || context.repo.owner,
     repo: config.gitlab.repo || context.repo.repo
   }
 }
