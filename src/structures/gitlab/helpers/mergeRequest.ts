@@ -1,4 +1,5 @@
 import { PullRequest, Config, Repository } from '@/src/types'
+import { LabelHelper } from '@/src/utils/labelsUtils'
 import * as core from '@actions/core'
 
 export class mergeRequestHelper {
@@ -88,6 +89,13 @@ export class mergeRequestHelper {
   async createPullRequest(pr: PullRequest): Promise<void> {
     try {
       const projectId = await this.getProjectId()
+      const normalizedLabels = LabelHelper.combineLabels(
+        pr.labels,
+        this.config,
+        'gitlab'
+      )
+
+      // First create the MR
       const mr = await this.gitlab.MergeRequests.create(
         projectId,
         pr.sourceBranch,
@@ -95,10 +103,22 @@ export class mergeRequestHelper {
         pr.title,
         {
           description: pr.description,
-          labels: pr.labels.join(',')
+          labels: LabelHelper.formatForGitLab(normalizedLabels)
         }
       )
 
+      // Then immediately update its state if needed
+      if (pr.state === 'merged') {
+        await this.gitlab.MergeRequests.merge(projectId, mr.iid, {
+          should_remove_source_branch: true
+        })
+      } else if (pr.state === 'closed') {
+        await this.gitlab.MergeRequests.edit(projectId, mr.iid, {
+          state_event: 'close'
+        })
+      }
+
+      // Handle comments after state is set
       if (pr.comments) {
         for (const comment of pr.comments) {
           await this.gitlab.MergeRequestNotes.create(

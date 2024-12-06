@@ -18,7 +18,6 @@ export class githubBranchHelper {
       // Colorful console log for fetching branches
       core.info('\x1b[36m🌿 Fetching GitHub Branches...\x1b[0m')
 
-      // Fetch branches from GitHub, respecting protected branch configuration
       // Remove the protected filter from the initial fetch to get all branches
       const { data: branches } = await this.octokit.rest.repos.listBranches({
         ...this.repo

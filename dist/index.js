@@ -56349,7 +56349,6 @@ class githubBranchHelper {
         try {
             // Colorful console log for fetching branches
             core.info('\x1b[36m🌿 Fetching GitHub Branches...\x1b[0m');
-            // Fetch branches from GitHub, respecting protected branch configuration
             // Remove the protected filter from the initial fetch to get all branches
             const { data: branches } = await this.octokit.rest.repos.listBranches({
                 ...this.repo
@@ -56447,6 +56446,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.githubIssueHelper = void 0;
 const core = __importStar(__nccwpck_require__(7484));
+const labelsUtils_1 = __nccwpck_require__(7569);
 class githubIssueHelper {
     octokit;
     repo;
@@ -56472,10 +56472,7 @@ class githubIssueHelper {
                 .map((issue) => ({
                 title: issue.title,
                 body: issue.body || '',
-                labels: [
-                    ...this.processLabels(issue.labels),
-                    ...(this.config.gitlab.sync?.issues.labels ?? [])
-                ],
+                labels: labelsUtils_1.LabelHelper.combineLabels(issue.labels, this.config, 'github'),
                 number: issue.number,
                 state: issue.state
             }));
@@ -56487,42 +56484,33 @@ class githubIssueHelper {
             return [];
         }
     }
-    processLabels(labels) {
-        // First deduplicate and flatten the labels
-        const processedLabels = new Set(labels
-            .map(label => {
-            if (typeof label === 'string')
-                return label;
-            if (typeof label === 'object' && label !== null && 'name' in label) {
-                return label.name;
-            }
-            return '';
-        })
-            .filter(Boolean));
-        // Convert back to array and remove any empty strings
-        return Array.from(processedLabels).filter(label => label.length > 0);
-    }
     async getIssueComments(issueNumber) {
+        // Check if comment sync is enabled
         if (!this.config.gitlab.sync?.issues.syncComments) {
             core.info('\x1b[33m⚠️ Issue Comments Sync Disabled\x1b[0m');
             return [];
         }
         try {
+            // Colorful console log for fetching comments
             core.info(`\x1b[36m💬 Fetching Comments for Issue #${issueNumber}...\x1b[0m`);
+            // Fetch comments for a specific issue
             const { data: comments } = await this.octokit.rest.issues.listComments({
                 ...this.repo,
                 issue_number: issueNumber
             });
+            // Process and transform comments
             const processedComments = comments.map((comment) => ({
                 id: comment.id,
                 body: comment.body || '',
                 createdAt: comment.created_at,
                 author: comment.user?.login || 'unknown'
             }));
+            // Log successful comment fetch
             core.info(`\x1b[32m✓ Comments Fetched: ${processedComments.length} comments\x1b[0m`);
             return processedComments;
         }
         catch (error) {
+            // Error handling with colorful console warning
             core.warning(`\x1b[31m❌ Failed to Fetch GitHub Issue Comments: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
         }
@@ -56533,7 +56521,8 @@ class githubIssueHelper {
                 ...this.repo,
                 title: issue.title,
                 body: issue.body,
-                labels: this.processLabels(issue.labels)
+                labels: issue.labels,
+                state: issue.state
             });
         }
         catch (error) {
@@ -56542,21 +56531,24 @@ class githubIssueHelper {
     }
     async updateIssue(issueNumber, issue) {
         try {
+            // Update an existing issue with the provided details
             await this.octokit.rest.issues.update({
                 ...this.repo,
                 issue_number: issueNumber,
                 title: issue.title,
                 body: issue.body,
-                labels: this.processLabels(issue.labels),
+                labels: issue.labels,
                 state: issue.state
             });
         }
         catch (error) {
+            // Throw a descriptive error if issue update fails
             throw new Error(`Failed to update issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     async createIssueComment(issueNumber, comment) {
         try {
+            // Create a new comment on a specific issue
             await this.octokit.rest.issues.createComment({
                 ...this.repo,
                 issue_number: issueNumber,
@@ -56564,6 +56556,7 @@ class githubIssueHelper {
             });
         }
         catch (error) {
+            // Throw a descriptive error if comment creation fails
             throw new Error(`Failed to create comment on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
@@ -56732,6 +56725,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.pullRequestHelper = void 0;
 // src/structures/github/helpers/prHelper.ts
 const core = __importStar(__nccwpck_require__(7484));
+const labelsUtils_1 = __nccwpck_require__(7569);
 class pullRequestHelper {
     octokit;
     repo;
@@ -56805,12 +56799,13 @@ class pullRequestHelper {
                 head: pr.sourceBranch,
                 base: pr.targetBranch
             });
-            // Add labels
-            if (pr.labels.length > 0) {
+            // Use LabelHelper to handle labels
+            const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(pr.labels, this.config, 'github');
+            if (normalizedLabels.length > 0) {
                 await this.octokit.rest.issues.addLabels({
                     ...this.repo,
                     issue_number: newPR.number,
-                    labels: pr.labels
+                    labels: normalizedLabels
                 });
             }
             // Sync comments
@@ -57538,6 +57533,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.gitlabIssueHelper = void 0;
 const core = __importStar(__nccwpck_require__(7484));
+const labelsUtils_1 = __nccwpck_require__(7569);
 class gitlabIssueHelper {
     gitlab;
     config;
@@ -57560,10 +57556,7 @@ class gitlabIssueHelper {
             const processedIssues = issues.map((issue) => ({
                 title: issue.title,
                 body: issue.description || '',
-                labels: [
-                    ...this.processLabels(issue.labels),
-                    ...(this.config.github.sync?.issues.labels ?? [])
-                ],
+                labels: labelsUtils_1.LabelHelper.combineLabels(issue.labels, this.config, 'gitlab'),
                 number: issue.iid,
                 state: (issue.state === 'opened' ? 'open' : 'closed')
             }));
@@ -57574,25 +57567,6 @@ class gitlabIssueHelper {
             core.warning(`\x1b[31m❌ Failed to Fetch GitLab Issues: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
             return [];
         }
-    }
-    processLabels(labels) {
-        if (!labels)
-            return [];
-        if (typeof labels === 'string')
-            return labels.split(',').map(l => l.trim());
-        if (Array.isArray(labels)) {
-            return labels
-                .map(label => {
-                if (typeof label === 'string')
-                    return label.trim();
-                if (typeof label === 'object' && label !== null && 'name' in label) {
-                    return label.name.trim();
-                }
-                return '';
-            })
-                .filter(Boolean);
-        }
-        return [];
     }
     async getIssueComments(issueNumber) {
         if (!this.config.github.sync?.issues.syncComments) {
@@ -57622,12 +57596,12 @@ class gitlabIssueHelper {
     async createIssue(issue) {
         try {
             const projectId = await this.getProjectId();
-            const labels = this.processLabels(issue.labels);
             await this.gitlab.Issues.create({
                 projectId: projectId,
                 title: issue.title,
                 description: issue.body,
-                labels: labels.join(',')
+                labels: labelsUtils_1.LabelHelper.formatForGitLab(issue.labels),
+                state_event: issue.state === 'closed' ? 'close' : 'reopen'
             });
         }
         catch (error) {
@@ -57637,13 +57611,12 @@ class gitlabIssueHelper {
     async updateIssue(issueNumber, issue) {
         try {
             const projectId = await this.getProjectId();
-            const labels = this.processLabels(issue.labels);
             await this.gitlab.Issues.edit({
                 projectId: projectId,
                 issueIid: issueNumber,
                 title: issue.title,
                 description: issue.body,
-                labels: labels.join(','),
+                labels: labelsUtils_1.LabelHelper.formatForGitLab(issue.labels),
                 stateEvent: issue.state === 'closed' ? 'close' : 'reopen'
             });
         }
@@ -57740,6 +57713,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.mergeRequestHelper = void 0;
+const labelsUtils_1 = __nccwpck_require__(7569);
 const core = __importStar(__nccwpck_require__(7484));
 class mergeRequestHelper {
     gitlab;
@@ -57798,10 +57772,24 @@ class mergeRequestHelper {
     async createPullRequest(pr) {
         try {
             const projectId = await this.getProjectId();
+            const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(pr.labels, this.config, 'gitlab');
+            // First create the MR
             const mr = await this.gitlab.MergeRequests.create(projectId, pr.sourceBranch, pr.targetBranch, pr.title, {
                 description: pr.description,
-                labels: pr.labels.join(',')
+                labels: labelsUtils_1.LabelHelper.formatForGitLab(normalizedLabels)
             });
+            // Then immediately update its state if needed
+            if (pr.state === 'merged') {
+                await this.gitlab.MergeRequests.merge(projectId, mr.iid, {
+                    should_remove_source_branch: true
+                });
+            }
+            else if (pr.state === 'closed') {
+                await this.gitlab.MergeRequests.edit(projectId, mr.iid, {
+                    state_event: 'close'
+                });
+            }
+            // Handle comments after state is set
             if (pr.comments) {
                 for (const comment of pr.comments) {
                     await this.gitlab.MergeRequestNotes.create(projectId, mr.iid, comment.body);
@@ -58414,11 +58402,6 @@ function compareIssues(sourceIssues, targetIssues) {
             core.info(`Will create: "${sourceIssue.title}" (${sourceIssue.state})`);
             continue;
         }
-        // Log detailed comparison for debugging
-        core.debug(`Comparing issue "${sourceIssue.title}":`);
-        core.debug(`- Body match: ${sourceIssue.body === targetIssue.body}`);
-        core.debug(`- State match: ${sourceIssue.state === targetIssue.state}`);
-        core.debug(`- Labels match: ${arraysEqual(sourceIssue.labels, targetIssue.labels)}`);
         if (sourceIssue.body !== targetIssue.body ||
             sourceIssue.state !== targetIssue.state ||
             !arraysEqual(sourceIssue.labels.sort(), targetIssue.labels.sort())) {
@@ -58539,7 +58522,11 @@ async function syncIssueComments(source, target, sourceIssueNumber, targetIssueN
 }
 async function createIssue(target, comparison) {
     core.info(`📝 Creating issue "${comparison.sourceIssue.title}"`);
-    await target.createIssue(comparison.sourceIssue);
+    // Pass the full issue object including the state
+    await target.createIssue({
+        ...comparison.sourceIssue,
+        state: comparison.sourceIssue.state // Explicitly include state
+    });
     core.info(`✓ Created issue "${comparison.sourceIssue.title}"`);
 }
 async function updateIssue(target, comparison) {
@@ -59068,6 +59055,81 @@ exports.ErrorCodes = {
     ENET3: 'Connection refused',
     ENET4: 'Connection reset'
 };
+
+
+/***/ }),
+
+/***/ 7569:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// src/utils/labelHelper.ts
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LabelHelper = void 0;
+class LabelHelper {
+    /**
+     * Normalizes label configuration from config
+     */
+    static normalizeConfigLabels(labels) {
+        if (!labels)
+            return [];
+        return Array.isArray(labels) ? labels : [labels];
+    }
+    /**
+     * Normalizes GitHub labels to a standard format
+     * GitHub labels come as an array of objects: { name: string, ... }
+     */
+    static normalizeGitHubLabels(labels) {
+        return labels.map(label => label.name);
+    }
+    /**
+     * Normalizes GitLab labels to a standard format
+     * GitLab labels come as either string[] or comma-separated string
+     */
+    static normalizeGitLabLabels(labels) {
+        if (!labels)
+            return [];
+        if (Array.isArray(labels))
+            return labels;
+        // Only split if contains commas, otherwise treat as single label
+        return labels.includes(',')
+            ? labels.split(',').map(label => label.trim())
+            : [labels.trim()];
+    }
+    /**
+     * Combines source labels with config labels and normalizes them
+     */
+    static combineLabels(sourceLabels, config, platform) {
+        // Normalize source labels based on platform
+        const normalizedSourceLabels = Array.isArray(sourceLabels)
+            ? platform === 'github'
+                ? this.normalizeGitHubLabels(sourceLabels)
+                : sourceLabels
+            : this.normalizeGitLabLabels(sourceLabels);
+        // Get config labels
+        const configLabels = platform === 'github'
+            ? this.normalizeConfigLabels(config.gitlab.sync?.pullRequests.labels)
+            : this.normalizeConfigLabels(config.github.sync?.pullRequests.labels);
+        // Combine and deduplicate
+        return [...new Set([...normalizedSourceLabels, ...configLabels])];
+    }
+    /**
+     * Formats labels for GitLab API (comma-separated string)
+     */
+    static formatForGitLab(labels) {
+        return labels.join(',');
+    }
+    /**
+     * Checks if two label sets are equivalent
+     */
+    static areLabelsEqual(labels1, labels2) {
+        const normalized1 = labels1.map(l => l.trim()).sort();
+        const normalized2 = labels2.map(l => l.trim()).sort();
+        return JSON.stringify(normalized1) === JSON.stringify(normalized2);
+    }
+}
+exports.LabelHelper = LabelHelper;
 
 
 /***/ }),

@@ -1,6 +1,7 @@
 // src/structures/github/helpers/prHelper.ts
 import * as core from '@actions/core'
 import { Repository, Config, PullRequest, Comment, Review } from '@/src/types'
+import { LabelHelper } from '@/src/utils/labelsUtils'
 
 export class pullRequestHelper {
   constructor(
@@ -119,12 +120,18 @@ export class pullRequestHelper {
         base: pr.targetBranch
       })
 
-      // Add labels
-      if (pr.labels.length > 0) {
+      // Use LabelHelper to handle labels
+      const normalizedLabels = LabelHelper.combineLabels(
+        pr.labels,
+        this.config,
+        'github'
+      )
+
+      if (normalizedLabels.length > 0) {
         await this.octokit.rest.issues.addLabels({
           ...this.repo,
           issue_number: newPR.number,
-          labels: pr.labels
+          labels: normalizedLabels
         })
       }
 

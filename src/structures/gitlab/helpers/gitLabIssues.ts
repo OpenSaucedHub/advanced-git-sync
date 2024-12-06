@@ -1,6 +1,7 @@
 import { IssueSchema, NoteSchema } from '@gitbeaker/rest'
 import { Issue, Comment, Config } from '@/src/types'
 import * as core from '@actions/core'
+import { LabelHelper } from '@/src/utils/labelsUtils'
 
 export class gitlabIssueHelper {
   constructor(
@@ -25,10 +26,7 @@ export class gitlabIssueHelper {
       const processedIssues = issues.map((issue: IssueSchema) => ({
         title: issue.title,
         body: issue.description || '',
-        labels: [
-          ...this.processLabels(issue.labels),
-          ...(this.config.github.sync?.issues.labels ?? [])
-        ],
+        labels: LabelHelper.combineLabels(issue.labels, this.config, 'gitlab'),
         number: issue.iid,
         state: (issue.state === 'opened' ? 'open' : 'closed') as
           | 'open'
@@ -46,24 +44,6 @@ export class gitlabIssueHelper {
       return []
     }
   }
-
-  private processLabels(labels: any): string[] {
-    if (!labels) return []
-    if (typeof labels === 'string') return labels.split(',').map(l => l.trim())
-    if (Array.isArray(labels)) {
-      return labels
-        .map(label => {
-          if (typeof label === 'string') return label.trim()
-          if (typeof label === 'object' && label !== null && 'name' in label) {
-            return label.name.trim()
-          }
-          return ''
-        })
-        .filter(Boolean)
-    }
-    return []
-  }
-
   async getIssueComments(issueNumber: number): Promise<Comment[]> {
     if (!this.config.github.sync?.issues.syncComments) {
       return []
@@ -102,13 +82,12 @@ export class gitlabIssueHelper {
   async createIssue(issue: Issue): Promise<void> {
     try {
       const projectId = await this.getProjectId()
-      const labels = this.processLabels(issue.labels)
-
       await this.gitlab.Issues.create({
         projectId: projectId,
         title: issue.title,
         description: issue.body,
-        labels: labels.join(',')
+        labels: LabelHelper.formatForGitLab(issue.labels),
+        state_event: issue.state === 'closed' ? 'close' : 'reopen'
       })
     } catch (error) {
       throw new Error(
@@ -120,14 +99,12 @@ export class gitlabIssueHelper {
   async updateIssue(issueNumber: number, issue: Issue): Promise<void> {
     try {
       const projectId = await this.getProjectId()
-      const labels = this.processLabels(issue.labels)
-
       await this.gitlab.Issues.edit({
         projectId: projectId,
         issueIid: issueNumber,
         title: issue.title,
         description: issue.body,
-        labels: labels.join(','),
+        labels: LabelHelper.formatForGitLab(issue.labels),
         stateEvent: issue.state === 'closed' ? 'close' : 'reopen'
       })
     } catch (error) {

@@ -2,16 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.1.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.3...v1.1.4) (2024-12-06)
-
-
 
 ## [1.1.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.3...v1.1.4) (2024-12-06)
 
 ### Bug Fixes
 
-* rename branchHelper and issueHelper to gitHubBranches and gitHubIssues; update imports and initialization in clientManager ([1bf4458](https://github.com/OpenSaucedHub/advanced-git-sync/commit/1bf4458a83ea568697002a2404cff7860c1be68e))
+- rename branchHelper and issueHelper to gitHubBranches and gitHubIssues; update imports and
+  initialization in clientManager
+  ([1bf4458](https://github.com/OpenSaucedHub/advanced-git-sync/commit/1bf4458a83ea568697002a2404cff7860c1be68e))
 
 # [v1.1.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.2...v1.1.3) (2024-12-03)
 

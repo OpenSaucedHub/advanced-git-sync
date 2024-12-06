@@ -5,7 +5,6 @@ export declare class githubIssueHelper {
     private config;
     constructor(octokit: any, repo: Repository, config: Config);
     syncIssues(): Promise<Issue[]>;
-    private processLabels;
     getIssueComments(issueNumber: number): Promise<Comment[]>;
     createIssue(issue: Issue): Promise<void>;
     updateIssue(issueNumber: number, issue: Issue): Promise<void>;

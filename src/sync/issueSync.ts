@@ -43,14 +43,6 @@ export function compareIssues(
       continue
     }
 
-    // Log detailed comparison for debugging
-    core.debug(`Comparing issue "${sourceIssue.title}":`)
-    core.debug(`- Body match: ${sourceIssue.body === targetIssue.body}`)
-    core.debug(`- State match: ${sourceIssue.state === targetIssue.state}`)
-    core.debug(
-      `- Labels match: ${arraysEqual(sourceIssue.labels, targetIssue.labels)}`
-    )
-
     if (
       sourceIssue.body !== targetIssue.body ||
       sourceIssue.state !== targetIssue.state ||
@@ -231,7 +223,11 @@ async function createIssue(
   comparison: IssueComparison
 ): Promise<void> {
   core.info(`📝 Creating issue "${comparison.sourceIssue.title}"`)
-  await target.createIssue(comparison.sourceIssue)
+  // Pass the full issue object including the state
+  await target.createIssue({
+    ...comparison.sourceIssue,
+    state: comparison.sourceIssue.state // Explicitly include state
+  })
   core.info(`✓ Created issue "${comparison.sourceIssue.title}"`)
 }
 
