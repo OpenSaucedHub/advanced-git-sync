@@ -1,5 +1,5 @@
 import { Config, Repository } from '@/src/types';
-export declare class permsHelper {
+export declare class githubPermsHelper {
     private octokit;
     private repo;
     private config;

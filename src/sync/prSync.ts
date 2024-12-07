@@ -32,12 +32,8 @@ export async function syncPullRequests(
 ) {
   try {
     const sourcePRs = await source.syncPullRequests()
-    core.info(`\nSource PRs:`)
-    sourcePRs.forEach(pr => core.info(`- ${pr.title} (${pr.state})`))
 
     const targetPRs = await target.syncPullRequests()
-    core.info(`\nTarget PRs:`)
-    targetPRs.forEach(pr => core.info(`- ${pr.title} (${pr.state})`))
 
     logSyncPlan(sourcePRs, targetPRs)
 

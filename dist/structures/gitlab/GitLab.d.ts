@@ -1,5 +1,5 @@
 import { Repository, Config, IClient } from '../../types';
-import { gitlabBranchHelper, gitlabIssueHelper, mergeRequestHelper, ReleaseHelper, TagHelper } from './helpers';
+import { gitlabBranchHelper, gitlabIssueHelper, mergeRequestHelper, gitlabReleaseHelper, gitlabTagHelper } from './helpers';
 export declare class GitLabClient implements IClient {
     config: Config;
     repo: Repository;
@@ -7,10 +7,10 @@ export declare class GitLabClient implements IClient {
     branches: gitlabBranchHelper;
     issues: gitlabIssueHelper;
     mergeRequest: mergeRequestHelper;
-    release: ReleaseHelper;
-    tags: TagHelper;
+    release: gitlabReleaseHelper;
+    tags: gitlabTagHelper;
     private projectId;
-    private permsHelper;
+    private perms;
     constructor(config: Config, repo: Repository);
     private formatHostUrl;
     private getProjectId;

@@ -5,8 +5,9 @@ import { getConfig } from './config'
 import { syncBranches } from './sync/branchSync'
 import { syncPullRequests } from './sync/prSync'
 import { syncIssues } from './sync/issueSync'
-import { syncReleases, syncTags } from './sync/releaseSync'
+import { syncReleases } from './sync/releaseSync'
 import { ClientManager } from './structures/clientManager'
+import { syncTags } from './sync/tagSync'
 
 async function run(): Promise<void> {
   try {
@@ -49,6 +50,22 @@ async function run(): Promise<void> {
           }
         },
         {
+          name: '\x1b[36m🏷 Tags (GitHub → GitLab)\x1b[0m',
+          enabled: config.github.sync?.tags.enabled || false,
+          operation: async () => {
+            await syncTags(githubClient, gitlabClient)
+          }
+        },
+
+        {
+          name: '\x1b[33m🏷️ Releases (GitHub → GitLab)\x1b[0m',
+          enabled: config.github.sync?.releases.enabled || false,
+          operation: async () => {
+            await syncReleases(githubClient, gitlabClient)
+          }
+        },
+
+        {
           name: '\x1b[32m🔀 Pull Requests (GitHub → GitLab)\x1b[0m',
           enabled: config.github.sync?.pullRequests.enabled || false,
           operation: async () => {
@@ -62,20 +79,6 @@ async function run(): Promise<void> {
             await syncIssues(githubClient, gitlabClient)
           }
         },
-        {
-          name: '\x1b[33m🏷️ Releases (GitHub → GitLab)\x1b[0m',
-          enabled: config.github.sync?.releases.enabled || false,
-          operation: async () => {
-            await syncReleases(githubClient, gitlabClient)
-          }
-        },
-        {
-          name: '\x1b[36m🏷 Tags (GitHub → GitLab)\x1b[0m',
-          enabled: config.github.sync?.tags.enabled || false,
-          operation: async () => {
-            await syncTags(githubClient, gitlabClient)
-          }
-        },
 
         // GitLab to GitHub sync operations
         {
@@ -83,6 +86,21 @@ async function run(): Promise<void> {
           enabled: config.gitlab.sync?.branches.enabled || false,
           operation: async () => {
             await syncBranches(gitlabClient, githubClient)
+          }
+        },
+
+        {
+          name: '\x1b[36m🏷 Tags (GitLab → GitHub)\x1b[0m',
+          enabled: config.gitlab.sync?.tags.enabled || false,
+          operation: async () => {
+            await syncTags(gitlabClient, githubClient)
+          }
+        },
+        {
+          name: '\x1b[33m🏷️ Releases (GitLab → GitHub)\x1b[0m',
+          enabled: config.gitlab.sync?.releases.enabled || false,
+          operation: async () => {
+            await syncReleases(gitlabClient, githubClient)
           }
         },
         {
@@ -97,20 +115,6 @@ async function run(): Promise<void> {
           enabled: config.gitlab.sync?.issues.enabled || false,
           operation: async () => {
             await syncIssues(gitlabClient, githubClient)
-          }
-        },
-        {
-          name: '\x1b[33m🏷️ Releases (GitLab → GitHub)\x1b[0m',
-          enabled: config.gitlab.sync?.releases.enabled || false,
-          operation: async () => {
-            await syncReleases(gitlabClient, githubClient)
-          }
-        },
-        {
-          name: '\x1b[36m🏷 Tags (GitLab → GitHub)\x1b[0m',
-          enabled: config.gitlab.sync?.tags.enabled || false,
-          operation: async () => {
-            await syncTags(gitlabClient, githubClient)
           }
         }
       ]

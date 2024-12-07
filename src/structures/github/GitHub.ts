@@ -16,9 +16,9 @@ import {
   githubBranchHelper,
   pullRequestHelper,
   githubIssueHelper,
-  releaseHelper,
+  githubReleaseHelper,
   tagsHelper,
-  permsHelper
+  githubPermsHelper
 } from './helpers'
 
 export class GitHubClient implements IClient {
@@ -28,9 +28,9 @@ export class GitHubClient implements IClient {
   public branches: githubBranchHelper
   public pullRequest: pullRequestHelper
   public issue: githubIssueHelper
-  public release: releaseHelper
+  public release: githubReleaseHelper
   public tags: tagsHelper
-  public permsHelper: permsHelper
+  public perms: githubPermsHelper
 
   constructor(config: Config, repo: Repository) {
     this.config = config
@@ -43,9 +43,9 @@ export class GitHubClient implements IClient {
       this.config
     )
     this.issue = new githubIssueHelper(this.octokit, this.repo, this.config)
-    this.release = new releaseHelper(this.octokit, this.repo, this.config)
+    this.release = new githubReleaseHelper(this.octokit, this.repo, this.config)
     this.tags = new tagsHelper(this.octokit, this.repo, this.config)
-    this.permsHelper = new permsHelper(this.octokit, this.repo, this.config)
+    this.perms = new githubPermsHelper(this.octokit, this.repo, this.config)
     core.info(
       `\x1b[32m✓ GitHub Client Initialized: ${repo.owner}/${repo.repo}\x1b[0m`
     )
@@ -58,7 +58,7 @@ export class GitHubClient implements IClient {
     }
   }
   async validateAccess(): Promise<void> {
-    return this.permsHelper.validateAccess()
+    return this.perms.validateAccess()
   }
 
   // Delegate branch operations to ghBranchHelper

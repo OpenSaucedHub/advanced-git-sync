@@ -1,5 +1,5 @@
 import { Config, Repository } from '@/src/types';
-export declare class permsHelper {
+export declare class gitlabPermsHelper {
     private gitlab;
     private repo;
     private config;

@@ -14,12 +14,12 @@ export function getDefaultConfig(): Config {
         pullRequests: {
           enabled: true,
           autoMerge: false,
-          labels: ['synced-from-gitlab']
+          labels: ['synced']
         },
         issues: {
           enabled: true,
           syncComments: false,
-          labels: ['synced-from-gitlab']
+          labels: ['synced']
         },
         releases: {
           enabled: true
@@ -40,12 +40,12 @@ export function getDefaultConfig(): Config {
         pullRequests: {
           enabled: true,
           autoMerge: false,
-          labels: ['synced-from-github']
+          labels: ['synced']
         },
         issues: {
           enabled: true,
           syncComments: false,
-          labels: ['synced-from-github']
+          labels: ['synced']
         },
         releases: {
           enabled: true

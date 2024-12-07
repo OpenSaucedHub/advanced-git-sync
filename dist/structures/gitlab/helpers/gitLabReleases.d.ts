@@ -1,10 +1,9 @@
-import { Release, ReleaseAsset, Config, Repository } from '@/src/types';
-export declare class ReleaseHelper {
+import { Release, ReleaseAsset, Config } from '@/src/types';
+export declare class gitlabReleaseHelper {
     private gitlab;
-    private repo;
     private config;
     private getProjectId;
-    constructor(gitlab: any, repo: Repository, config: Config, getProjectId: () => Promise<number>);
+    constructor(gitlab: any, config: Config, getProjectId: () => Promise<number>);
     syncReleases(): Promise<Release[]>;
     createRelease(release: Release): Promise<void>;
     updateRelease(release: Release): Promise<void>;

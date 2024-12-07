@@ -1,3 +1,5 @@
+// src/structures/github/helpers/gitHubTags.ts
+
 import * as core from '@actions/core'
 import { Repository, Config, Tag } from '@/src/types'
 

@@ -55945,6 +55945,7 @@ const prSync_1 = __nccwpck_require__(2678);
 const issueSync_1 = __nccwpck_require__(4455);
 const releaseSync_1 = __nccwpck_require__(6389);
 const clientManager_1 = __nccwpck_require__(5188);
+const tagSync_1 = __nccwpck_require__(5160);
 async function run() {
     try {
         // Enhanced startup logging
@@ -55975,6 +55976,20 @@ async function run() {
                     }
                 },
                 {
+                    name: '\x1b[36m🏷 Tags (GitHub → GitLab)\x1b[0m',
+                    enabled: config.github.sync?.tags.enabled || false,
+                    operation: async () => {
+                        await (0, tagSync_1.syncTags)(githubClient, gitlabClient);
+                    }
+                },
+                {
+                    name: '\x1b[33m🏷️ Releases (GitHub → GitLab)\x1b[0m',
+                    enabled: config.github.sync?.releases.enabled || false,
+                    operation: async () => {
+                        await (0, releaseSync_1.syncReleases)(githubClient, gitlabClient);
+                    }
+                },
+                {
                     name: '\x1b[32m🔀 Pull Requests (GitHub → GitLab)\x1b[0m',
                     enabled: config.github.sync?.pullRequests.enabled || false,
                     operation: async () => {
@@ -55988,26 +56003,26 @@ async function run() {
                         await (0, issueSync_1.syncIssues)(githubClient, gitlabClient);
                     }
                 },
-                {
-                    name: '\x1b[33m🏷️ Releases (GitHub → GitLab)\x1b[0m',
-                    enabled: config.github.sync?.releases.enabled || false,
-                    operation: async () => {
-                        await (0, releaseSync_1.syncReleases)(githubClient, gitlabClient);
-                    }
-                },
-                {
-                    name: '\x1b[36m🏷 Tags (GitHub → GitLab)\x1b[0m',
-                    enabled: config.github.sync?.tags.enabled || false,
-                    operation: async () => {
-                        await (0, releaseSync_1.syncTags)(githubClient, gitlabClient);
-                    }
-                },
                 // GitLab to GitHub sync operations
                 {
                     name: '\x1b[34m🌿 Branches (GitLab → GitHub)\x1b[0m',
                     enabled: config.gitlab.sync?.branches.enabled || false,
                     operation: async () => {
                         await (0, branchSync_1.syncBranches)(gitlabClient, githubClient);
+                    }
+                },
+                {
+                    name: '\x1b[36m🏷 Tags (GitLab → GitHub)\x1b[0m',
+                    enabled: config.gitlab.sync?.tags.enabled || false,
+                    operation: async () => {
+                        await (0, tagSync_1.syncTags)(gitlabClient, githubClient);
+                    }
+                },
+                {
+                    name: '\x1b[33m🏷️ Releases (GitLab → GitHub)\x1b[0m',
+                    enabled: config.gitlab.sync?.releases.enabled || false,
+                    operation: async () => {
+                        await (0, releaseSync_1.syncReleases)(gitlabClient, githubClient);
                     }
                 },
                 {
@@ -56022,20 +56037,6 @@ async function run() {
                     enabled: config.gitlab.sync?.issues.enabled || false,
                     operation: async () => {
                         await (0, issueSync_1.syncIssues)(gitlabClient, githubClient);
-                    }
-                },
-                {
-                    name: '\x1b[33m🏷️ Releases (GitLab → GitHub)\x1b[0m',
-                    enabled: config.gitlab.sync?.releases.enabled || false,
-                    operation: async () => {
-                        await (0, releaseSync_1.syncReleases)(gitlabClient, githubClient);
-                    }
-                },
-                {
-                    name: '\x1b[36m🏷 Tags (GitLab → GitHub)\x1b[0m',
-                    enabled: config.gitlab.sync?.tags.enabled || false,
-                    operation: async () => {
-                        await (0, releaseSync_1.syncTags)(gitlabClient, githubClient);
                     }
                 }
             ];
@@ -56199,7 +56200,7 @@ class GitHubClient {
     issue;
     release;
     tags;
-    permsHelper;
+    perms;
     constructor(config, repo) {
         this.config = config;
         this.repo = repo;
@@ -56207,9 +56208,9 @@ class GitHubClient {
         this.branches = new helpers_1.githubBranchHelper(this.octokit, this.repo, this.config);
         this.pullRequest = new helpers_1.pullRequestHelper(this.octokit, this.repo, this.config);
         this.issue = new helpers_1.githubIssueHelper(this.octokit, this.repo, this.config);
-        this.release = new helpers_1.releaseHelper(this.octokit, this.repo, this.config);
+        this.release = new helpers_1.githubReleaseHelper(this.octokit, this.repo, this.config);
         this.tags = new helpers_1.tagsHelper(this.octokit, this.repo, this.config);
-        this.permsHelper = new helpers_1.permsHelper(this.octokit, this.repo, this.config);
+        this.perms = new helpers_1.githubPermsHelper(this.octokit, this.repo, this.config);
         core.info(`\x1b[32m✓ GitHub Client Initialized: ${repo.owner}/${repo.repo}\x1b[0m`);
     }
     getRepoInfo() {
@@ -56219,7 +56220,7 @@ class GitHubClient {
         };
     }
     async validateAccess() {
-        return this.permsHelper.validateAccess();
+        return this.perms.validateAccess();
     }
     // Delegate branch operations to ghBranchHelper
     async syncBranches() {
@@ -56566,37 +56567,7 @@ exports.githubIssueHelper = githubIssueHelper;
 
 /***/ }),
 
-/***/ 6170:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-__exportStar(__nccwpck_require__(3787), exports);
-__exportStar(__nccwpck_require__(8098), exports);
-__exportStar(__nccwpck_require__(8967), exports);
-__exportStar(__nccwpck_require__(4539), exports);
-__exportStar(__nccwpck_require__(3689), exports);
-__exportStar(__nccwpck_require__(5537), exports);
-
-
-/***/ }),
-
-/***/ 5537:
+/***/ 7956:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -56635,11 +56606,11 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.permsHelper = void 0;
+exports.githubPermsHelper = void 0;
 const validator_1 = __nccwpck_require__(4460);
 const errorCodes_1 = __nccwpck_require__(9481);
 const core = __importStar(__nccwpck_require__(7484));
-class permsHelper {
+class githubPermsHelper {
     octokit;
     repo;
     config;
@@ -56678,7 +56649,327 @@ class permsHelper {
         }
     }
 }
-exports.permsHelper = permsHelper;
+exports.githubPermsHelper = githubPermsHelper;
+
+
+/***/ }),
+
+/***/ 4553:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.githubReleaseHelper = void 0;
+// src/structures/github/helpers/releaseHelper.ts
+const core = __importStar(__nccwpck_require__(7484));
+class githubReleaseHelper {
+    octokit;
+    repo;
+    config;
+    constructor(octokit, repo, config) {
+        this.octokit = octokit;
+        this.repo = repo;
+        this.config = config;
+    }
+    async syncReleases() {
+        if (!this.config.gitlab.sync?.releases.enabled) {
+            return [];
+        }
+        try {
+            core.info('\x1b[36m🏷️ Fetching GitHub Releases...\x1b[0m');
+            const { data: releases } = await this.octokit.rest.repos.listReleases({
+                ...this.repo
+            });
+            const processedReleases = releases.map((release) => ({
+                id: release.id.toString(),
+                tag: release.tag_name,
+                name: release.name || release.tag_name,
+                body: release.body || '',
+                draft: release.draft,
+                prerelease: release.prerelease,
+                createdAt: release.created_at,
+                publishedAt: release.published_at,
+                assets: release.assets.map((asset) => ({
+                    name: asset.name,
+                    url: asset.browser_download_url,
+                    size: asset.size,
+                    contentType: asset.content_type
+                }))
+            }));
+            core.info(`\x1b[32m✓ Releases Fetched: ${processedReleases.length} releases\x1b[0m`);
+            return processedReleases;
+        }
+        catch (error) {
+            core.warning(`\x1b[31m❌ Failed to Fetch GitHub Releases: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+            return [];
+        }
+    }
+    async createRelease(release) {
+        try {
+            const { data: createdRelease } = await this.octokit.rest.repos.createRelease({
+                ...this.repo,
+                tag_name: release.tag,
+                name: release.name,
+                body: release.body,
+                draft: release.draft,
+                prerelease: release.prerelease
+            });
+            // Store the created release ID for asset upload
+            release.id = createdRelease.id.toString();
+        }
+        catch (error) {
+            throw new Error(`Failed to create release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateRelease(release) {
+        try {
+            const { data: existingRelease } = await this.octokit.rest.repos.getReleaseByTag({
+                ...this.repo,
+                tag: release.tag
+            });
+            await this.octokit.rest.repos.updateRelease({
+                ...this.repo,
+                release_id: existingRelease.id,
+                tag_name: release.tag,
+                name: release.name,
+                body: release.body,
+                draft: release.draft,
+                prerelease: release.prerelease
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async downloadReleaseAsset(releaseId, asset) {
+        try {
+            const response = await this.octokit.request('GET /repos/{owner}/{repo}/releases/assets/{asset_id}', {
+                ...this.repo,
+                asset_id: parseInt(releaseId),
+                headers: {
+                    Accept: 'application/octet-stream'
+                }
+            });
+            return Buffer.from(response.data);
+        }
+        catch (error) {
+            throw new Error(`Failed to download asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async uploadReleaseAsset(releaseId, asset, content) {
+        try {
+            await this.octokit.rest.repos.uploadReleaseAsset({
+                ...this.repo,
+                release_id: parseInt(releaseId),
+                name: asset.name,
+                data: content.toString('base64'),
+                headers: {
+                    'content-type': asset.contentType,
+                    'content-length': asset.size
+                }
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to upload asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+}
+exports.githubReleaseHelper = githubReleaseHelper;
+
+
+/***/ }),
+
+/***/ 8554:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+// src/structures/github/helpers/gitHubTags.ts
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.tagsHelper = void 0;
+const core = __importStar(__nccwpck_require__(7484));
+class tagsHelper {
+    octokit;
+    repo;
+    config;
+    constructor(octokit, repo, config) {
+        this.octokit = octokit;
+        this.repo = repo;
+        this.config = config;
+    }
+    async syncTags() {
+        if (!this.config.gitlab.sync?.tags.enabled) {
+            return [];
+        }
+        try {
+            core.info('\x1b[36m🏷 Fetching GitHub Tags...\x1b[0m');
+            // First get list of tags
+            const { data: tags } = await this.octokit.rest.repos.listTags({
+                ...this.repo
+            });
+            // Process tags with proper error handling
+            const processedTags = await Promise.all(tags.map(async (tag) => {
+                try {
+                    // Get ref details first
+                    const { data: refData } = await this.octokit.rest.git.getRef({
+                        ...this.repo,
+                        ref: `tags/${tag.name}`
+                    });
+                    // Get commit details for timestamp
+                    const { data: commitData } = await this.octokit.rest.git.getCommit({
+                        ...this.repo,
+                        commit_sha: refData.object.sha
+                    });
+                    return {
+                        name: tag.name,
+                        createdAt: commitData.author.date,
+                        commitSha: tag.commit.sha
+                    };
+                }
+                catch (error) {
+                    core.warning(`\x1b[33m⚠️ Failed to process tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+                    // Fallback to basic tag info
+                    return {
+                        name: tag.name,
+                        createdAt: new Date().toISOString(),
+                        commitSha: tag.commit.sha
+                    };
+                }
+            }));
+            core.info(`\x1b[32m✓ Tags Fetched: ${processedTags.length} tags\x1b[0m`);
+            return processedTags;
+        }
+        catch (error) {
+            core.warning(`\x1b[31m❌ Failed to Fetch GitHub Tags: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+            return [];
+        }
+    }
+    async createTag(tag) {
+        try {
+            // Create the tag reference
+            await this.octokit.rest.git.createRef({
+                ...this.repo,
+                ref: `refs/tags/${tag.name}`,
+                sha: tag.commitSha
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to create tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateTag(tag) {
+        try {
+            // Delete existing tag
+            await this.octokit.rest.git.deleteRef({
+                ...this.repo,
+                ref: `tags/${tag.name}`
+            });
+            // Create new tag
+            await this.createTag(tag);
+        }
+        catch (error) {
+            throw new Error(`Failed to update tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+}
+exports.tagsHelper = tagsHelper;
+
+
+/***/ }),
+
+/***/ 6170:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(3787), exports);
+__exportStar(__nccwpck_require__(8098), exports);
+__exportStar(__nccwpck_require__(8967), exports);
+__exportStar(__nccwpck_require__(4553), exports);
+__exportStar(__nccwpck_require__(8554), exports);
+__exportStar(__nccwpck_require__(7956), exports);
 
 
 /***/ }),
@@ -56861,295 +57152,6 @@ exports.pullRequestHelper = pullRequestHelper;
 
 /***/ }),
 
-/***/ 4539:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.releaseHelper = void 0;
-// src/structures/github/helpers/releaseHelper.ts
-const core = __importStar(__nccwpck_require__(7484));
-class releaseHelper {
-    octokit;
-    repo;
-    config;
-    constructor(octokit, repo, config) {
-        this.octokit = octokit;
-        this.repo = repo;
-        this.config = config;
-    }
-    async syncReleases() {
-        if (!this.config.gitlab.sync?.releases.enabled) {
-            return [];
-        }
-        try {
-            core.info('\x1b[36m🏷️ Fetching GitHub Releases...\x1b[0m');
-            const { data: releases } = await this.octokit.rest.repos.listReleases({
-                ...this.repo
-            });
-            const processedReleases = releases.map((release) => ({
-                id: release.id.toString(),
-                tag: release.tag_name,
-                name: release.name || release.tag_name,
-                body: release.body || '',
-                draft: release.draft,
-                prerelease: release.prerelease,
-                createdAt: release.created_at,
-                publishedAt: release.published_at,
-                assets: release.assets.map((asset) => ({
-                    name: asset.name,
-                    url: asset.browser_download_url,
-                    size: asset.size,
-                    contentType: asset.content_type
-                }))
-            }));
-            core.info(`\x1b[32m✓ Releases Fetched: ${processedReleases.length} releases\x1b[0m`);
-            return processedReleases;
-        }
-        catch (error) {
-            core.warning(`\x1b[31m❌ Failed to Fetch GitHub Releases: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
-            return [];
-        }
-    }
-    async createRelease(release) {
-        try {
-            const { data: createdRelease } = await this.octokit.rest.repos.createRelease({
-                ...this.repo,
-                tag_name: release.tag,
-                name: release.name,
-                body: release.body,
-                draft: release.draft,
-                prerelease: release.prerelease
-            });
-            // Store the created release ID for asset upload
-            release.id = createdRelease.id.toString();
-        }
-        catch (error) {
-            throw new Error(`Failed to create release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async updateRelease(release) {
-        try {
-            const { data: existingRelease } = await this.octokit.rest.repos.getReleaseByTag({
-                ...this.repo,
-                tag: release.tag
-            });
-            await this.octokit.rest.repos.updateRelease({
-                ...this.repo,
-                release_id: existingRelease.id,
-                tag_name: release.tag,
-                name: release.name,
-                body: release.body,
-                draft: release.draft,
-                prerelease: release.prerelease
-            });
-        }
-        catch (error) {
-            throw new Error(`Failed to update release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async downloadReleaseAsset(releaseId, asset) {
-        try {
-            const response = await this.octokit.request('GET /repos/{owner}/{repo}/releases/assets/{asset_id}', {
-                ...this.repo,
-                asset_id: parseInt(releaseId),
-                headers: {
-                    Accept: 'application/octet-stream'
-                }
-            });
-            return Buffer.from(response.data);
-        }
-        catch (error) {
-            throw new Error(`Failed to download asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async uploadReleaseAsset(releaseId, asset, content) {
-        try {
-            await this.octokit.rest.repos.uploadReleaseAsset({
-                ...this.repo,
-                release_id: parseInt(releaseId),
-                name: asset.name,
-                data: content.toString('base64'),
-                headers: {
-                    'content-type': asset.contentType,
-                    'content-length': asset.size
-                }
-            });
-        }
-        catch (error) {
-            throw new Error(`Failed to upload asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-}
-exports.releaseHelper = releaseHelper;
-
-
-/***/ }),
-
-/***/ 3689:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.tagsHelper = void 0;
-const core = __importStar(__nccwpck_require__(7484));
-class tagsHelper {
-    octokit;
-    repo;
-    config;
-    constructor(octokit, repo, config) {
-        this.octokit = octokit;
-        this.repo = repo;
-        this.config = config;
-    }
-    async syncTags() {
-        if (!this.config.gitlab.sync?.tags.enabled) {
-            return [];
-        }
-        try {
-            core.info('\x1b[36m🏷 Fetching GitHub Tags...\x1b[0m');
-            // First get list of tags
-            const { data: tags } = await this.octokit.rest.repos.listTags({
-                ...this.repo
-            });
-            // Process tags with proper error handling
-            const processedTags = await Promise.all(tags.map(async (tag) => {
-                try {
-                    // Get ref details first
-                    const { data: refData } = await this.octokit.rest.git.getRef({
-                        ...this.repo,
-                        ref: `tags/${tag.name}`
-                    });
-                    // Get commit details for timestamp
-                    const { data: commitData } = await this.octokit.rest.git.getCommit({
-                        ...this.repo,
-                        commit_sha: refData.object.sha
-                    });
-                    return {
-                        name: tag.name,
-                        createdAt: commitData.author.date,
-                        commitSha: tag.commit.sha
-                    };
-                }
-                catch (error) {
-                    core.warning(`\x1b[33m⚠️ Failed to process tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
-                    // Fallback to basic tag info
-                    return {
-                        name: tag.name,
-                        createdAt: new Date().toISOString(),
-                        commitSha: tag.commit.sha
-                    };
-                }
-            }));
-            core.info(`\x1b[32m✓ Tags Fetched: ${processedTags.length} tags\x1b[0m`);
-            return processedTags;
-        }
-        catch (error) {
-            core.warning(`\x1b[31m❌ Failed to Fetch GitHub Tags: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
-            return [];
-        }
-    }
-    async createTag(tag) {
-        try {
-            // Create the tag reference
-            await this.octokit.rest.git.createRef({
-                ...this.repo,
-                ref: `refs/tags/${tag.name}`,
-                sha: tag.commitSha
-            });
-        }
-        catch (error) {
-            throw new Error(`Failed to create tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async updateTag(tag) {
-        try {
-            // Delete existing tag
-            await this.octokit.rest.git.deleteRef({
-                ...this.repo,
-                ref: `tags/${tag.name}`
-            });
-            // Create new tag
-            await this.createTag(tag);
-        }
-        catch (error) {
-            throw new Error(`Failed to update tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-}
-exports.tagsHelper = tagsHelper;
-
-
-/***/ }),
-
 /***/ 741:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -57204,7 +57206,7 @@ class GitLabClient {
     release;
     tags;
     projectId = null;
-    permsHelper;
+    perms;
     constructor(config, repo) {
         this.config = config;
         this.repo = repo;
@@ -57221,9 +57223,9 @@ class GitLabClient {
         this.branches = new helpers_1.gitlabBranchHelper(this.gitlab, this.config, () => this.getProjectId());
         this.issues = new helpers_1.gitlabIssueHelper(this.gitlab, this.config, () => this.getProjectId());
         this.mergeRequest = new helpers_1.mergeRequestHelper(this.gitlab, this.config, () => this.getProjectId());
-        this.permsHelper = new helpers_1.permsHelper(this.gitlab, this.repo, this.config, () => this.getProjectId());
-        this.release = new helpers_1.ReleaseHelper(this.gitlab, this.repo, this.config, () => this.getProjectId());
-        this.tags = new helpers_1.TagHelper(this.gitlab, this.config, () => this.getProjectId());
+        this.perms = new helpers_1.gitlabPermsHelper(this.gitlab, this.repo, this.config, () => this.getProjectId());
+        this.release = new helpers_1.gitlabReleaseHelper(this.gitlab, this.config, () => this.getProjectId());
+        this.tags = new helpers_1.gitlabTagHelper(this.gitlab, this.config, () => this.getProjectId());
         this.projectId = config.gitlab.projectId || null;
         core.info(`\x1b[32m✓ GitLab client initialized successfully\x1b[0m`);
     }
@@ -57268,7 +57270,7 @@ class GitLabClient {
         };
     }
     async validateAccess() {
-        return this.permsHelper.validateAccess();
+        return this.perms.validateAccess();
     }
     // Delegate to branch helper
     async syncBranches() {
@@ -57643,6 +57645,411 @@ exports.gitlabIssueHelper = gitlabIssueHelper;
 
 /***/ }),
 
+/***/ 2276:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.gitlabPermsHelper = void 0;
+const validator_1 = __nccwpck_require__(4460);
+const errorCodes_1 = __nccwpck_require__(9481);
+const core = __importStar(__nccwpck_require__(7484));
+class gitlabPermsHelper {
+    gitlab;
+    repo;
+    config;
+    getProjectId;
+    constructor(gitlab, repo, config, projectIdGetter) {
+        this.gitlab = gitlab;
+        this.repo = repo;
+        this.config = config;
+        this.getProjectId = projectIdGetter;
+    }
+    async validateAccess() {
+        try {
+            core.info('GitLab Access Validation');
+            const projectId = await this.getProjectId();
+            core.info(`\x1b[32m✓ Validating access using Project ID: ${projectId}\x1b[0m`);
+            const permissionChecks = [
+                {
+                    feature: 'issues',
+                    check: async () => {
+                        const issues = await this.gitlab.Issues.all({ projectId });
+                        return Array.isArray(issues);
+                    },
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
+                },
+                {
+                    feature: 'mergeRequests',
+                    check: async () => {
+                        const mrs = await this.gitlab.MergeRequests.all({ projectId });
+                        return Array.isArray(mrs);
+                    },
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Merge requests read/write permissions missing`
+                },
+                {
+                    feature: 'releases',
+                    check: async () => {
+                        const releases = await this.gitlab.ProjectReleases.all(projectId);
+                        return Array.isArray(releases);
+                    },
+                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
+                }
+            ];
+            await validator_1.PermissionValidator.validatePlatformPermissions('gitlab', permissionChecks, this.config.gitlab.sync, `${this.repo.owner}/${this.repo.repo}`);
+            core.info(`\x1b[32m✓ GitLab Project Access Verified: ${this.repo.owner}/${this.repo.repo}; Project ID: ${projectId}\x1b[0m`);
+        }
+        catch (error) {
+            core.error('GitLab access validation failed');
+            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+}
+exports.gitlabPermsHelper = gitlabPermsHelper;
+
+
+/***/ }),
+
+/***/ 1993:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.gitlabReleaseHelper = void 0;
+const core = __importStar(__nccwpck_require__(7484));
+class gitlabReleaseHelper {
+    gitlab;
+    config;
+    getProjectId;
+    constructor(gitlab, config, getProjectId) {
+        this.gitlab = gitlab;
+        this.config = config;
+        this.getProjectId = getProjectId;
+    }
+    async syncReleases() {
+        if (!this.config.github.sync?.releases.enabled) {
+            return [];
+        }
+        try {
+            core.info('\x1b[36m🏷️ Fetching GitLab ProjectReleases...\x1b[0m');
+            const projectId = await this.getProjectId();
+            const releases = await this.gitlab.ProjectReleases.all(projectId);
+            const processedReleases = releases.map((release) => ({
+                id: release.tag_name,
+                tag: release.tag_name,
+                name: release.name || release.tag_name,
+                body: release.description || '',
+                draft: false,
+                prerelease: false,
+                createdAt: release.created_at,
+                publishedAt: release.released_at,
+                assets: (release.assets.links ?? []).map((asset) => ({
+                    name: asset.name,
+                    url: asset.url,
+                    size: 0,
+                    contentType: asset.link_type || 'application/octet-stream'
+                }))
+            }));
+            core.info(`\x1b[32m✓ ProjectReleases Fetched: ${processedReleases.length} releases\x1b[0m`);
+            return processedReleases;
+        }
+        catch (error) {
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab ProjectReleases: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+            return [];
+        }
+    }
+    async createRelease(release) {
+        try {
+            const projectId = await this.getProjectId();
+            const createdRelease = await this.gitlab.ProjectReleases.create(projectId, {
+                tag_name: release.tag,
+                name: release.name,
+                description: release.body,
+                ref: release.tag
+            });
+            release.id = createdRelease.tag_name;
+        }
+        catch (error) {
+            throw new Error(`Failed to create release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async updateRelease(release) {
+        try {
+            const projectId = await this.getProjectId();
+            await this.gitlab.ProjectReleases.update(projectId, release.tag, {
+                name: release.name,
+                description: release.body
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async uploadReleaseAsset(releaseId, asset) {
+        try {
+            const projectId = await this.getProjectId();
+            await this.gitlab.ReleaseLinks.create(projectId, releaseId, {
+                name: asset.name,
+                url: asset.url,
+                link_type: asset.contentType
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to upload asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    async downloadReleaseAsset(releaseId, asset) {
+        try {
+            const response = await fetch(asset.url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            return Buffer.from(arrayBuffer);
+        }
+        catch (error) {
+            throw new Error(`Failed to download asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+}
+exports.gitlabReleaseHelper = gitlabReleaseHelper;
+
+
+/***/ }),
+
+/***/ 2250:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+// src/structures/gitlab/helpers/gitLabTags.ts
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.gitlabTagHelper = void 0;
+const core = __importStar(__nccwpck_require__(7484));
+const exec = __importStar(__nccwpck_require__(5236));
+const path = __importStar(__nccwpck_require__(6928));
+const fs = __importStar(__nccwpck_require__(9896));
+class gitlabTagHelper {
+    gitlab;
+    config;
+    getProjectId;
+    repoPath = null;
+    constructor(gitlab, config, getProjectId) {
+        this.gitlab = gitlab;
+        this.config = config;
+        this.getProjectId = getProjectId;
+    }
+    getRepoPathFromConfig() {
+        if (this.config.gitlab?.projectId) {
+            return null;
+        }
+        const owner = this.config.gitlab.owner;
+        const repo = this.config.gitlab.repo;
+        if (owner && repo) {
+            return `${owner}/${repo}`;
+        }
+        return null;
+    }
+    async syncTags() {
+        if (!this.config.github.sync?.tags.enabled) {
+            return [];
+        }
+        try {
+            core.info('\x1b[36m🏷 Fetching GitLab Tags...\x1b[0m');
+            const projectId = await this.getProjectId();
+            const tags = await this.gitlab.Tags.all(projectId);
+            // Extract repo path from first tag API URL if available
+            if (tags.length > 0 && !this.repoPath) {
+                const apiUrl = tags[0]._links?.self || '';
+                const match = apiUrl.match(/projects\/(.+?)\/repository/);
+                if (match) {
+                    this.repoPath = decodeURIComponent(match[1]);
+                    core.debug(`Extracted repo path: ${this.repoPath}`);
+                }
+            }
+            const processedTags = tags.map((tag) => ({
+                name: tag.name,
+                createdAt: tag.commit.created_at,
+                commitSha: tag.commit.id
+            }));
+            core.info(`\x1b[32m✓ Tags Fetched: ${processedTags.length} tags\x1b[0m`);
+            return processedTags;
+        }
+        catch (error) {
+            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Tags: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+            return [];
+        }
+    }
+    async createTag(tag) {
+        try {
+            const projectId = await this.getProjectId();
+            // First verify the commit exists
+            try {
+                await this.gitlab.Commits.show(projectId, tag.commitSha);
+            }
+            catch (error) {
+                throw new Error(`Commit ${tag.commitSha} does not exist in GitLab repository`);
+            }
+            // Create tag with additional parameters
+            await this.gitlab.Tags.create(projectId, {
+                tag_name: tag.name,
+                ref: tag.commitSha
+            });
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw new Error(`Failed to create tag ${tag.name}: ${errorMessage}`);
+        }
+    }
+    async updateTag(tag) {
+        try {
+            // Try getting path from sync first
+            if (!this.repoPath) {
+                await this.syncTags();
+            }
+            if (!this.repoPath) {
+                // If still no path, try getting path from config as last resort
+                this.repoPath = this.getRepoPathFromConfig();
+                if (!this.repoPath) {
+                    throw new Error('Could not determine repository path');
+                }
+            }
+            const gitlabUrl = this.config.gitlab.host || 'https://gitlab.com';
+            const repoPath = `${gitlabUrl}/${this.repoPath}.git`;
+            const tmpDir = path.join(process.cwd(), '.tmp-git');
+            if (!fs.existsSync(tmpDir)) {
+                fs.mkdirSync(tmpDir, { recursive: true });
+            }
+            await exec.exec('git', ['init'], { cwd: tmpDir });
+            await exec.exec('git', ['config', 'user.name', 'advanced-git-sync'], {
+                cwd: tmpDir
+            });
+            await exec.exec('git', ['config', 'user.email', 'advanced-git-sync@users.noreply.github.com'], { cwd: tmpDir });
+            const githubUrl = `https://x-access-token:${this.config.github.token}@github.com/${this.config.github.owner}/${this.config.github.repo}.git`;
+            await exec.exec('git', ['remote', 'add', 'gitHub', githubUrl], {
+                cwd: tmpDir
+            });
+            await exec.exec('git', ['fetch', 'gitHub', tag.commitSha], {
+                cwd: tmpDir
+            });
+            const gitlabAuthUrl = `https://oauth2:${this.config.gitlab.token}@${repoPath.replace('https://', '')}`;
+            await exec.exec('git', ['remote', 'add', 'gitlab', gitlabAuthUrl], {
+                cwd: tmpDir
+            });
+            await exec.exec('git', ['push', '-f', 'gitlab', `${tag.commitSha}:refs/tags/${tag.name}`], { cwd: tmpDir });
+            fs.rmSync(tmpDir, { recursive: true, force: true });
+        }
+        catch (error) {
+            throw new Error(`Failed to update tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+}
+exports.gitlabTagHelper = gitlabTagHelper;
+
+
+/***/ }),
+
 /***/ 3682:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -57666,9 +58073,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 __exportStar(__nccwpck_require__(7579), exports);
 __exportStar(__nccwpck_require__(6071), exports);
 __exportStar(__nccwpck_require__(7065), exports);
-__exportStar(__nccwpck_require__(515), exports);
-__exportStar(__nccwpck_require__(5374), exports);
-__exportStar(__nccwpck_require__(425), exports);
+__exportStar(__nccwpck_require__(1993), exports);
+__exportStar(__nccwpck_require__(2250), exports);
+__exportStar(__nccwpck_require__(2276), exports);
 
 
 /***/ }),
@@ -57846,345 +58253,6 @@ class mergeRequestHelper {
     }
 }
 exports.mergeRequestHelper = mergeRequestHelper;
-
-
-/***/ }),
-
-/***/ 425:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.permsHelper = void 0;
-const validator_1 = __nccwpck_require__(4460);
-const errorCodes_1 = __nccwpck_require__(9481);
-const core = __importStar(__nccwpck_require__(7484));
-class permsHelper {
-    gitlab;
-    repo;
-    config;
-    getProjectId;
-    constructor(gitlab, repo, config, projectIdGetter) {
-        this.gitlab = gitlab;
-        this.repo = repo;
-        this.config = config;
-        this.getProjectId = projectIdGetter;
-    }
-    async validateAccess() {
-        try {
-            core.info('GitLab Access Validation');
-            const projectId = await this.getProjectId();
-            core.info(`\x1b[32m✓ Validating access using Project ID: ${projectId}\x1b[0m`);
-            const permissionChecks = [
-                {
-                    feature: 'issues',
-                    check: async () => {
-                        const issues = await this.gitlab.Issues.all({ projectId });
-                        return Array.isArray(issues);
-                    },
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM2}: Issues read/write permissions missing`
-                },
-                {
-                    feature: 'mergeRequests',
-                    check: async () => {
-                        const mrs = await this.gitlab.MergeRequests.all({ projectId });
-                        return Array.isArray(mrs);
-                    },
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM3}: Merge requests read/write permissions missing`
-                },
-                {
-                    feature: 'releases',
-                    check: async () => {
-                        const releases = await this.gitlab.ProjectReleases.all(projectId);
-                        return Array.isArray(releases);
-                    },
-                    warningMessage: `${errorCodes_1.ErrorCodes.EPERM4}: Releases read/write permissions missing`
-                }
-            ];
-            await validator_1.PermissionValidator.validatePlatformPermissions('gitlab', permissionChecks, this.config.gitlab.sync, `${this.repo.owner}/${this.repo.repo}`);
-            core.info(`\x1b[32m✓ GitLab Project Access Verified: ${this.repo.owner}/${this.repo.repo}; Project ID: ${projectId}\x1b[0m`);
-        }
-        catch (error) {
-            core.error('GitLab access validation failed');
-            throw new Error(`${errorCodes_1.ErrorCodes.EGLAB}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-}
-exports.permsHelper = permsHelper;
-
-
-/***/ }),
-
-/***/ 515:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ReleaseHelper = void 0;
-const core = __importStar(__nccwpck_require__(7484));
-class ReleaseHelper {
-    gitlab;
-    repo;
-    config;
-    getProjectId;
-    constructor(gitlab, repo, config, getProjectId) {
-        this.gitlab = gitlab;
-        this.repo = repo;
-        this.config = config;
-        this.getProjectId = getProjectId;
-    }
-    async syncReleases() {
-        if (!this.config.github.sync?.releases.enabled) {
-            return [];
-        }
-        try {
-            core.info('\x1b[36m🏷️ Fetching GitLab ProjectReleases...\x1b[0m');
-            const projectId = await this.getProjectId();
-            const releases = await this.gitlab.ProjectReleases.all(projectId);
-            const processedReleases = releases.map((release) => ({
-                id: release.tag_name,
-                tag: release.tag_name,
-                name: release.name || release.tag_name,
-                body: release.description || '',
-                draft: false,
-                prerelease: false,
-                createdAt: release.created_at,
-                publishedAt: release.released_at,
-                assets: (release.assets.links ?? []).map((asset) => ({
-                    name: asset.name,
-                    url: asset.url,
-                    size: 0,
-                    contentType: asset.link_type || 'application/octet-stream'
-                }))
-            }));
-            core.info(`\x1b[32m✓ ProjectReleases Fetched: ${processedReleases.length} releases\x1b[0m`);
-            return processedReleases;
-        }
-        catch (error) {
-            core.warning(`\x1b[31m❌ Failed to Fetch GitLab ProjectReleases: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
-            return [];
-        }
-    }
-    async createRelease(release) {
-        try {
-            const projectId = await this.getProjectId();
-            const createdRelease = await this.gitlab.ProjectReleases.create(projectId, {
-                tag_name: release.tag,
-                name: release.name,
-                description: release.body,
-                ref: release.tag
-            });
-            release.id = createdRelease.tag_name;
-        }
-        catch (error) {
-            throw new Error(`Failed to create release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async updateRelease(release) {
-        try {
-            const projectId = await this.getProjectId();
-            await this.gitlab.ProjectReleases.update(projectId, release.tag, {
-                name: release.name,
-                description: release.body
-            });
-        }
-        catch (error) {
-            throw new Error(`Failed to update release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async uploadReleaseAsset(releaseId, asset) {
-        try {
-            const projectId = await this.getProjectId();
-            await this.gitlab.ReleaseLinks.create(projectId, releaseId, {
-                name: asset.name,
-                url: asset.url,
-                link_type: asset.contentType
-            });
-        }
-        catch (error) {
-            throw new Error(`Failed to upload asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    // downloadReleaseAsset remains unchanged as it uses direct fetch
-    async downloadReleaseAsset(releaseId, asset) {
-        try {
-            const response = await fetch(asset.url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const arrayBuffer = await response.arrayBuffer();
-            return Buffer.from(arrayBuffer);
-        }
-        catch (error) {
-            throw new Error(`Failed to download asset ${asset.name}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-}
-exports.ReleaseHelper = ReleaseHelper;
-
-
-/***/ }),
-
-/***/ 5374:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.TagHelper = void 0;
-const core = __importStar(__nccwpck_require__(7484));
-class TagHelper {
-    gitlab;
-    config;
-    getProjectId;
-    constructor(gitlab, config, getProjectId) {
-        this.gitlab = gitlab;
-        this.config = config;
-        this.getProjectId = getProjectId;
-    }
-    async syncTags() {
-        if (!this.config.github.sync?.tags.enabled) {
-            return [];
-        }
-        try {
-            core.info('\x1b[36m🏷 Fetching GitLab Tags...\x1b[0m');
-            const projectId = await this.getProjectId();
-            const tags = await this.gitlab.Tags.all(projectId);
-            const processedTags = tags.map((tag) => ({
-                name: tag.name,
-                createdAt: tag.commit.created_at,
-                commitSha: tag.commit.id
-            }));
-            core.info(`\x1b[32m✓ Tags Fetched: ${processedTags.length} tags\x1b[0m`);
-            return processedTags;
-        }
-        catch (error) {
-            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Tags: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
-            return [];
-        }
-    }
-    async createTag(tag) {
-        try {
-            const projectId = await this.getProjectId();
-            await this.gitlab.Tags.create(projectId, tag.name, tag.commitSha);
-        }
-        catch (error) {
-            throw new Error(`Failed to create tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async updateTag(tag) {
-        try {
-            const projectId = await this.getProjectId();
-            await this.gitlab.Tags.remove(projectId, tag.name);
-            await this.createTag(tag);
-        }
-        catch (error) {
-            throw new Error(`Failed to update tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-}
-exports.TagHelper = TagHelper;
 
 
 /***/ }),
@@ -58388,10 +58456,6 @@ function arraysEqual(a, b) {
 }
 function compareIssues(sourceIssues, targetIssues) {
     const comparisons = [];
-    core.info('\nSource Issues:');
-    sourceIssues.forEach(issue => core.info(`- ${issue.title} (${issue.state}) [labels: ${issue.labels.join(', ')}]`));
-    core.info('\nTarget Issues:');
-    targetIssues.forEach(issue => core.info(`- ${issue.title} (${issue.state}) [labels: ${issue.labels.join(', ')}]`));
     for (const sourceIssue of sourceIssues) {
         const targetIssue = targetIssues.find(target => target.title === sourceIssue.title);
         if (!targetIssue) {
@@ -58625,11 +58689,7 @@ function logSyncPlan(sourcePRs, targetPRs) {
 async function syncPullRequests(source, target) {
     try {
         const sourcePRs = await source.syncPullRequests();
-        core.info(`\nSource PRs:`);
-        sourcePRs.forEach(pr => core.info(`- ${pr.title} (${pr.state})`));
         const targetPRs = await target.syncPullRequests();
-        core.info(`\nTarget PRs:`);
-        targetPRs.forEach(pr => core.info(`- ${pr.title} (${pr.state})`));
         logSyncPlan(sourcePRs, targetPRs);
         // Process each source PR
         for (const sourcePR of sourcePRs) {
@@ -58709,29 +58769,38 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.syncReleases = syncReleases;
-exports.syncTags = syncTags;
 const core = __importStar(__nccwpck_require__(7484));
+function logSyncPlan(sourceReleases, targetReleases) {
+    const toCreate = sourceReleases.filter(sourceRelease => !targetReleases.find(r => r.tag === sourceRelease.tag)).length;
+    const toUpdate = sourceReleases.filter(sourceRelease => {
+        const targetRelease = targetReleases.find(r => r.tag === sourceRelease.tag);
+        return (targetRelease &&
+            new Date(sourceRelease.createdAt).getTime() >
+                new Date(targetRelease.createdAt).getTime());
+    }).length;
+    const skip = sourceReleases.length - (toCreate + toUpdate);
+    core.info(`
+📊 Release Sync Plan Summary:
+  - Create: ${toCreate} releases
+  - Update: ${toUpdate} releases
+  - Skip: ${skip} releases (already in sync)
+`);
+}
 async function syncReleases(source, target) {
     try {
         const sourceReleases = await source.syncReleases();
-        core.info(`Fetched ${sourceReleases.length} releases from source`);
         const targetReleases = await target.syncReleases();
-        core.info(`Fetched ${targetReleases.length} releases from target`);
-        // Sort releases by creation time (newest first)
         sourceReleases.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        // Filter out releases that already exist in target
-        // If a release exists, only update if source release is newer
+        core.info('\n🔍 Release Sync Analysis:');
+        logSyncPlan(sourceReleases, targetReleases);
         const releasesToSync = sourceReleases.filter(sourceRelease => {
             const targetRelease = targetReleases.find(r => r.tag === sourceRelease.tag);
-            if (!targetRelease) {
-                return true; // Release doesn't exist in target, should sync
-            }
-            // Compare creation times
+            if (!targetRelease)
+                return true;
             return (new Date(sourceRelease.createdAt).getTime() >
                 new Date(targetRelease.createdAt).getTime());
         });
         core.info(`Found ${releasesToSync.length} releases to sync`);
-        // Sync releases
         for (const release of releasesToSync) {
             try {
                 const existingRelease = targetReleases.find(r => r.tag === release.tag);
@@ -58743,7 +58812,6 @@ async function syncReleases(source, target) {
                     await target.createRelease(release);
                     core.info(`Created release ${release.tag}`);
                 }
-                // Sync release assets if any
                 if (release.assets.length > 0) {
                     await syncReleaseAssets(source, target, release);
                 }
@@ -58771,27 +58839,66 @@ async function syncReleaseAssets(source, target, release) {
         core.warning(`Failed to sync assets for release ${release.tag}: ${error instanceof Error ? error.message : String(error)}`);
     }
 }
+
+
+/***/ }),
+
+/***/ 5160:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.syncTags = syncTags;
+const core = __importStar(__nccwpck_require__(7484));
 async function syncTags(source, target) {
     try {
         const sourceTags = await source.syncTags();
         core.info(`Fetched ${sourceTags.length} tags from source`);
         const targetTags = await target.syncTags();
         core.info(`Fetched ${targetTags.length} tags from target`);
-        // Sort tags by creation time (newest first)
         sourceTags.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        // Filter out tags that already exist in target
-        // If a tag exists, only update if source tag is newer
         const tagsToSync = sourceTags.filter(sourceTag => {
             const targetTag = targetTags.find(t => t.name === sourceTag.name);
-            if (!targetTag) {
-                return true; // Tag doesn't exist in target, should sync
-            }
-            // Compare creation times
+            if (!targetTag)
+                return true;
             return (new Date(sourceTag.createdAt).getTime() >
                 new Date(targetTag.createdAt).getTime());
         });
         core.info(`Found ${tagsToSync.length} tags to sync`);
-        // Sync tags
         for (const tag of tagsToSync) {
             try {
                 const existingTag = targetTags.find(t => t.name === tag.name);
@@ -58972,12 +59079,12 @@ function getDefaultConfig() {
                 pullRequests: {
                     enabled: true,
                     autoMerge: false,
-                    labels: ['synced-from-gitlab']
+                    labels: ['synced']
                 },
                 issues: {
                     enabled: true,
                     syncComments: false,
-                    labels: ['synced-from-gitlab']
+                    labels: ['synced']
                 },
                 releases: {
                     enabled: true
@@ -58998,12 +59105,12 @@ function getDefaultConfig() {
                 pullRequests: {
                     enabled: true,
                     autoMerge: false,
-                    labels: ['synced-from-github']
+                    labels: ['synced']
                 },
                 issues: {
                     enabled: true,
                     syncComments: false,
-                    labels: ['synced-from-github']
+                    labels: ['synced']
                 },
                 releases: {
                     enabled: true

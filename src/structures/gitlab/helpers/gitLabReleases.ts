@@ -1,10 +1,9 @@
-import { Release, ReleaseAsset, Config, Repository } from '@/src/types'
+import { Release, ReleaseAsset, Config } from '@/src/types'
 import * as core from '@actions/core'
 
-export class ReleaseHelper {
+export class gitlabReleaseHelper {
   constructor(
     private gitlab: any,
-    private repo: Repository,
     private config: Config,
     private getProjectId: () => Promise<number>
   ) {}
@@ -115,7 +114,6 @@ export class ReleaseHelper {
     }
   }
 
-  // downloadReleaseAsset remains unchanged as it uses direct fetch
   async downloadReleaseAsset(
     releaseId: string,
     asset: ReleaseAsset

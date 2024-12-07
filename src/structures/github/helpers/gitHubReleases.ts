@@ -2,7 +2,7 @@
 import * as core from '@actions/core'
 import { Repository, Config, Release, ReleaseAsset } from '@/src/types'
 
-export class releaseHelper {
+export class githubReleaseHelper {
   constructor(
     private octokit: any,
     private repo: Repository,

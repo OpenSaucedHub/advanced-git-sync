@@ -15,20 +15,6 @@ export function compareIssues(
 ): IssueComparison[] {
   const comparisons: IssueComparison[] = []
 
-  core.info('\nSource Issues:')
-  sourceIssues.forEach(issue =>
-    core.info(
-      `- ${issue.title} (${issue.state}) [labels: ${issue.labels.join(', ')}]`
-    )
-  )
-
-  core.info('\nTarget Issues:')
-  targetIssues.forEach(issue =>
-    core.info(
-      `- ${issue.title} (${issue.state}) [labels: ${issue.labels.join(', ')}]`
-    )
-  )
-
   for (const sourceIssue of sourceIssues) {
     const targetIssue = targetIssues.find(
       target => target.title === sourceIssue.title

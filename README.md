@@ -128,19 +128,19 @@ github:
 
 #### Pull Requests
 
-| Option      | Description                 | Required | Default                   |
-| ----------- | --------------------------- | -------- | ------------------------- |
-| `enabled`   | Enable PR sync              | No       | true                      |
-| `autoMerge` | Auto-merge synced PRs       | No       | false                     |
-| `labels`    | Labels to add to synced PRs | No       | synced-from-github/gitlab |
+| Option      | Description                 | Required | Default |
+| ----------- | --------------------------- | -------- | ------- |
+| `enabled`   | Enable PR sync              | No       | true    |
+| `autoMerge` | Auto-merge synced PRs       | No       | false   |
+| `labels`    | Labels to add to synced PRs | No       | synced  |
 
 #### Issues
 
-| Option         | Description                    | Required | Default                   |
-| -------------- | ------------------------------ | -------- | ------------------------- |
-| `enabled`      | Enable issue sync              | No       | true                      |
-| `syncComments` | Sync issue comments            | No       | false                     |
-| `labels`       | Labels to add to synced issues | No       | synced-from-github/gitlab |
+| Option         | Description                    | Required | Default |
+| -------------- | ------------------------------ | -------- | ------- |
+| `enabled`      | Enable issue sync              | No       | true    |
+| `syncComments` | Sync issue comments            | No       | false   |
+| `labels`       | Labels to add to synced issues | No       | synced  |
 
 #### Releases and Tags
 
@@ -177,12 +177,12 @@ gitlab:
     pullRequests:
       enabled: true
       autoMerge: false
-      labels: ['synced-from-github']
+      labels: ['synced']
 
     issues:
       enabled: true
       syncComments: false
-      labels: ['synced-from-github']
+      labels: ['synced']
 
     releases:
       enabled: true
@@ -204,12 +204,12 @@ github:
     pullRequests:
       enabled: true
       autoMerge: false
-      labels: ['synced-from-gitlab']
+      labels: ['synced']
 
     issues:
       enabled: true
       syncComments: false
-      labels: ['synced-from-gitlab']
+      labels: ['synced']
 
     releases:
       enabled: true

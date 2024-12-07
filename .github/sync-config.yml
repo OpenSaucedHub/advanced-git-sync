@@ -15,12 +15,12 @@ gitlab:
     pullRequests:
       enabled: true
       autoMerge: false
-      labels: "synced-from-gitlab"
+      labels: "synced"
 
     issues:
       enabled: true
       syncComments: false
-      labels: "synced-from-gitlab"
+      labels: "synced"
 
     releases:
       enabled: true
@@ -42,12 +42,12 @@ github:
     pullRequests:
       enabled: true
       autoMerge: false
-      labels: "synced-from-gitlab"
+      labels: "synced"
 
     issues:
       enabled: true
       syncComments: false
-      labels: "synced-from-gitlab"
+      labels: "synced"
 
     releases:
       enabled: true

@@ -3,7 +3,7 @@ import { Config, PermissionCheck, Repository } from '@/src/types'
 import { ErrorCodes } from '@/src/utils/errorCodes'
 import * as core from '@actions/core'
 
-export class permsHelper {
+export class githubPermsHelper {
   constructor(
     private octokit: any,
     private repo: Repository,

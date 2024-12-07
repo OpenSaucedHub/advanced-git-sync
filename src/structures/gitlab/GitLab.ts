@@ -5,9 +5,9 @@ import {
   gitlabBranchHelper,
   gitlabIssueHelper,
   mergeRequestHelper,
-  ReleaseHelper,
-  TagHelper,
-  permsHelper
+  gitlabReleaseHelper,
+  gitlabTagHelper,
+  gitlabPermsHelper
 } from './helpers'
 import { ErrorCodes } from '@/src/utils/errorCodes'
 
@@ -18,10 +18,10 @@ export class GitLabClient implements IClient {
   public branches: gitlabBranchHelper
   public issues: gitlabIssueHelper
   public mergeRequest: mergeRequestHelper
-  public release: ReleaseHelper
-  public tags: TagHelper
+  public release: gitlabReleaseHelper
+  public tags: gitlabTagHelper
   private projectId: number | null = null
-  private permsHelper: permsHelper
+  private perms: gitlabPermsHelper
 
   constructor(config: Config, repo: Repository) {
     this.config = config
@@ -48,16 +48,16 @@ export class GitLabClient implements IClient {
     this.mergeRequest = new mergeRequestHelper(this.gitlab, this.config, () =>
       this.getProjectId()
     )
-    this.permsHelper = new permsHelper(
+    this.perms = new gitlabPermsHelper(
       this.gitlab,
       this.repo,
       this.config,
       () => this.getProjectId()
     )
-    this.release = new ReleaseHelper(this.gitlab, this.repo, this.config, () =>
+    this.release = new gitlabReleaseHelper(this.gitlab, this.config, () =>
       this.getProjectId()
     )
-    this.tags = new TagHelper(this.gitlab, this.config, () =>
+    this.tags = new gitlabTagHelper(this.gitlab, this.config, () =>
       this.getProjectId()
     )
     this.projectId = config.gitlab.projectId || null
@@ -116,7 +116,7 @@ export class GitLabClient implements IClient {
   }
 
   async validateAccess(): Promise<void> {
-    return this.permsHelper.validateAccess()
+    return this.perms.validateAccess()
   }
 
   // Delegate to branch helper

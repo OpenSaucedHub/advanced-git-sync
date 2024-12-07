@@ -1,5 +1,5 @@
 import { Repository, Config, Release, ReleaseAsset } from '@/src/types';
-export declare class releaseHelper {
+export declare class githubReleaseHelper {
     private octokit;
     private repo;
     private config;
