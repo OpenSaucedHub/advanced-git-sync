@@ -36,7 +36,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "@gitbeaker/rest": "^41.3.0",
+    "@gitbeaker/rest": "^42.0.2",
     "@octokit/rest": "^21.0.2",
     "deepmerge": "^4.3.1",
     "js-yaml": "^4.1.0",
