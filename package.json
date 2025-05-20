@@ -58,7 +58,7 @@
     "@typescript-eslint/parser": "^8.17.0",
     "@vercel/ncc": "^0.38.3",
     "axios": "^1.7.9",
-    "conventional-changelog-conventionalcommits": "^8.0.0",
+    "conventional-changelog-conventionalcommits": "^9.0.0",
     "conventional-changelog-gitmoji": "^0.2.5",
     "eslint": "^9.16.0",
     "globals": "^16.0.0",
