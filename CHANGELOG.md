@@ -2,17 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.1.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.4...v1.1.5) (2024-12-07)
-
-
 
 ## [1.1.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.4...v1.1.5) (2024-12-07)
 
 ### Bug Fixes
 
-* implement LabelHelper for label normalization and integration; refactor issue and pull request handling ([05f9f26](https://github.com/OpenSaucedHub/advanced-git-sync/commit/05f9f267b7fbe6d74c2d565cde0a337508d910dc))
-* introduce GitHub and GitLab permissions and tags helpers; refactor release and sync functionalities ([9bc811e](https://github.com/OpenSaucedHub/advanced-git-sync/commit/9bc811e9ac137f30fdd1df338018376c81e6b40b))
+- implement LabelHelper for label normalization and integration; refactor issue and pull request
+  handling
+  ([05f9f26](https://github.com/OpenSaucedHub/advanced-git-sync/commit/05f9f267b7fbe6d74c2d565cde0a337508d910dc))
+- introduce GitHub and GitLab permissions and tags helpers; refactor release and sync
+  functionalities
+  ([9bc811e](https://github.com/OpenSaucedHub/advanced-git-sync/commit/9bc811e9ac137f30fdd1df338018376c81e6b40b))
 
 # [v1.1.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.3...v1.1.4) (2024-12-06)
 

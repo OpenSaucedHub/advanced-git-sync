@@ -93,3 +93,9 @@ export interface BranchComparison {
   action: 'create' | 'update' | 'skip'
   protected: boolean
 }
+
+// Branch filter options for both GitHub and GitLab
+export interface BranchFilterOptions {
+  includeProtected?: boolean
+  pattern?: string
+}

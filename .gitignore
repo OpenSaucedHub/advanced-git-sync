@@ -105,3 +105,6 @@ typings/
 # package locks
 package-lock.json
 bun.lockb
+
+.idea/
+advanced-git-sync.iml

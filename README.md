@@ -67,13 +67,13 @@ jobs:
 
 ```yaml
 #sync-config.yml
-# When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub TO GitLab
+# When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab To GitHub
 gitlab:
   enabled: true
   projectId: # recommended, if present, you do not need owner and repo
   # owner: # Optional, defaults to GitHub repo owner
 
-# When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab TO GitHub
+# When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub To GitLab
 github:
   enabled: true
 ```
@@ -161,7 +161,7 @@ set it to `false`.
 
 ```yaml
 #sync-config.yml
-# When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub TO GitLab
+# When you have gitlab.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab to GitHub
 gitlab:
   enabled: true
   host: 'gitlab.com' # Optional, defaults to gitlab.com
@@ -190,7 +190,7 @@ gitlab:
     tags:
       enabled: true # automatically enabled if releases = true
 
-# When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitLab TO GitHub
+# When you have github.sync.[entity].enabled: true, it means those entities will be synced FROM GitHub to GitLab
 github:
   enabled: true
   owner: # Optional, defaults to GitHub owner

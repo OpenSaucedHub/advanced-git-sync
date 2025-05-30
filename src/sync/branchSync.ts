@@ -54,50 +54,36 @@ export async function syncBranches(
   source: GitHubClient | GitLabClient,
   target: GitHubClient | GitLabClient
 ): Promise<void> {
-  try {
-    // Fetch branches from both repositories
-    const sourceBranches = await source.syncBranches()
-    const targetBranches = await target.syncBranches()
+  // Fetch branches from both repositories
+  const sourceBranches = await source.fetchBranches({
+    includeProtected: source.config.github.sync?.branches.protected,
+    pattern: source.config.github.sync?.branches.pattern
+  })
 
-    // Compare branches and determine required actions
-    const branchComparisons = compareBranches(sourceBranches, targetBranches)
+  const targetBranches = await target.fetchBranches()
 
-    // Log sync plan
-    core.info('\n🔍 Branch Sync Analysis:')
-    logSyncPlan(branchComparisons)
+  // Compare branches and determine required actions
+  const branchComparisons = compareBranches(sourceBranches, targetBranches)
 
-    // Process each branch according to its required action
-    for (const comparison of branchComparisons) {
-      try {
-        switch (comparison.action) {
-          case 'create':
-            await createBranch(target, comparison)
-            break
-          case 'update':
-            await updateBranch(target, comparison)
-            break
-          case 'skip':
-            core.info(`⏭️ Skipping ${comparison.name} - already in sync`)
-            break
-        }
-      } catch (error) {
-        core.warning(
-          `Failed to process branch ${comparison.name}: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        )
-      }
+  // Log sync plan
+  core.info('\n🔍 Branch Sync Analysis:')
+  logSyncPlan(branchComparisons)
+
+  // Process each branch according to its required action
+  for (const comparison of branchComparisons) {
+    switch (comparison.action) {
+      case 'create':
+        await createBranch(target, comparison)
+        break
+      case 'update':
+        await updateBranch(target, comparison)
+        break
+      case 'skip':
+        core.info(`⏭️ Skipping ${comparison.name} - already in sync`)
+        break
     }
-
-    core.info('✓ Branch synchronization completed')
-  } catch (error) {
-    core.error(
-      `Branch synchronization failed: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    )
-    throw error
   }
+  core.info('✓ Branch synchronization completed')
 }
 
 async function createBranch(
@@ -114,13 +100,6 @@ async function updateBranch(
   target: GitHubClient | GitLabClient,
   comparison: BranchComparison
 ): Promise<void> {
-  if (comparison.protected) {
-    core.warning(
-      `⚠️ Skipping protected branch ${comparison.name} - manual update required`
-    )
-    return
-  }
-
   core.info(`📝 Updating branch ${comparison.name}`)
   // Implementation will be handled by the specific client (GitHub/GitLab)
   await target.updateBranch(comparison.name, comparison.sourceCommit)
