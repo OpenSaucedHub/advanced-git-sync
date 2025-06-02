@@ -1,5 +1,5 @@
 {
-  "name": "@opensaucedhub/git-sync",
+  "name": "@nosugarcoffee/advanced-git-sync",
   "description": "Synchronize GitHub repository with GitLab including branches, PRs, and issues",
   "version": "1.0.0",
   "publishConfig": {
@@ -27,12 +27,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OpenSaucedHub/advanced-git-sync.git"
+    "url": "git+https://github.com/nosugarcoffee/advanced-git-sync.git"
   },
   "bugs": {
-    "url": "https://github.com/OpenSaucedHub/advanced-git-sync/issues"
+    "url": "https://github.com/nosugarcoffee/advanced-git-sync/issues"
   },
-  "homepage": "https://github.com/OpenSaucedHub/advanced-git-sync#readme",
+  "homepage": "https://github.com/nosugarcoffee/advanced-git-sync#readme",
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
