@@ -36,11 +36,11 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "@gitbeaker/rest": "^42.0.2",
+    "@gitbeaker/rest": "^43.0.0",
     "@octokit/rest": "^22.0.0",
     "deepmerge": "^4.3.1",
     "js-yaml": "^4.1.0",
-    "zod": "^3.23.8"
+    "zod": "^4.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.16.0",
