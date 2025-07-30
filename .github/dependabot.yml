@@ -14,8 +14,6 @@ updates:
     commit-message:
       prefix: "chore"
       prefix-development: "chore(dev)"
-    reviewers:
-      - "iamvikshan"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -30,5 +28,3 @@ updates:
       - "gh-actions"
     commit-message:
       prefix: "chore"
-    reviewers:
-      - "iamvikshan"
