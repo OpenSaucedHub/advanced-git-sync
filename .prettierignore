@@ -4,3 +4,4 @@ dist/
 *.sh
 *.lockb
 *.nix
+*.lock

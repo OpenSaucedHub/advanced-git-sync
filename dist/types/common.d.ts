@@ -77,3 +77,7 @@ export interface BranchComparison {
     action: 'create' | 'update' | 'skip';
     protected: boolean;
 }
+export interface BranchFilterOptions {
+    includeProtected?: boolean;
+    pattern?: string;
+}

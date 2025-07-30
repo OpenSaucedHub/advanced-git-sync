@@ -1,4 +1,4 @@
-import { Repository, Config, Issue, Comment, PullRequest, Release, ReleaseAsset, Tag, IClient } from '@/src/types';
+import { Repository, Config, Issue, Comment, PullRequest, Release, ReleaseAsset, Tag, IClient, BranchFilterOptions } from '@/src/types';
 import { githubBranchHelper, pullRequestHelper, githubIssueHelper, githubReleaseHelper, tagsHelper, githubPermsHelper } from './helpers';
 export declare class GitHubClient implements IClient {
     config: Config;
@@ -17,7 +17,7 @@ export declare class GitHubClient implements IClient {
         repo: string;
     };
     validateAccess(): Promise<void>;
-    syncBranches(): Promise<import("@/src/types").Branch[]>;
+    fetchBranches(filterOptions?: BranchFilterOptions): Promise<import("@/src/types").Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;
     updateBranch(name: string, commitSha: string): Promise<void>;
     syncPullRequests(): Promise<PullRequest[]>;

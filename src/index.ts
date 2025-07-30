@@ -141,7 +141,9 @@ async function run(): Promise<void> {
     core.info('\x1b[90m--------------------------------------------\x1b[0m')
 
     if (error instanceof Error) {
-      core.setFailed(`\x1b[31m❌ Sync Failed: ${error.message}\x1b[0m`)
+      core.setFailed(
+        `\x1b[31m❌ Sync Failed: ${error.message} ${error.stack} \x1b[0m`
+      )
     } else {
       core.setFailed(
         '\x1b[31m❌ An unexpected error occurred during synchronization\x1b[0m'

@@ -93,6 +93,11 @@ export declare const SyncConfigSchema: z.ZodObject<{
         enabled: boolean;
     }>;
 }, "strip", z.ZodTypeAny, {
+    issues: {
+        enabled: boolean;
+        labels: string | string[];
+        syncComments: boolean;
+    };
     branches: {
         enabled: boolean;
         protected: boolean;
@@ -102,11 +107,6 @@ export declare const SyncConfigSchema: z.ZodObject<{
         enabled: boolean;
         autoMerge: boolean;
         labels: string | string[];
-    };
-    issues: {
-        enabled: boolean;
-        labels: string | string[];
-        syncComments: boolean;
     };
     releases: {
         enabled: boolean;
@@ -115,6 +115,11 @@ export declare const SyncConfigSchema: z.ZodObject<{
         enabled: boolean;
     };
 }, {
+    issues: {
+        enabled: boolean;
+        labels: string | string[];
+        syncComments: boolean;
+    };
     branches: {
         enabled: boolean;
         protected: boolean;
@@ -124,11 +129,6 @@ export declare const SyncConfigSchema: z.ZodObject<{
         enabled: boolean;
         autoMerge: boolean;
         labels: string | string[];
-    };
-    issues: {
-        enabled: boolean;
-        labels: string | string[];
-        syncComments: boolean;
     };
     releases: {
         enabled: boolean;
@@ -199,6 +199,11 @@ export declare const GitlabConfigSchema: z.ZodObject<{
             enabled: boolean;
         }>;
     }, "strip", z.ZodTypeAny, {
+        issues: {
+            enabled: boolean;
+            labels: string | string[];
+            syncComments: boolean;
+        };
         branches: {
             enabled: boolean;
             protected: boolean;
@@ -208,11 +213,6 @@ export declare const GitlabConfigSchema: z.ZodObject<{
             enabled: boolean;
             autoMerge: boolean;
             labels: string | string[];
-        };
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
         };
         releases: {
             enabled: boolean;
@@ -221,6 +221,11 @@ export declare const GitlabConfigSchema: z.ZodObject<{
             enabled: boolean;
         };
     }, {
+        issues: {
+            enabled: boolean;
+            labels: string | string[];
+            syncComments: boolean;
+        };
         branches: {
             enabled: boolean;
             protected: boolean;
@@ -230,11 +235,6 @@ export declare const GitlabConfigSchema: z.ZodObject<{
             enabled: boolean;
             autoMerge: boolean;
             labels: string | string[];
-        };
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
         };
         releases: {
             enabled: boolean;
@@ -251,6 +251,11 @@ export declare const GitlabConfigSchema: z.ZodObject<{
     owner?: string | undefined;
     repo?: string | undefined;
     sync?: {
+        issues: {
+            enabled: boolean;
+            labels: string | string[];
+            syncComments: boolean;
+        };
         branches: {
             enabled: boolean;
             protected: boolean;
@@ -260,11 +265,6 @@ export declare const GitlabConfigSchema: z.ZodObject<{
             enabled: boolean;
             autoMerge: boolean;
             labels: string | string[];
-        };
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
         };
         releases: {
             enabled: boolean;
@@ -281,6 +281,11 @@ export declare const GitlabConfigSchema: z.ZodObject<{
     owner?: string | undefined;
     repo?: string | undefined;
     sync?: {
+        issues: {
+            enabled: boolean;
+            labels: string | string[];
+            syncComments: boolean;
+        };
         branches: {
             enabled: boolean;
             protected: boolean;
@@ -290,11 +295,6 @@ export declare const GitlabConfigSchema: z.ZodObject<{
             enabled: boolean;
             autoMerge: boolean;
             labels: string | string[];
-        };
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
         };
         releases: {
             enabled: boolean;
@@ -364,6 +364,11 @@ export declare const GithubConfigSchema: z.ZodObject<{
             enabled: boolean;
         }>;
     }, "strip", z.ZodTypeAny, {
+        issues: {
+            enabled: boolean;
+            labels: string | string[];
+            syncComments: boolean;
+        };
         branches: {
             enabled: boolean;
             protected: boolean;
@@ -373,11 +378,6 @@ export declare const GithubConfigSchema: z.ZodObject<{
             enabled: boolean;
             autoMerge: boolean;
             labels: string | string[];
-        };
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
         };
         releases: {
             enabled: boolean;
@@ -386,6 +386,11 @@ export declare const GithubConfigSchema: z.ZodObject<{
             enabled: boolean;
         };
     }, {
+        issues: {
+            enabled: boolean;
+            labels: string | string[];
+            syncComments: boolean;
+        };
         branches: {
             enabled: boolean;
             protected: boolean;
@@ -395,11 +400,6 @@ export declare const GithubConfigSchema: z.ZodObject<{
             enabled: boolean;
             autoMerge: boolean;
             labels: string | string[];
-        };
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
         };
         releases: {
             enabled: boolean;
@@ -414,6 +414,11 @@ export declare const GithubConfigSchema: z.ZodObject<{
     owner?: string | undefined;
     repo?: string | undefined;
     sync?: {
+        issues: {
+            enabled: boolean;
+            labels: string | string[];
+            syncComments: boolean;
+        };
         branches: {
             enabled: boolean;
             protected: boolean;
@@ -423,11 +428,6 @@ export declare const GithubConfigSchema: z.ZodObject<{
             enabled: boolean;
             autoMerge: boolean;
             labels: string | string[];
-        };
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
         };
         releases: {
             enabled: boolean;
@@ -442,6 +442,11 @@ export declare const GithubConfigSchema: z.ZodObject<{
     owner?: string | undefined;
     repo?: string | undefined;
     sync?: {
+        issues: {
+            enabled: boolean;
+            labels: string | string[];
+            syncComments: boolean;
+        };
         branches: {
             enabled: boolean;
             protected: boolean;
@@ -451,11 +456,6 @@ export declare const GithubConfigSchema: z.ZodObject<{
             enabled: boolean;
             autoMerge: boolean;
             labels: string | string[];
-        };
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
         };
         releases: {
             enabled: boolean;
@@ -528,6 +528,11 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
             }>;
         }, "strip", z.ZodTypeAny, {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -537,11 +542,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
@@ -550,6 +550,11 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
             };
         }, {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -559,11 +564,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
@@ -580,6 +580,11 @@ export declare const ConfigSchema: z.ZodObject<{
         owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -589,11 +594,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
@@ -610,6 +610,11 @@ export declare const ConfigSchema: z.ZodObject<{
         owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -619,11 +624,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
@@ -693,6 +693,11 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
             }>;
         }, "strip", z.ZodTypeAny, {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -702,11 +707,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
@@ -715,6 +715,11 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
             };
         }, {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -724,11 +729,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
@@ -743,6 +743,11 @@ export declare const ConfigSchema: z.ZodObject<{
         owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -752,11 +757,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
@@ -771,6 +771,11 @@ export declare const ConfigSchema: z.ZodObject<{
         owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -780,11 +785,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
@@ -803,6 +803,11 @@ export declare const ConfigSchema: z.ZodObject<{
         owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -812,11 +817,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
@@ -832,6 +832,11 @@ export declare const ConfigSchema: z.ZodObject<{
         owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -841,11 +846,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
@@ -864,6 +864,11 @@ export declare const ConfigSchema: z.ZodObject<{
         owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -873,11 +878,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
@@ -893,6 +893,11 @@ export declare const ConfigSchema: z.ZodObject<{
         owner?: string | undefined;
         repo?: string | undefined;
         sync?: {
+            issues: {
+                enabled: boolean;
+                labels: string | string[];
+                syncComments: boolean;
+            };
             branches: {
                 enabled: boolean;
                 protected: boolean;
@@ -902,11 +907,6 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: boolean;
                 autoMerge: boolean;
                 labels: string | string[];
-            };
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
             };
             releases: {
                 enabled: boolean;
