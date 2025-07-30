@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.1.6](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.5...v1.1.6) (2025-07-30)
+
+
+
+## [1.1.6](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.5...v1.1.6) (2025-07-30)
+
+### ⚠ BREAKING CHANGES
+
+* release v2 and add rimraf as a dependency for improved file deletion
+
+### Features
+
+* release v2 and add rimraf as a dependency for improved file deletion ([8f9f5c5](https://github.com/OpenSaucedHub/advanced-git-sync/commit/8f9f5c539da33314bbe5b89cccd7210a220aa822))
+
+### Bug Fixes
+
+* cleanup [#13](https://github.com/OpenSaucedHub/advanced-git-sync/issues/13), update Dependabot configuration and remove reviewers; enhance release workflow to use latest Bun version; update package.json for repository name and dependency versions; add CLA Assistant workflow ([dd03b34](https://github.com/OpenSaucedHub/advanced-git-sync/commit/dd03b34cf67369a77d3a04eeeaa08ef5502864bf))
+
 # [v1.1.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.4...v1.1.5) (2024-12-07)
 
 ## [1.1.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.4...v1.1.5) (2024-12-07)
