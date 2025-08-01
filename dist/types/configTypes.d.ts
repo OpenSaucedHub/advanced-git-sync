@@ -3,140 +3,40 @@ export declare const BranchConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     protected: z.ZodBoolean;
     pattern: z.ZodString;
-}, "strip", z.ZodTypeAny, {
-    enabled: boolean;
-    protected: boolean;
-    pattern: string;
-}, {
-    enabled: boolean;
-    protected: boolean;
-    pattern: string;
-}>;
+}, z.core.$strip>;
 export declare const PRConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     autoMerge: z.ZodBoolean;
-    labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-}, "strip", z.ZodTypeAny, {
-    enabled: boolean;
-    autoMerge: boolean;
-    labels: string | string[];
-}, {
-    enabled: boolean;
-    autoMerge: boolean;
-    labels: string | string[];
-}>;
+    labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+}, z.core.$strip>;
 export declare const IssueConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     syncComments: z.ZodBoolean;
-    labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-}, "strip", z.ZodTypeAny, {
-    enabled: boolean;
-    labels: string | string[];
-    syncComments: boolean;
-}, {
-    enabled: boolean;
-    labels: string | string[];
-    syncComments: boolean;
-}>;
+    labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+}, z.core.$strip>;
 export declare const SyncConfigSchema: z.ZodObject<{
     branches: z.ZodObject<{
         enabled: z.ZodBoolean;
         protected: z.ZodBoolean;
         pattern: z.ZodString;
-    }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
-        protected: boolean;
-        pattern: string;
-    }, {
-        enabled: boolean;
-        protected: boolean;
-        pattern: string;
-    }>;
+    }, z.core.$strip>;
     pullRequests: z.ZodObject<{
         enabled: z.ZodBoolean;
         autoMerge: z.ZodBoolean;
-        labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-    }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
-        autoMerge: boolean;
-        labels: string | string[];
-    }, {
-        enabled: boolean;
-        autoMerge: boolean;
-        labels: string | string[];
-    }>;
+        labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+    }, z.core.$strip>;
     issues: z.ZodObject<{
         enabled: z.ZodBoolean;
         syncComments: z.ZodBoolean;
-        labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-    }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
-        labels: string | string[];
-        syncComments: boolean;
-    }, {
-        enabled: boolean;
-        labels: string | string[];
-        syncComments: boolean;
-    }>;
+        labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+    }, z.core.$strip>;
     releases: z.ZodObject<{
         enabled: z.ZodBoolean;
-    }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
-    }, {
-        enabled: boolean;
-    }>;
+    }, z.core.$strip>;
     tags: z.ZodObject<{
         enabled: z.ZodBoolean;
-    }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
-    }, {
-        enabled: boolean;
-    }>;
-}, "strip", z.ZodTypeAny, {
-    issues: {
-        enabled: boolean;
-        labels: string | string[];
-        syncComments: boolean;
-    };
-    branches: {
-        enabled: boolean;
-        protected: boolean;
-        pattern: string;
-    };
-    pullRequests: {
-        enabled: boolean;
-        autoMerge: boolean;
-        labels: string | string[];
-    };
-    releases: {
-        enabled: boolean;
-    };
-    tags: {
-        enabled: boolean;
-    };
-}, {
-    issues: {
-        enabled: boolean;
-        labels: string | string[];
-        syncComments: boolean;
-    };
-    branches: {
-        enabled: boolean;
-        protected: boolean;
-        pattern: string;
-    };
-    pullRequests: {
-        enabled: boolean;
-        autoMerge: boolean;
-        labels: string | string[];
-    };
-    releases: {
-        enabled: boolean;
-    };
-    tags: {
-        enabled: boolean;
-    };
-}>;
+    }, z.core.$strip>;
+}, z.core.$strip>;
 export declare const GitlabConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     projectId: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
@@ -149,161 +49,25 @@ export declare const GitlabConfigSchema: z.ZodObject<{
             enabled: z.ZodBoolean;
             protected: z.ZodBoolean;
             pattern: z.ZodString;
-        }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        }, {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        }>;
+        }, z.core.$strip>;
         pullRequests: z.ZodObject<{
             enabled: z.ZodBoolean;
             autoMerge: z.ZodBoolean;
-            labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-        }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        }, {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        }>;
+            labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+        }, z.core.$strip>;
         issues: z.ZodObject<{
             enabled: z.ZodBoolean;
             syncComments: z.ZodBoolean;
-            labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-        }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        }, {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        }>;
+            labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+        }, z.core.$strip>;
         releases: z.ZodObject<{
             enabled: z.ZodBoolean;
-        }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
-        }, {
-            enabled: boolean;
-        }>;
+        }, z.core.$strip>;
         tags: z.ZodObject<{
             enabled: z.ZodBoolean;
-        }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
-        }, {
-            enabled: boolean;
-        }>;
-    }, "strip", z.ZodTypeAny, {
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        };
-        branches: {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        };
-        pullRequests: {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        };
-        releases: {
-            enabled: boolean;
-        };
-        tags: {
-            enabled: boolean;
-        };
-    }, {
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        };
-        branches: {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        };
-        pullRequests: {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        };
-        releases: {
-            enabled: boolean;
-        };
-        tags: {
-            enabled: boolean;
-        };
-    }>>;
-}, "strip", z.ZodTypeAny, {
-    enabled: boolean;
-    projectId?: number | null | undefined;
-    host?: string | undefined;
-    token?: string | undefined;
-    owner?: string | undefined;
-    repo?: string | undefined;
-    sync?: {
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        };
-        branches: {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        };
-        pullRequests: {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        };
-        releases: {
-            enabled: boolean;
-        };
-        tags: {
-            enabled: boolean;
-        };
-    } | undefined;
-}, {
-    enabled: boolean;
-    projectId?: number | null | undefined;
-    host?: string | undefined;
-    token?: string | undefined;
-    owner?: string | undefined;
-    repo?: string | undefined;
-    sync?: {
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        };
-        branches: {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        };
-        pullRequests: {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        };
-        releases: {
-            enabled: boolean;
-        };
-        tags: {
-            enabled: boolean;
-        };
-    } | undefined;
-}>;
+        }, z.core.$strip>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
 export declare const GithubConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     token: z.ZodOptional<z.ZodString>;
@@ -314,157 +78,25 @@ export declare const GithubConfigSchema: z.ZodObject<{
             enabled: z.ZodBoolean;
             protected: z.ZodBoolean;
             pattern: z.ZodString;
-        }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        }, {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        }>;
+        }, z.core.$strip>;
         pullRequests: z.ZodObject<{
             enabled: z.ZodBoolean;
             autoMerge: z.ZodBoolean;
-            labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-        }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        }, {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        }>;
+            labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+        }, z.core.$strip>;
         issues: z.ZodObject<{
             enabled: z.ZodBoolean;
             syncComments: z.ZodBoolean;
-            labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-        }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        }, {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        }>;
+            labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+        }, z.core.$strip>;
         releases: z.ZodObject<{
             enabled: z.ZodBoolean;
-        }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
-        }, {
-            enabled: boolean;
-        }>;
+        }, z.core.$strip>;
         tags: z.ZodObject<{
             enabled: z.ZodBoolean;
-        }, "strip", z.ZodTypeAny, {
-            enabled: boolean;
-        }, {
-            enabled: boolean;
-        }>;
-    }, "strip", z.ZodTypeAny, {
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        };
-        branches: {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        };
-        pullRequests: {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        };
-        releases: {
-            enabled: boolean;
-        };
-        tags: {
-            enabled: boolean;
-        };
-    }, {
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        };
-        branches: {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        };
-        pullRequests: {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        };
-        releases: {
-            enabled: boolean;
-        };
-        tags: {
-            enabled: boolean;
-        };
-    }>>;
-}, "strip", z.ZodTypeAny, {
-    enabled: boolean;
-    token?: string | undefined;
-    owner?: string | undefined;
-    repo?: string | undefined;
-    sync?: {
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        };
-        branches: {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        };
-        pullRequests: {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        };
-        releases: {
-            enabled: boolean;
-        };
-        tags: {
-            enabled: boolean;
-        };
-    } | undefined;
-}, {
-    enabled: boolean;
-    token?: string | undefined;
-    owner?: string | undefined;
-    repo?: string | undefined;
-    sync?: {
-        issues: {
-            enabled: boolean;
-            labels: string | string[];
-            syncComments: boolean;
-        };
-        branches: {
-            enabled: boolean;
-            protected: boolean;
-            pattern: string;
-        };
-        pullRequests: {
-            enabled: boolean;
-            autoMerge: boolean;
-            labels: string | string[];
-        };
-        releases: {
-            enabled: boolean;
-        };
-        tags: {
-            enabled: boolean;
-        };
-    } | undefined;
-}>;
+        }, z.core.$strip>;
+    }, z.core.$strip>>;
+}, z.core.$strip>;
 export declare const ConfigSchema: z.ZodObject<{
     gitlab: z.ZodObject<{
         enabled: z.ZodBoolean;
@@ -478,161 +110,25 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 protected: z.ZodBoolean;
                 pattern: z.ZodString;
-            }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            }, {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            }>;
+            }, z.core.$strip>;
             pullRequests: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 autoMerge: z.ZodBoolean;
-                labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-            }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            }, {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            }>;
+                labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+            }, z.core.$strip>;
             issues: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 syncComments: z.ZodBoolean;
-                labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-            }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            }, {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            }>;
+                labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+            }, z.core.$strip>;
             releases: z.ZodObject<{
                 enabled: z.ZodBoolean;
-            }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
-            }, {
-                enabled: boolean;
-            }>;
+            }, z.core.$strip>;
             tags: z.ZodObject<{
                 enabled: z.ZodBoolean;
-            }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
-            }, {
-                enabled: boolean;
-            }>;
-        }, "strip", z.ZodTypeAny, {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        }, {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        }>>;
-    }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
-        projectId?: number | null | undefined;
-        host?: string | undefined;
-        token?: string | undefined;
-        owner?: string | undefined;
-        repo?: string | undefined;
-        sync?: {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        } | undefined;
-    }, {
-        enabled: boolean;
-        projectId?: number | null | undefined;
-        host?: string | undefined;
-        token?: string | undefined;
-        owner?: string | undefined;
-        repo?: string | undefined;
-        sync?: {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        } | undefined;
-    }>;
+            }, z.core.$strip>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>;
     github: z.ZodObject<{
         enabled: z.ZodBoolean;
         token: z.ZodOptional<z.ZodString>;
@@ -643,280 +139,26 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 protected: z.ZodBoolean;
                 pattern: z.ZodString;
-            }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            }, {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            }>;
+            }, z.core.$strip>;
             pullRequests: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 autoMerge: z.ZodBoolean;
-                labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-            }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            }, {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            }>;
+                labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+            }, z.core.$strip>;
             issues: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 syncComments: z.ZodBoolean;
-                labels: z.ZodUnion<[z.ZodString, z.ZodArray<z.ZodString, "many">]>;
-            }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            }, {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            }>;
+                labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+            }, z.core.$strip>;
             releases: z.ZodObject<{
                 enabled: z.ZodBoolean;
-            }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
-            }, {
-                enabled: boolean;
-            }>;
+            }, z.core.$strip>;
             tags: z.ZodObject<{
                 enabled: z.ZodBoolean;
-            }, "strip", z.ZodTypeAny, {
-                enabled: boolean;
-            }, {
-                enabled: boolean;
-            }>;
-        }, "strip", z.ZodTypeAny, {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        }, {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        }>>;
-    }, "strip", z.ZodTypeAny, {
-        enabled: boolean;
-        token?: string | undefined;
-        owner?: string | undefined;
-        repo?: string | undefined;
-        sync?: {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        } | undefined;
-    }, {
-        enabled: boolean;
-        token?: string | undefined;
-        owner?: string | undefined;
-        repo?: string | undefined;
-        sync?: {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        } | undefined;
-    }>;
-}, "strip", z.ZodTypeAny, {
-    gitlab: {
-        enabled: boolean;
-        projectId?: number | null | undefined;
-        host?: string | undefined;
-        token?: string | undefined;
-        owner?: string | undefined;
-        repo?: string | undefined;
-        sync?: {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        } | undefined;
-    };
-    github: {
-        enabled: boolean;
-        token?: string | undefined;
-        owner?: string | undefined;
-        repo?: string | undefined;
-        sync?: {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        } | undefined;
-    };
-}, {
-    gitlab: {
-        enabled: boolean;
-        projectId?: number | null | undefined;
-        host?: string | undefined;
-        token?: string | undefined;
-        owner?: string | undefined;
-        repo?: string | undefined;
-        sync?: {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        } | undefined;
-    };
-    github: {
-        enabled: boolean;
-        token?: string | undefined;
-        owner?: string | undefined;
-        repo?: string | undefined;
-        sync?: {
-            issues: {
-                enabled: boolean;
-                labels: string | string[];
-                syncComments: boolean;
-            };
-            branches: {
-                enabled: boolean;
-                protected: boolean;
-                pattern: string;
-            };
-            pullRequests: {
-                enabled: boolean;
-                autoMerge: boolean;
-                labels: string | string[];
-            };
-            releases: {
-                enabled: boolean;
-            };
-            tags: {
-                enabled: boolean;
-            };
-        } | undefined;
-    };
-}>;
+            }, z.core.$strip>;
+        }, z.core.$strip>>;
+    }, z.core.$strip>;
+}, z.core.$strip>;
 export type BranchConfig = z.infer<typeof BranchConfigSchema>;
 export type PRConfig = z.infer<typeof PRConfigSchema>;
 export type IssueConfig = z.infer<typeof IssueConfigSchema>;

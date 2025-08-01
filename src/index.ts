@@ -119,13 +119,54 @@ async function run(): Promise<void> {
         }
       ]
 
-      // Execute enabled sync operations
-      for (const syncOp of syncOperations) {
-        if (syncOp.enabled) {
-          core.info(`\x1b[90m➜ Syncing: ${syncOp.name}\x1b[0m`)
-          await syncOp.operation()
-          core.info(`\x1b[32m✓ Completed: ${syncOp.name}\x1b[0m`)
-        }
+      // Execute enabled sync operations in parallel
+      const enabledOperations = syncOperations.filter(op => op.enabled)
+
+      if (enabledOperations.length === 0) {
+        core.warning('No sync operations are enabled')
+        return
+      }
+
+      core.info(
+        `\x1b[90m➜ Starting ${enabledOperations.length} sync operations in parallel...\x1b[0m`
+      )
+
+      const results = await Promise.allSettled(
+        enabledOperations.map(async syncOp => {
+          try {
+            core.info(`\x1b[90m➜ Starting: ${syncOp.name}\x1b[0m`)
+            await syncOp.operation()
+            core.info(`\x1b[32m✓ Completed: ${syncOp.name}\x1b[0m`)
+            return { name: syncOp.name, status: 'success' }
+          } catch (error) {
+            const errorMessage =
+              error instanceof Error ? error.message : String(error)
+            core.error(
+              `\x1b[31m❌ Failed: ${syncOp.name} - ${errorMessage}\x1b[0m`
+            )
+            return { name: syncOp.name, status: 'failed', error: errorMessage }
+          }
+        })
+      )
+
+      // Report results
+      const successful = results.filter(
+        r => r.status === 'fulfilled' && r.value.status === 'success'
+      )
+      const failed = results.filter(
+        r =>
+          r.status === 'rejected' ||
+          (r.status === 'fulfilled' && r.value.status === 'failed')
+      )
+
+      core.info(
+        `\x1b[32m✓ Completed: ${successful.length} operations successful\x1b[0m`
+      )
+      if (failed.length > 0) {
+        core.warning(
+          `\x1b[33m⚠️ Failed: ${failed.length} operations failed\x1b[0m`
+        )
+        // Don't fail the entire action if some operations fail, just warn
       }
 
       core.info('\x1b[32m🎉 Sync completed successfully!\x1b[0m')

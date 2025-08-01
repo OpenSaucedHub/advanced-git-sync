@@ -7,16 +7,40 @@ export const BranchConfigSchema = z.object({
   pattern: z.string()
 })
 
+// Helper function to normalize labels from various YAML formats
+const normalizeLabels = (val: unknown): string | string[] => {
+  if (typeof val === 'string') return val
+  if (Array.isArray(val)) return val
+  // Handle object-like arrays from YAML parsing (e.g., when YAML parser creates objects)
+  if (typeof val === 'object' && val !== null) {
+    const values = Object.values(val)
+    if (values.every(v => typeof v === 'string')) {
+      return values as string[]
+    }
+  }
+  // Fallback: convert to string if possible
+  if (val !== null && val !== undefined) {
+    return String(val)
+  }
+  return []
+}
+
 export const PRConfigSchema = z.object({
   enabled: z.boolean(),
   autoMerge: z.boolean(),
-  labels: z.union([z.string(), z.array(z.string())])
+  labels: z
+    .any()
+    .transform(normalizeLabels)
+    .pipe(z.union([z.string(), z.array(z.string())]))
 })
 
 export const IssueConfigSchema = z.object({
   enabled: z.boolean(),
   syncComments: z.boolean(),
-  labels: z.union([z.string(), z.array(z.string())])
+  labels: z
+    .any()
+    .transform(normalizeLabels)
+    .pipe(z.union([z.string(), z.array(z.string())]))
 })
 
 export const SyncConfigSchema = z.object({

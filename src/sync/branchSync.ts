@@ -69,18 +69,93 @@ export async function syncBranches(
   core.info('\n🔍 Branch Sync Analysis:')
   logSyncPlan(branchComparisons)
 
-  // Process each branch according to its required action
-  for (const comparison of branchComparisons) {
-    switch (comparison.action) {
-      case 'create':
-        await createBranch(target, comparison)
-        break
-      case 'update':
-        await updateBranch(target, comparison)
-        break
-      case 'skip':
-        core.info(`⏭️ Skipping ${comparison.name} - already in sync`)
-        break
+  // Process branches in parallel with controlled concurrency
+  const actionsToProcess = branchComparisons.filter(c => c.action !== 'skip')
+  const skippedBranches = branchComparisons.filter(c => c.action === 'skip')
+
+  // Log skipped branches
+  if (skippedBranches.length > 0) {
+    core.info(
+      `⏭️ Skipping ${skippedBranches.length} branches - already in sync`
+    )
+    skippedBranches.forEach(branch => {
+      core.debug(`  - ${branch.name}`)
+    })
+  }
+
+  if (actionsToProcess.length === 0) {
+    core.info('✓ All branches are already in sync')
+    return
+  }
+
+  // Process branch operations in parallel with controlled concurrency
+  const BRANCH_BATCH_SIZE = 5 // Process 5 branches at a time
+  const batches = []
+  for (let i = 0; i < actionsToProcess.length; i += BRANCH_BATCH_SIZE) {
+    batches.push(actionsToProcess.slice(i, i + BRANCH_BATCH_SIZE))
+  }
+
+  for (const batch of batches) {
+    const batchResults = await Promise.allSettled(
+      batch.map(async comparison => {
+        try {
+          switch (comparison.action) {
+            case 'create':
+              await createBranch(target, comparison)
+              return {
+                name: comparison.name,
+                action: 'create',
+                status: 'success'
+              }
+            case 'update':
+              await updateBranch(target, comparison)
+              return {
+                name: comparison.name,
+                action: 'update',
+                status: 'success'
+              }
+            default:
+              return {
+                name: comparison.name,
+                action: comparison.action,
+                status: 'skipped'
+              }
+          }
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
+          core.warning(
+            `Failed to ${comparison.action} branch ${comparison.name}: ${errorMessage}`
+          )
+          return {
+            name: comparison.name,
+            action: comparison.action,
+            status: 'failed',
+            error: errorMessage
+          }
+        }
+      })
+    )
+
+    // Log batch results
+    const successful = batchResults.filter(
+      r => r.status === 'fulfilled' && r.value.status === 'success'
+    )
+    const failed = batchResults.filter(
+      r =>
+        r.status === 'rejected' ||
+        (r.status === 'fulfilled' && r.value.status === 'failed')
+    )
+
+    if (successful.length > 0) {
+      core.info(
+        `✓ Batch completed: ${successful.length} branches processed successfully`
+      )
+    }
+    if (failed.length > 0) {
+      core.warning(
+        `⚠️ Batch issues: ${failed.length} branches failed to process`
+      )
     }
   }
   core.info('✓ Branch synchronization completed')

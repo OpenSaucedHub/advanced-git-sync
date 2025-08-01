@@ -10,6 +10,44 @@ import { validateConfig } from './validator'
 import { ErrorCodes } from '../utils/errorCodes'
 import { mergeWithDefaults } from '../utils/configMerger'
 
+/**
+ * Normalize YAML arrays that might be parsed as objects
+ * This handles cases where YAML arrays like ["item1", "item2"] get parsed as objects
+ */
+function normalizeYamlArrays(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeYamlArrays)
+  }
+
+  if (obj && typeof obj === 'object') {
+    const result: any = {}
+    for (const [key, value] of Object.entries(obj)) {
+      // Check if this looks like an array that was parsed as an object
+      if (
+        key === 'labels' &&
+        value &&
+        typeof value === 'object' &&
+        !Array.isArray(value)
+      ) {
+        const values = Object.values(value)
+        // If all values are strings and keys are numeric-like, convert to array
+        if (values.every(v => typeof v === 'string')) {
+          const keys = Object.keys(value)
+          const isNumericKeys = keys.every(k => /^\d+$/.test(k))
+          if (isNumericKeys) {
+            result[key] = values
+            continue
+          }
+        }
+      }
+      result[key] = normalizeYamlArrays(value)
+    }
+    return result
+  }
+
+  return obj
+}
+
 export async function loadConfig(): Promise<Config> {
   // Log the start of config loading with a colorful group
   core.startGroup('🔍 Configuration Loading')
@@ -69,6 +107,9 @@ export async function loadConfig(): Promise<Config> {
       }
     }
 
+    // Post-process the parsed config to handle YAML array parsing issues
+    parsedConfig = normalizeYamlArrays(parsedConfig)
+
     // If parsed config is null or empty
     if (!parsedConfig || Object.keys(parsedConfig).length === 0) {
       core.endGroup()
@@ -97,8 +138,8 @@ export async function loadConfig(): Promise<Config> {
     } catch (error) {
       if (error instanceof ZodError) {
         // Handle Zod validation errors
-        const errorMessages = error.errors
-          .map(err => `${err.path.join('.')}: ${err.message}`)
+        const errorMessages = error.issues
+          .map((err: any) => `${err.path.join('.')}: ${err.message}`)
           .join('\n')
 
         core.setFailed(
