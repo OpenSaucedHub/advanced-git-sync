@@ -43,7 +43,7 @@ jobs:
 
       - name: Create Pull Request
         if: steps.sync.outputs.changes == 'true' && github.event_name != 'pull_request'
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GH_TOKEN }}
           commit-message: "chore: sync action.yml dependencies with package.json"
