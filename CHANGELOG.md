@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.2.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.6...v1.2.0) (2025-08-01)
+
+
+
+## [1.2.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.6...v1.2.0) (2025-08-01)
+
+### Features
+
+* update TypeScript configuration and include tests directory in include path, add GitHub Actions workflow for syncing action dependencies with package.json,  add comprehensive configuration guide for GitHub GitLab Sync Action, create contributing guide for the GitHub GitLab Sync Action, add advanced configuration examples for various use cases, provide example configuration for the sync action create token setup guide for GitHub and GitLab tokens, establish troubleshooting guide for common issues with the sync action, and implemented script to sync action.yml dependencies with package.json versions ([1fd3cf9](https://github.com/OpenSaucedHub/advanced-git-sync/commit/1fd3cf96917d3d0c7f4650405712572b4062bd34))
+
 # [v1.1.6](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.5...v1.1.6) (2025-07-30)
 
 ## [1.1.6](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.5...v1.1.6) (2025-07-30)
