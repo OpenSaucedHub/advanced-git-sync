@@ -132,6 +132,29 @@ export class GitLabClient implements IClient {
     return this.branches.update(name, commitSha)
   }
 
+  async commitExists(commitSha: string): Promise<boolean> {
+    try {
+      const projectId = await this.getProjectId()
+      await this.gitlab.Commits.show(projectId, commitSha)
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+
+  async getRecentCommits(branchName: string, limit: number): Promise<any[]> {
+    try {
+      const projectId = await this.getProjectId()
+      const commits = await this.gitlab.Commits.all(projectId, {
+        refName: branchName,
+        perPage: limit
+      })
+      return commits
+    } catch (error) {
+      throw new Error(`Failed to get recent commits: ${error}`)
+    }
+  }
+
   // Delegate to pull request helper
   async syncPullRequests() {
     return this.mergeRequest.syncPullRequests()
@@ -154,20 +177,12 @@ export class GitLabClient implements IClient {
     return this.issues.syncIssues()
   }
 
-  async getIssueComments(issueNumber: number) {
-    return this.issues.getIssueComments(issueNumber)
-  }
-
   async createIssue(issue: any) {
     return this.issues.createIssue(issue)
   }
 
   async updateIssue(issueNumber: number, issue: any) {
     return this.issues.updateIssue(issueNumber, issue)
-  }
-
-  async createIssueComment(issueNumber: number, comment: any) {
-    return this.issues.createIssueComment(issueNumber, comment)
   }
 
   // Delegate to release helper

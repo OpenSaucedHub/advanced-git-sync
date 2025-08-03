@@ -2,7 +2,7 @@
 import * as core from '@actions/core'
 import { GitHubClient } from '../structures/github/GitHub'
 
-import { IssueComparison, CommentComparison, Issue, Comment } from '../types'
+import { IssueComparison, Issue } from '../types'
 import { GitLabClient } from '../structures/gitlab/GitLab'
 
 function arraysEqual(a: string[], b: string[]): boolean {
@@ -59,43 +59,19 @@ export function prepareSourceLink(
   sourceClient: GitHubClient | GitLabClient,
   sourceIssue: Issue
 ): string {
-  // Prepare a link to the source issue for tracking
   const repoInfo = sourceClient.getRepoInfo()
-  return `**Original Issue**: [${sourceIssue.title}](${repoInfo.url}/issues/${sourceIssue.number})`
-}
+  const platform = sourceClient instanceof GitHubClient ? 'GitHub' : 'GitLab'
 
-export function compareComments(
-  sourceComments: Comment[],
-  targetComments: Comment[]
-): CommentComparison[] {
-  const comparisons: CommentComparison[] = []
+  return `
+---
 
-  // Only consider the first and last comments (assuming these are opening/closing comments)
-  const openingComment = sourceComments[0]
-  const closingComment = sourceComments[sourceComments.length - 1]
+**📋 Synced from ${platform}**
+- **Original Issue**: [${sourceIssue.title}](${repoInfo.url}/issues/${sourceIssue.number})
+- **Repository**: [${repoInfo.owner}/${repoInfo.repo}](${repoInfo.url})
+- **Platform**: ${platform}
 
-  if (
-    openingComment &&
-    !targetComments.some(c => c.body === openingComment.body)
-  ) {
-    comparisons.push({
-      sourceComment: openingComment,
-      action: 'create'
-    })
-  }
-
-  if (
-    closingComment &&
-    closingComment !== openingComment &&
-    !targetComments.some(c => c.body === closingComment.body)
-  ) {
-    comparisons.push({
-      sourceComment: closingComment,
-      action: 'create'
-    })
-  }
-
-  return comparisons
+> 💬 **Note**: For the complete discussion history and comments, please refer to the original issue above.
+`
 }
 
 export async function syncIssues(
@@ -114,11 +90,23 @@ export async function syncIssues(
     core.info('\n🔍 Issue Sync Analysis:')
     logSyncPlan(issueComparisons)
 
+    // Check if there are any actions to perform
+    const hasActions = issueComparisons.some(c => c.action !== 'skip')
+
+    if (!hasActions) {
+      core.info('✓ Issue synchronization completed')
+      return
+    }
+
+    // Group detailed operations under collapsible section
+    core.startGroup('🔄 Issue Operations')
+
     // Process each issue according to its required action
     for (const comparison of issueComparisons) {
       try {
         switch (comparison.action) {
           case 'create': {
+            core.info(`🆕 Creating: "${comparison.sourceIssue.title}"`)
             // Add a link to the original source issue in the body
             const sourceLink = prepareSourceLink(source, comparison.sourceIssue)
             const issueToCreate = {
@@ -132,23 +120,23 @@ export async function syncIssues(
             break
           }
           case 'update':
-            await updateIssue(target, comparison)
+            core.info(`🔄 Updating: "${comparison.sourceIssue.title}"`)
+            // Add source link to updated issues as well
+            const sourceLink = prepareSourceLink(source, comparison.sourceIssue)
+            const issueToUpdate = {
+              ...comparison.sourceIssue,
+              body: `${comparison.sourceIssue.body || ''}\n\n${sourceLink}`
+            }
+            await updateIssue(target, {
+              ...comparison,
+              sourceIssue: issueToUpdate
+            })
             break
           case 'skip':
-            core.info(
+            core.debug(
               `⏭️ Skipping "${comparison.sourceIssue.title}" - already in sync`
             )
             break
-        }
-
-        // Sync only opening/closing comments if the issue exists in both repositories
-        if (comparison.sourceIssue.number && comparison.targetIssue?.number) {
-          await syncIssueComments(
-            source,
-            target,
-            comparison.sourceIssue.number,
-            comparison.targetIssue.number
-          )
         }
       } catch (error) {
         core.warning(
@@ -158,6 +146,8 @@ export async function syncIssues(
         )
       }
     }
+
+    core.endGroup()
 
     core.info('✓ Issue synchronization completed')
   } catch (error) {
@@ -170,51 +160,15 @@ export async function syncIssues(
   }
 }
 
-async function syncIssueComments(
-  source: GitHubClient | GitLabClient,
-  target: GitHubClient | GitLabClient,
-  sourceIssueNumber: number,
-  targetIssueNumber: number
-): Promise<void> {
-  try {
-    const sourceComments = await source.getIssueComments(sourceIssueNumber)
-    const targetComments = await target.getIssueComments(targetIssueNumber)
-
-    const commentComparisons = compareComments(sourceComments, targetComments)
-
-    for (const comparison of commentComparisons) {
-      try {
-        if (comparison.action === 'create') {
-          await createComment(target, targetIssueNumber, comparison)
-        }
-      } catch (error) {
-        core.warning(
-          `Failed to sync comment in issue #${targetIssueNumber}: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        )
-      }
-    }
-  } catch (error) {
-    core.warning(
-      `Failed to sync comments for issue #${sourceIssueNumber}: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    )
-  }
-}
-
 async function createIssue(
   target: GitHubClient | GitLabClient,
   comparison: IssueComparison
 ): Promise<void> {
-  core.info(`📝 Creating issue "${comparison.sourceIssue.title}"`)
   // Pass the full issue object including the state
   await target.createIssue({
     ...comparison.sourceIssue,
     state: comparison.sourceIssue.state // Explicitly include state
   })
-  core.info(`✓ Created issue "${comparison.sourceIssue.title}"`)
 }
 
 async function updateIssue(
@@ -237,32 +191,26 @@ async function updateIssue(
     )
   )
 
-  core.info(`📝 Updating issue "${comparison.sourceIssue.title}"`)
   await target.updateIssue(
     comparison.targetIssue.number,
     comparison.sourceIssue
   )
-  core.info(`✓ Updated issue "${comparison.sourceIssue.title}"`)
-}
-async function createComment(
-  target: GitHubClient | GitLabClient,
-  issueNumber: number,
-  comparison: CommentComparison
-): Promise<void> {
-  core.info(`💬 Creating comment in issue #${issueNumber}`)
-  await target.createIssueComment(issueNumber, comparison.sourceComment)
-  core.info(`✓ Created comment in issue #${issueNumber}`)
 }
 
 function logSyncPlan(comparisons: IssueComparison[]): void {
   const create = comparisons.filter(c => c.action === 'create').length
   const update = comparisons.filter(c => c.action === 'update').length
-  const skip = comparisons.filter(c => c.action === 'skip').length
+  const totalActions = create + update
 
-  core.info(`
-📊 Sync Plan Summary:
-  - Create: ${create} issues
-  - Update: ${update} issues
-  - Skip: ${skip} issues (already in sync)
-`)
+  if (totalActions === 0) {
+    core.info('✅ All issues are already in sync')
+    return
+  }
+
+  // Only log what we're actually doing
+  const actions: string[] = []
+  if (create > 0) actions.push(`Create ${create} issues`)
+  if (update > 0) actions.push(`Update ${update} issues`)
+
+  core.info(`📊 Issue Sync Plan: ${actions.join(', ')}`)
 }

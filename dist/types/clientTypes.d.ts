@@ -11,4 +11,6 @@ export interface IClient {
     fetchBranches(filterOptions?: BranchFilterOptions): Promise<Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;
     updateBranch(name: string, commitSha: string): Promise<void>;
+    commitExists(commitSha: string): Promise<boolean>;
+    getRecentCommits(branchName: string, limit: number): Promise<any[]>;
 }

@@ -16,18 +16,29 @@ gitlab:
       enabled: true
       protected: true # Include protected branches
       pattern: "*" # Pattern to match branch names (* = all branches)
+      historySync: # Timeline merging configuration
+        enabled: true
+        strategy: "merge-timelines" # merge-timelines | skip-diverged | force-match
+        createMergeCommits: true
+        mergeMessage: "Sync: Merge timeline from {source} to {target}"
     pullRequests:
       enabled: true
       autoMerge: false # Don't auto-merge synced PRs
       labels: ["synced", "github-origin"] # Labels to add to synced PRs
     issues:
       enabled: true
-      syncComments: false # Don't sync issue comments (can be resource intensive)
       labels: ["synced", "github-origin"] # Labels to add to synced issues
     releases:
       enabled: true # Sync releases and their assets
+      divergentCommitStrategy: "skip" # skip | create-anyway | point-to-latest
+      latestReleaseStrategy: "point-to-latest" # skip | point-to-latest | create-anyway
+      skipPreReleases: false # Skip pre-release versions
+      pattern: "*" # Pattern to match release names
+      includeAssets: true # Include release assets
     tags:
       enabled: true # Sync Git tags
+      divergentCommitStrategy: "skip" # skip | create-anyway | point-to-latest
+      pattern: "*" # Pattern to match tag names
 
 # GitHub Configuration
 # When github.sync.[entity].enabled: true, entities will be synced FROM GitLab TO GitHub
@@ -39,18 +50,29 @@ github:
       enabled: true
       protected: true # Include protected branches
       pattern: "*" # Pattern to match branch names
+      historySync: # Timeline merging configuration
+        enabled: true
+        strategy: "merge-timelines" # merge-timelines | skip-diverged | force-match
+        createMergeCommits: true
+        mergeMessage: "Sync: Merge timeline from {source} to {target}"
     pullRequests:
       enabled: true
       autoMerge: false # Don't auto-merge synced PRs
       labels: ["synced", "gitlab-origin"] # Labels to add to synced PRs
     issues:
       enabled: true
-      syncComments: false # Don't sync issue comments
       labels: ["synced", "gitlab-origin"] # Labels to add to synced issues
     releases:
       enabled: true # Sync releases and their assets
+      divergentCommitStrategy: "skip" # skip | create-anyway | point-to-latest
+      latestReleaseStrategy: "point-to-latest" # skip | point-to-latest | create-anyway
+      skipPreReleases: false # Skip pre-release versions
+      pattern: "*" # Pattern to match release names
+      includeAssets: true # Include release assets
     tags:
       enabled: true # Sync Git tags
+      divergentCommitStrategy: "skip" # skip | create-anyway | point-to-latest
+      pattern: "*" # Pattern to match tag names
 
 # Alternative label configurations:
 #
@@ -69,8 +91,18 @@ github:
 # pattern: "feature/*"   # All feature branches
 # pattern: "release/*"   # All release branches
 
+# Timeline Merging Strategies:
+# - merge-timelines: Creates merge commits to unify divergent histories (recommended)
+# - skip-diverged: Only syncs commits that exist on both sides
+# - force-match: Forces one repository to match the other exactly (destructive)
+
+# Release Sync Strategies:
+# - skip: Skip releases pointing to commits that don't exist in target (default)
+# - create-anyway: Create releases even if commit doesn't exist in target
+# - point-to-latest: For latest release only, point to latest commit in target
+
 # Performance considerations:
-# - Set syncComments: false for better performance
 # - Use specific branch patterns instead of "*" if you have many branches
 # - Consider disabling releases/tags sync if not needed
-# - The action now runs operations in parallel for better performance
+# - The action runs operations in parallel for better performance
+# - Issue comments are not synced to avoid confusion and maintain performance

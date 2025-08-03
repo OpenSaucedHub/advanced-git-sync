@@ -1,4 +1,4 @@
-import { Repository, Config, Issue, Comment, PullRequest, Release, ReleaseAsset, Tag, IClient, BranchFilterOptions } from '@/src/types';
+import { Repository, Config, Issue, PullRequest, Release, ReleaseAsset, Tag, IClient, BranchFilterOptions } from '@/src/types';
 import { githubBranchHelper, pullRequestHelper, githubIssueHelper, githubReleaseHelper, tagsHelper, githubPermsHelper } from './helpers';
 export declare class GitHubClient implements IClient {
     config: Config;
@@ -20,15 +20,15 @@ export declare class GitHubClient implements IClient {
     fetchBranches(filterOptions?: BranchFilterOptions): Promise<import("@/src/types").Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;
     updateBranch(name: string, commitSha: string): Promise<void>;
+    commitExists(commitSha: string): Promise<boolean>;
+    getRecentCommits(branchName: string, limit: number): Promise<any[]>;
     syncPullRequests(): Promise<PullRequest[]>;
     createPullRequest(pr: PullRequest): Promise<void>;
     updatePullRequest(number: number, pr: PullRequest): Promise<void>;
     closePullRequest(number: number): Promise<void>;
     syncIssues(): Promise<Issue[]>;
-    getIssueComments(issueNumber: number): Promise<Comment[]>;
     createIssue(issue: Issue): Promise<void>;
     updateIssue(issueNumber: number, issue: Issue): Promise<void>;
-    createIssueComment(issueNumber: number, comment: Comment): Promise<void>;
     syncReleases(): Promise<Release[]>;
     createRelease(release: Release): Promise<void>;
     updateRelease(release: Release): Promise<void>;

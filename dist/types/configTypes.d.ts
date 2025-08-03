@@ -3,6 +3,16 @@ export declare const BranchConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     protected: z.ZodBoolean;
     pattern: z.ZodString;
+    historySync: z.ZodOptional<z.ZodObject<{
+        enabled: z.ZodDefault<z.ZodBoolean>;
+        strategy: z.ZodDefault<z.ZodEnum<{
+            "merge-timelines": "merge-timelines";
+            "skip-diverged": "skip-diverged";
+            "force-match": "force-match";
+        }>>;
+        createMergeCommits: z.ZodDefault<z.ZodBoolean>;
+        mergeMessage: z.ZodDefault<z.ZodString>;
+    }, z.core.$strip>>;
 }, z.core.$strip>;
 export declare const PRConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
@@ -11,14 +21,48 @@ export declare const PRConfigSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const IssueConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
-    syncComments: z.ZodBoolean;
     labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+}, z.core.$strip>;
+export declare const ReleaseConfigSchema: z.ZodObject<{
+    enabled: z.ZodBoolean;
+    divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+        skip: "skip";
+        "create-anyway": "create-anyway";
+        "point-to-latest": "point-to-latest";
+    }>>;
+    latestReleaseStrategy: z.ZodDefault<z.ZodEnum<{
+        skip: "skip";
+        "create-anyway": "create-anyway";
+        "point-to-latest": "point-to-latest";
+    }>>;
+    skipPreReleases: z.ZodDefault<z.ZodBoolean>;
+    pattern: z.ZodDefault<z.ZodString>;
+    includeAssets: z.ZodDefault<z.ZodBoolean>;
+}, z.core.$strip>;
+export declare const TagConfigSchema: z.ZodObject<{
+    enabled: z.ZodBoolean;
+    divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+        skip: "skip";
+        "create-anyway": "create-anyway";
+        "point-to-latest": "point-to-latest";
+    }>>;
+    pattern: z.ZodDefault<z.ZodString>;
 }, z.core.$strip>;
 export declare const SyncConfigSchema: z.ZodObject<{
     branches: z.ZodObject<{
         enabled: z.ZodBoolean;
         protected: z.ZodBoolean;
         pattern: z.ZodString;
+        historySync: z.ZodOptional<z.ZodObject<{
+            enabled: z.ZodDefault<z.ZodBoolean>;
+            strategy: z.ZodDefault<z.ZodEnum<{
+                "merge-timelines": "merge-timelines";
+                "skip-diverged": "skip-diverged";
+                "force-match": "force-match";
+            }>>;
+            createMergeCommits: z.ZodDefault<z.ZodBoolean>;
+            mergeMessage: z.ZodDefault<z.ZodString>;
+        }, z.core.$strip>>;
     }, z.core.$strip>;
     pullRequests: z.ZodObject<{
         enabled: z.ZodBoolean;
@@ -27,14 +71,32 @@ export declare const SyncConfigSchema: z.ZodObject<{
     }, z.core.$strip>;
     issues: z.ZodObject<{
         enabled: z.ZodBoolean;
-        syncComments: z.ZodBoolean;
         labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
     }, z.core.$strip>;
     releases: z.ZodObject<{
         enabled: z.ZodBoolean;
+        divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+            skip: "skip";
+            "create-anyway": "create-anyway";
+            "point-to-latest": "point-to-latest";
+        }>>;
+        latestReleaseStrategy: z.ZodDefault<z.ZodEnum<{
+            skip: "skip";
+            "create-anyway": "create-anyway";
+            "point-to-latest": "point-to-latest";
+        }>>;
+        skipPreReleases: z.ZodDefault<z.ZodBoolean>;
+        pattern: z.ZodDefault<z.ZodString>;
+        includeAssets: z.ZodDefault<z.ZodBoolean>;
     }, z.core.$strip>;
     tags: z.ZodObject<{
         enabled: z.ZodBoolean;
+        divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+            skip: "skip";
+            "create-anyway": "create-anyway";
+            "point-to-latest": "point-to-latest";
+        }>>;
+        pattern: z.ZodDefault<z.ZodString>;
     }, z.core.$strip>;
 }, z.core.$strip>;
 export declare const GitlabConfigSchema: z.ZodObject<{
@@ -49,6 +111,16 @@ export declare const GitlabConfigSchema: z.ZodObject<{
             enabled: z.ZodBoolean;
             protected: z.ZodBoolean;
             pattern: z.ZodString;
+            historySync: z.ZodOptional<z.ZodObject<{
+                enabled: z.ZodDefault<z.ZodBoolean>;
+                strategy: z.ZodDefault<z.ZodEnum<{
+                    "merge-timelines": "merge-timelines";
+                    "skip-diverged": "skip-diverged";
+                    "force-match": "force-match";
+                }>>;
+                createMergeCommits: z.ZodDefault<z.ZodBoolean>;
+                mergeMessage: z.ZodDefault<z.ZodString>;
+            }, z.core.$strip>>;
         }, z.core.$strip>;
         pullRequests: z.ZodObject<{
             enabled: z.ZodBoolean;
@@ -57,14 +129,32 @@ export declare const GitlabConfigSchema: z.ZodObject<{
         }, z.core.$strip>;
         issues: z.ZodObject<{
             enabled: z.ZodBoolean;
-            syncComments: z.ZodBoolean;
             labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
         }, z.core.$strip>;
         releases: z.ZodObject<{
             enabled: z.ZodBoolean;
+            divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+                skip: "skip";
+                "create-anyway": "create-anyway";
+                "point-to-latest": "point-to-latest";
+            }>>;
+            latestReleaseStrategy: z.ZodDefault<z.ZodEnum<{
+                skip: "skip";
+                "create-anyway": "create-anyway";
+                "point-to-latest": "point-to-latest";
+            }>>;
+            skipPreReleases: z.ZodDefault<z.ZodBoolean>;
+            pattern: z.ZodDefault<z.ZodString>;
+            includeAssets: z.ZodDefault<z.ZodBoolean>;
         }, z.core.$strip>;
         tags: z.ZodObject<{
             enabled: z.ZodBoolean;
+            divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+                skip: "skip";
+                "create-anyway": "create-anyway";
+                "point-to-latest": "point-to-latest";
+            }>>;
+            pattern: z.ZodDefault<z.ZodString>;
         }, z.core.$strip>;
     }, z.core.$strip>>;
 }, z.core.$strip>;
@@ -78,6 +168,16 @@ export declare const GithubConfigSchema: z.ZodObject<{
             enabled: z.ZodBoolean;
             protected: z.ZodBoolean;
             pattern: z.ZodString;
+            historySync: z.ZodOptional<z.ZodObject<{
+                enabled: z.ZodDefault<z.ZodBoolean>;
+                strategy: z.ZodDefault<z.ZodEnum<{
+                    "merge-timelines": "merge-timelines";
+                    "skip-diverged": "skip-diverged";
+                    "force-match": "force-match";
+                }>>;
+                createMergeCommits: z.ZodDefault<z.ZodBoolean>;
+                mergeMessage: z.ZodDefault<z.ZodString>;
+            }, z.core.$strip>>;
         }, z.core.$strip>;
         pullRequests: z.ZodObject<{
             enabled: z.ZodBoolean;
@@ -86,14 +186,32 @@ export declare const GithubConfigSchema: z.ZodObject<{
         }, z.core.$strip>;
         issues: z.ZodObject<{
             enabled: z.ZodBoolean;
-            syncComments: z.ZodBoolean;
             labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
         }, z.core.$strip>;
         releases: z.ZodObject<{
             enabled: z.ZodBoolean;
+            divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+                skip: "skip";
+                "create-anyway": "create-anyway";
+                "point-to-latest": "point-to-latest";
+            }>>;
+            latestReleaseStrategy: z.ZodDefault<z.ZodEnum<{
+                skip: "skip";
+                "create-anyway": "create-anyway";
+                "point-to-latest": "point-to-latest";
+            }>>;
+            skipPreReleases: z.ZodDefault<z.ZodBoolean>;
+            pattern: z.ZodDefault<z.ZodString>;
+            includeAssets: z.ZodDefault<z.ZodBoolean>;
         }, z.core.$strip>;
         tags: z.ZodObject<{
             enabled: z.ZodBoolean;
+            divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+                skip: "skip";
+                "create-anyway": "create-anyway";
+                "point-to-latest": "point-to-latest";
+            }>>;
+            pattern: z.ZodDefault<z.ZodString>;
         }, z.core.$strip>;
     }, z.core.$strip>>;
 }, z.core.$strip>;
@@ -110,6 +228,16 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 protected: z.ZodBoolean;
                 pattern: z.ZodString;
+                historySync: z.ZodOptional<z.ZodObject<{
+                    enabled: z.ZodDefault<z.ZodBoolean>;
+                    strategy: z.ZodDefault<z.ZodEnum<{
+                        "merge-timelines": "merge-timelines";
+                        "skip-diverged": "skip-diverged";
+                        "force-match": "force-match";
+                    }>>;
+                    createMergeCommits: z.ZodDefault<z.ZodBoolean>;
+                    mergeMessage: z.ZodDefault<z.ZodString>;
+                }, z.core.$strip>>;
             }, z.core.$strip>;
             pullRequests: z.ZodObject<{
                 enabled: z.ZodBoolean;
@@ -118,14 +246,32 @@ export declare const ConfigSchema: z.ZodObject<{
             }, z.core.$strip>;
             issues: z.ZodObject<{
                 enabled: z.ZodBoolean;
-                syncComments: z.ZodBoolean;
                 labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
             }, z.core.$strip>;
             releases: z.ZodObject<{
                 enabled: z.ZodBoolean;
+                divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+                    skip: "skip";
+                    "create-anyway": "create-anyway";
+                    "point-to-latest": "point-to-latest";
+                }>>;
+                latestReleaseStrategy: z.ZodDefault<z.ZodEnum<{
+                    skip: "skip";
+                    "create-anyway": "create-anyway";
+                    "point-to-latest": "point-to-latest";
+                }>>;
+                skipPreReleases: z.ZodDefault<z.ZodBoolean>;
+                pattern: z.ZodDefault<z.ZodString>;
+                includeAssets: z.ZodDefault<z.ZodBoolean>;
             }, z.core.$strip>;
             tags: z.ZodObject<{
                 enabled: z.ZodBoolean;
+                divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+                    skip: "skip";
+                    "create-anyway": "create-anyway";
+                    "point-to-latest": "point-to-latest";
+                }>>;
+                pattern: z.ZodDefault<z.ZodString>;
             }, z.core.$strip>;
         }, z.core.$strip>>;
     }, z.core.$strip>;
@@ -139,6 +285,16 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 protected: z.ZodBoolean;
                 pattern: z.ZodString;
+                historySync: z.ZodOptional<z.ZodObject<{
+                    enabled: z.ZodDefault<z.ZodBoolean>;
+                    strategy: z.ZodDefault<z.ZodEnum<{
+                        "merge-timelines": "merge-timelines";
+                        "skip-diverged": "skip-diverged";
+                        "force-match": "force-match";
+                    }>>;
+                    createMergeCommits: z.ZodDefault<z.ZodBoolean>;
+                    mergeMessage: z.ZodDefault<z.ZodString>;
+                }, z.core.$strip>>;
             }, z.core.$strip>;
             pullRequests: z.ZodObject<{
                 enabled: z.ZodBoolean;
@@ -147,14 +303,32 @@ export declare const ConfigSchema: z.ZodObject<{
             }, z.core.$strip>;
             issues: z.ZodObject<{
                 enabled: z.ZodBoolean;
-                syncComments: z.ZodBoolean;
                 labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
             }, z.core.$strip>;
             releases: z.ZodObject<{
                 enabled: z.ZodBoolean;
+                divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+                    skip: "skip";
+                    "create-anyway": "create-anyway";
+                    "point-to-latest": "point-to-latest";
+                }>>;
+                latestReleaseStrategy: z.ZodDefault<z.ZodEnum<{
+                    skip: "skip";
+                    "create-anyway": "create-anyway";
+                    "point-to-latest": "point-to-latest";
+                }>>;
+                skipPreReleases: z.ZodDefault<z.ZodBoolean>;
+                pattern: z.ZodDefault<z.ZodString>;
+                includeAssets: z.ZodDefault<z.ZodBoolean>;
             }, z.core.$strip>;
             tags: z.ZodObject<{
                 enabled: z.ZodBoolean;
+                divergentCommitStrategy: z.ZodDefault<z.ZodEnum<{
+                    skip: "skip";
+                    "create-anyway": "create-anyway";
+                    "point-to-latest": "point-to-latest";
+                }>>;
+                pattern: z.ZodDefault<z.ZodString>;
             }, z.core.$strip>;
         }, z.core.$strip>>;
     }, z.core.$strip>;
@@ -162,6 +336,8 @@ export declare const ConfigSchema: z.ZodObject<{
 export type BranchConfig = z.infer<typeof BranchConfigSchema>;
 export type PRConfig = z.infer<typeof PRConfigSchema>;
 export type IssueConfig = z.infer<typeof IssueConfigSchema>;
+export type ReleaseConfig = z.infer<typeof ReleaseConfigSchema>;
+export type TagConfig = z.infer<typeof TagConfigSchema>;
 export type SyncConfig = z.infer<typeof SyncConfigSchema>;
 export type GitlabConfig = z.infer<typeof GitlabConfigSchema>;
 export type GithubConfig = z.infer<typeof GithubConfigSchema>;

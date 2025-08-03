@@ -52412,6 +52412,31 @@ class GitHubClient {
     async updateBranch(name, commitSha) {
         return this.branches.update(name, commitSha);
     }
+    async commitExists(commitSha) {
+        try {
+            await this.octokit.rest.git.getCommit({
+                ...this.repo,
+                commit_sha: commitSha
+            });
+            return true;
+        }
+        catch (error) {
+            return false;
+        }
+    }
+    async getRecentCommits(branchName, limit) {
+        try {
+            const { data: commits } = await this.octokit.rest.repos.listCommits({
+                ...this.repo,
+                sha: branchName,
+                per_page: limit
+            });
+            return commits;
+        }
+        catch (error) {
+            throw new Error(`Failed to get recent commits: ${error}`);
+        }
+    }
     async syncPullRequests() {
         return this.pullRequest.syncPullRequests();
     }
@@ -52428,17 +52453,11 @@ class GitHubClient {
     async syncIssues() {
         return this.issue.syncIssues();
     }
-    async getIssueComments(issueNumber) {
-        return this.issue.getIssueComments(issueNumber);
-    }
     async createIssue(issue) {
         return this.issue.createIssue(issue);
     }
     async updateIssue(issueNumber, issue) {
         return this.issue.updateIssue(issueNumber, issue);
-    }
-    async createIssueComment(issueNumber, comment) {
-        return this.issue.createIssueComment(issueNumber, comment);
     }
     // releases
     async syncReleases() {
@@ -52692,37 +52711,6 @@ class githubIssueHelper {
             return [];
         }
     }
-    async getIssueComments(issueNumber) {
-        // Check if comment sync is enabled
-        if (!this.config.gitlab.sync?.issues.syncComments) {
-            core.info('\x1b[33m⚠️ Issue Comments Sync Disabled\x1b[0m');
-            return [];
-        }
-        try {
-            // Colorful console log for fetching comments
-            core.info(`\x1b[36m💬 Fetching Comments for Issue #${issueNumber}...\x1b[0m`);
-            // Fetch comments for a specific issue
-            const { data: comments } = await this.octokit.rest.issues.listComments({
-                ...this.repo,
-                issue_number: issueNumber
-            });
-            // Process and transform comments
-            const processedComments = comments.map((comment) => ({
-                id: comment.id,
-                body: comment.body || '',
-                createdAt: comment.created_at,
-                author: comment.user?.login || 'unknown'
-            }));
-            // Log successful comment fetch
-            core.info(`\x1b[32m✓ Comments Fetched: ${processedComments.length} comments\x1b[0m`);
-            return processedComments;
-        }
-        catch (error) {
-            // Error handling with colorful console warning
-            core.warning(`\x1b[31m❌ Failed to Fetch GitHub Issue Comments: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
-            return [];
-        }
-    }
     async createIssue(issue) {
         try {
             await this.octokit.rest.issues.create({
@@ -52752,20 +52740,6 @@ class githubIssueHelper {
         catch (error) {
             // Throw a descriptive error if issue update fails
             throw new Error(`Failed to update issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async createIssueComment(issueNumber, comment) {
-        try {
-            // Create a new comment on a specific issue
-            await this.octokit.rest.issues.createComment({
-                ...this.repo,
-                issue_number: issueNumber,
-                body: comment.body
-            });
-        }
-        catch (error) {
-            // Throw a descriptive error if comment creation fails
-            throw new Error(`Failed to create comment on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }
@@ -53516,6 +53490,29 @@ class GitLabClient {
     async updateBranch(name, commitSha) {
         return this.branches.update(name, commitSha);
     }
+    async commitExists(commitSha) {
+        try {
+            const projectId = await this.getProjectId();
+            await this.gitlab.Commits.show(projectId, commitSha);
+            return true;
+        }
+        catch (error) {
+            return false;
+        }
+    }
+    async getRecentCommits(branchName, limit) {
+        try {
+            const projectId = await this.getProjectId();
+            const commits = await this.gitlab.Commits.all(projectId, {
+                refName: branchName,
+                perPage: limit
+            });
+            return commits;
+        }
+        catch (error) {
+            throw new Error(`Failed to get recent commits: ${error}`);
+        }
+    }
     // Delegate to pull request helper
     async syncPullRequests() {
         return this.mergeRequest.syncPullRequests();
@@ -53533,17 +53530,11 @@ class GitLabClient {
     async syncIssues() {
         return this.issues.syncIssues();
     }
-    async getIssueComments(issueNumber) {
-        return this.issues.getIssueComments(issueNumber);
-    }
     async createIssue(issue) {
         return this.issues.createIssue(issue);
     }
     async updateIssue(issueNumber, issue) {
         return this.issues.updateIssue(issueNumber, issue);
-    }
-    async createIssueComment(issueNumber, comment) {
-        return this.issues.createIssueComment(issueNumber, comment);
     }
     // Delegate to release helper
     async syncReleases() {
@@ -53819,31 +53810,6 @@ class gitlabIssueHelper {
             return [];
         }
     }
-    async getIssueComments(issueNumber) {
-        if (!this.config.github.sync?.issues.syncComments) {
-            return [];
-        }
-        try {
-            core.info(`\x1b[36m💬 Fetching Comments for Issue #${issueNumber}...\x1b[0m`);
-            const projectId = await this.getProjectId();
-            const notes = await this.gitlab.IssueNotes.all({
-                projectId: projectId,
-                issueIid: issueNumber
-            });
-            const processedComments = notes.map((note) => ({
-                id: note.id,
-                body: note.body,
-                createdAt: note.created_at,
-                author: note.author.owner
-            }));
-            core.info(`\x1b[32m✓ Comments Fetched: ${processedComments.length} comments\x1b[0m`);
-            return processedComments;
-        }
-        catch (error) {
-            core.warning(`\x1b[31m❌ Failed to Fetch GitLab Issue Comments: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
-            return [];
-        }
-    }
     async createIssue(issue) {
         try {
             const projectId = await this.getProjectId();
@@ -53870,19 +53836,6 @@ class gitlabIssueHelper {
         }
         catch (error) {
             throw new Error(`Failed to update issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-    async createIssueComment(issueNumber, comment) {
-        try {
-            const projectId = await this.getProjectId();
-            await this.gitlab.IssueNotes.create({
-                projectId: projectId,
-                issueIid: issueNumber,
-                body: comment.body
-            });
-        }
-        catch (error) {
-            throw new Error(`Failed to create comment on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }
@@ -54611,18 +54564,11 @@ async function syncBranches(source, target) {
     logSyncPlan(branchComparisons);
     // Process branches in parallel with controlled concurrency
     const actionsToProcess = branchComparisons.filter(c => c.action !== 'skip');
-    const skippedBranches = branchComparisons.filter(c => c.action === 'skip');
-    // Log skipped branches
-    if (skippedBranches.length > 0) {
-        core.info(`⏭️ Skipping ${skippedBranches.length} branches - already in sync`);
-        skippedBranches.forEach(branch => {
-            core.debug(`  - ${branch.name}`);
-        });
-    }
     if (actionsToProcess.length === 0) {
-        core.info('✓ All branches are already in sync');
         return;
     }
+    // Group detailed operations under collapsible section
+    core.startGroup('🔄 Branch Operations');
     // Process branch operations in parallel with controlled concurrency
     const BRANCH_BATCH_SIZE = 5; // Process 5 branches at a time
     const batches = [];
@@ -54634,6 +54580,7 @@ async function syncBranches(source, target) {
             try {
                 switch (comparison.action) {
                     case 'create':
+                        core.info(`🆕 Creating: ${comparison.name}`);
                         await createBranch(target, comparison);
                         return {
                             name: comparison.name,
@@ -54641,6 +54588,7 @@ async function syncBranches(source, target) {
                             status: 'success'
                         };
                     case 'update':
+                        core.info(`🔄 Updating: ${comparison.name}`);
                         await updateBranch(target, comparison);
                         return {
                             name: comparison.name,
@@ -54677,6 +54625,7 @@ async function syncBranches(source, target) {
             core.warning(`⚠️ Batch issues: ${failed.length} branches failed to process`);
         }
     }
+    core.endGroup();
     core.info('✓ Branch synchronization completed');
 }
 async function createBranch(target, comparison) {
@@ -54694,13 +54643,18 @@ async function updateBranch(target, comparison) {
 function logSyncPlan(comparisons) {
     const create = comparisons.filter(c => c.action === 'create').length;
     const update = comparisons.filter(c => c.action === 'update').length;
-    const skip = comparisons.filter(c => c.action === 'skip').length;
-    core.info(`
-📊 Sync Plan Summary:
-  - Create: ${create} branches
-  - Update: ${update} branches
-  - Skip: ${skip} branches (already in sync)
-`);
+    const totalActions = create + update;
+    if (totalActions === 0) {
+        core.info('✅ All branches are already in sync');
+        return;
+    }
+    // Only log what we're actually doing
+    const actions = [];
+    if (create > 0)
+        actions.push(`Create ${create} branches`);
+    if (update > 0)
+        actions.push(`Update ${update} branches`);
+    core.info(`📊 Branch Sync Plan: ${actions.join(', ')}`);
 }
 
 
@@ -54747,10 +54701,10 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.compareIssues = compareIssues;
 exports.prepareSourceLink = prepareSourceLink;
-exports.compareComments = compareComments;
 exports.syncIssues = syncIssues;
 // src/sync/issues.ts
 const core = __importStar(__nccwpck_require__(7484));
+const GitHub_1 = __nccwpck_require__(4821);
 function arraysEqual(a, b) {
     return a.length === b.length && a.every((val, index) => val === b[index]);
 }
@@ -54788,31 +54742,18 @@ function compareIssues(sourceIssues, targetIssues) {
     return comparisons;
 }
 function prepareSourceLink(sourceClient, sourceIssue) {
-    // Prepare a link to the source issue for tracking
     const repoInfo = sourceClient.getRepoInfo();
-    return `**Original Issue**: [${sourceIssue.title}](${repoInfo.url}/issues/${sourceIssue.number})`;
-}
-function compareComments(sourceComments, targetComments) {
-    const comparisons = [];
-    // Only consider the first and last comments (assuming these are opening/closing comments)
-    const openingComment = sourceComments[0];
-    const closingComment = sourceComments[sourceComments.length - 1];
-    if (openingComment &&
-        !targetComments.some(c => c.body === openingComment.body)) {
-        comparisons.push({
-            sourceComment: openingComment,
-            action: 'create'
-        });
-    }
-    if (closingComment &&
-        closingComment !== openingComment &&
-        !targetComments.some(c => c.body === closingComment.body)) {
-        comparisons.push({
-            sourceComment: closingComment,
-            action: 'create'
-        });
-    }
-    return comparisons;
+    const platform = sourceClient instanceof GitHub_1.GitHubClient ? 'GitHub' : 'GitLab';
+    return `
+---
+
+**📋 Synced from ${platform}**
+- **Original Issue**: [${sourceIssue.title}](${repoInfo.url}/issues/${sourceIssue.number})
+- **Repository**: [${repoInfo.owner}/${repoInfo.repo}](${repoInfo.url})
+- **Platform**: ${platform}
+
+> 💬 **Note**: For the complete discussion history and comments, please refer to the original issue above.
+`;
 }
 async function syncIssues(source, target) {
     try {
@@ -54824,11 +54765,20 @@ async function syncIssues(source, target) {
         // Log sync plan
         core.info('\n🔍 Issue Sync Analysis:');
         logSyncPlan(issueComparisons);
+        // Check if there are any actions to perform
+        const hasActions = issueComparisons.some(c => c.action !== 'skip');
+        if (!hasActions) {
+            core.info('✓ Issue synchronization completed');
+            return;
+        }
+        // Group detailed operations under collapsible section
+        core.startGroup('🔄 Issue Operations');
         // Process each issue according to its required action
         for (const comparison of issueComparisons) {
             try {
                 switch (comparison.action) {
                     case 'create': {
+                        core.info(`🆕 Creating: "${comparison.sourceIssue.title}"`);
                         // Add a link to the original source issue in the body
                         const sourceLink = prepareSourceLink(source, comparison.sourceIssue);
                         const issueToCreate = {
@@ -54842,21 +54792,28 @@ async function syncIssues(source, target) {
                         break;
                     }
                     case 'update':
-                        await updateIssue(target, comparison);
+                        core.info(`🔄 Updating: "${comparison.sourceIssue.title}"`);
+                        // Add source link to updated issues as well
+                        const sourceLink = prepareSourceLink(source, comparison.sourceIssue);
+                        const issueToUpdate = {
+                            ...comparison.sourceIssue,
+                            body: `${comparison.sourceIssue.body || ''}\n\n${sourceLink}`
+                        };
+                        await updateIssue(target, {
+                            ...comparison,
+                            sourceIssue: issueToUpdate
+                        });
                         break;
                     case 'skip':
-                        core.info(`⏭️ Skipping "${comparison.sourceIssue.title}" - already in sync`);
+                        core.debug(`⏭️ Skipping "${comparison.sourceIssue.title}" - already in sync`);
                         break;
-                }
-                // Sync only opening/closing comments if the issue exists in both repositories
-                if (comparison.sourceIssue.number && comparison.targetIssue?.number) {
-                    await syncIssueComments(source, target, comparison.sourceIssue.number, comparison.targetIssue.number);
                 }
             }
             catch (error) {
                 core.warning(`Failed to process issue "${comparison.sourceIssue.title}": ${error instanceof Error ? error.message : String(error)}`);
             }
         }
+        core.endGroup();
         core.info('✓ Issue synchronization completed');
     }
     catch (error) {
@@ -54864,34 +54821,12 @@ async function syncIssues(source, target) {
         throw error;
     }
 }
-async function syncIssueComments(source, target, sourceIssueNumber, targetIssueNumber) {
-    try {
-        const sourceComments = await source.getIssueComments(sourceIssueNumber);
-        const targetComments = await target.getIssueComments(targetIssueNumber);
-        const commentComparisons = compareComments(sourceComments, targetComments);
-        for (const comparison of commentComparisons) {
-            try {
-                if (comparison.action === 'create') {
-                    await createComment(target, targetIssueNumber, comparison);
-                }
-            }
-            catch (error) {
-                core.warning(`Failed to sync comment in issue #${targetIssueNumber}: ${error instanceof Error ? error.message : String(error)}`);
-            }
-        }
-    }
-    catch (error) {
-        core.warning(`Failed to sync comments for issue #${sourceIssueNumber}: ${error instanceof Error ? error.message : String(error)}`);
-    }
-}
 async function createIssue(target, comparison) {
-    core.info(`📝 Creating issue "${comparison.sourceIssue.title}"`);
     // Pass the full issue object including the state
     await target.createIssue({
         ...comparison.sourceIssue,
         state: comparison.sourceIssue.state // Explicitly include state
     });
-    core.info(`✓ Created issue "${comparison.sourceIssue.title}"`);
 }
 async function updateIssue(target, comparison) {
     if (!comparison.targetIssue?.number)
@@ -54903,25 +54838,23 @@ async function updateIssue(target, comparison) {
         state: comparison.sourceIssue.state,
         labels: comparison.sourceIssue.labels
     }, null, 2));
-    core.info(`📝 Updating issue "${comparison.sourceIssue.title}"`);
     await target.updateIssue(comparison.targetIssue.number, comparison.sourceIssue);
-    core.info(`✓ Updated issue "${comparison.sourceIssue.title}"`);
-}
-async function createComment(target, issueNumber, comparison) {
-    core.info(`💬 Creating comment in issue #${issueNumber}`);
-    await target.createIssueComment(issueNumber, comparison.sourceComment);
-    core.info(`✓ Created comment in issue #${issueNumber}`);
 }
 function logSyncPlan(comparisons) {
     const create = comparisons.filter(c => c.action === 'create').length;
     const update = comparisons.filter(c => c.action === 'update').length;
-    const skip = comparisons.filter(c => c.action === 'skip').length;
-    core.info(`
-📊 Sync Plan Summary:
-  - Create: ${create} issues
-  - Update: ${update} issues
-  - Skip: ${skip} issues (already in sync)
-`);
+    const totalActions = create + update;
+    if (totalActions === 0) {
+        core.info('✅ All issues are already in sync');
+        return;
+    }
+    // Only log what we're actually doing
+    const actions = [];
+    if (create > 0)
+        actions.push(`Create ${create} issues`);
+    if (update > 0)
+        actions.push(`Update ${update} issues`);
+    core.info(`📊 Issue Sync Plan: ${actions.join(', ')}`);
 }
 
 
@@ -54978,37 +54911,57 @@ function logSyncPlan(sourcePRs, targetPRs) {
         const targetPR = targetPRs.find(pr => pr.title === sourcePR.title);
         return targetPR && sourcePR.state === 'closed' && targetPR.state === 'open';
     }).length;
-    core.info(`
-📊 Pull Request Sync Plan:
-  - Create: ${toCreate} PRs
-  - Update: ${toUpdate} PRs 
-  - Close: ${toClose} PRs
-  - Skip: ${sourcePRs.length - (toCreate + toUpdate + toClose)} PRs (already in sync)
-`);
+    const totalActions = toCreate + toUpdate + toClose;
+    if (totalActions === 0) {
+        core.info('✅ All pull requests are already in sync');
+        return;
+    }
+    // Only log what we're actually doing
+    const actions = [];
+    if (toCreate > 0)
+        actions.push(`Create ${toCreate} PRs`);
+    if (toUpdate > 0)
+        actions.push(`Update ${toUpdate} PRs`);
+    if (toClose > 0)
+        actions.push(`Close ${toClose} PRs`);
+    core.info(`📊 Pull Request Sync Plan: ${actions.join(', ')}`);
 }
 async function syncPullRequests(source, target) {
     try {
         const sourcePRs = await source.syncPullRequests();
         const targetPRs = await target.syncPullRequests();
         logSyncPlan(sourcePRs, targetPRs);
+        // Check if there are any actions to perform
+        const hasActions = sourcePRs.some(sourcePR => {
+            const targetPR = targetPRs.find(pr => pr.title === sourcePR.title);
+            return (!targetPR ||
+                needsUpdate(sourcePR, targetPR) ||
+                (sourcePR.state === 'closed' && targetPR.state === 'open'));
+        });
+        if (!hasActions) {
+            return sourcePRs;
+        }
+        // Group detailed operations under collapsible section
+        core.startGroup('🔄 Pull Request Operations');
         // Process each source PR
         for (const sourcePR of sourcePRs) {
             const targetPR = targetPRs.find(pr => pr.title === sourcePR.title);
             if (!targetPR) {
-                core.info(`Creating new PR: ${sourcePR.title} (${sourcePR.state})`);
+                core.info(`🆕 Creating: ${sourcePR.title} (${sourcePR.state})`);
                 await target.createPullRequest(sourcePR);
             }
             else {
                 if (needsUpdate(sourcePR, targetPR)) {
-                    core.info(`Updating PR: ${sourcePR.title} (${sourcePR.state} → ${targetPR.state})`);
+                    core.info(`🔄 Updating: ${sourcePR.title} (${targetPR.state} → ${sourcePR.state})`);
                     await target.updatePullRequest(targetPR.number, sourcePR);
                 }
                 if (sourcePR.state === 'closed' && targetPR.state === 'open') {
-                    core.info(`Closing PR: ${sourcePR.title} (open → closed)`);
+                    core.info(`🔒 Closing: ${sourcePR.title} (open → closed)`);
                     await target.closePullRequest(targetPR.number);
                 }
             }
         }
+        core.endGroup();
         return sourcePRs;
     }
     catch (error) {
@@ -55080,36 +55033,220 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.syncReleases = syncReleases;
 const core = __importStar(__nccwpck_require__(7484));
-function logSyncPlan(sourceReleases, targetReleases) {
-    const toCreate = sourceReleases.filter(sourceRelease => !targetReleases.find(r => r.tag === sourceRelease.tag)).length;
-    const toUpdate = sourceReleases.filter(sourceRelease => {
-        const targetRelease = targetReleases.find(r => r.tag === sourceRelease.tag);
-        return (targetRelease &&
-            new Date(sourceRelease.createdAt).getTime() >
-                new Date(targetRelease.createdAt).getTime());
-    }).length;
-    const skip = sourceReleases.length - (toCreate + toUpdate);
-    core.info(`
-📊 Release Sync Plan Summary:
-  - Create: ${toCreate} releases
-  - Update: ${toUpdate} releases
-  - Skip: ${skip} releases (already in sync)
-`);
+const timelineUtils_1 = __nccwpck_require__(4109);
+function logEnhancedSyncPlan(plan) {
+    const totalActions = plan.toCreate.length + plan.toUpdate.length;
+    if (totalActions === 0) {
+        core.info('✅ All releases are already in sync');
+        return;
+    }
+    // Only log what we're actually doing
+    const actions = [];
+    if (plan.toCreate.length > 0)
+        actions.push(`Create ${plan.toCreate.length} releases`);
+    if (plan.toUpdate.length > 0)
+        actions.push(`Update ${plan.toUpdate.length} releases`);
+    core.info(`📊 Release Sync Plan: ${actions.join(', ')}`);
+    // Group detailed logs under collapsible sections
+    if (plan.toSkip.length > 0) {
+        core.startGroup('📋 Detailed Analysis');
+        // Log what we're doing first
+        if (plan.toCreate.length > 0) {
+            core.info('🆕 Creating releases:');
+            plan.toCreate.forEach(analysis => {
+                core.info(`  • ${analysis.release.tag}: ${analysis.reason}`);
+            });
+        }
+        if (plan.toUpdate.length > 0) {
+            core.info('🔄 Updating releases:');
+            plan.toUpdate.forEach(analysis => {
+                core.info(`  • ${analysis.release.tag}: ${analysis.reason}`);
+            });
+        }
+        // Then log what we're skipping and why
+        const skippedWithMissingCommits = plan.toSkip.filter(a => !a.commitExists);
+        if (skippedWithMissingCommits.length > 0) {
+            core.info('⏭️ Skipping releases (missing commits):');
+            skippedWithMissingCommits.forEach(analysis => {
+                core.info(`  • ${analysis.release.tag}: ${analysis.reason}`);
+            });
+        }
+        // Special handling notifications
+        const latestReleaseActions = [...plan.toCreate, ...plan.toUpdate].filter(a => a.isLatest);
+        if (latestReleaseActions.length > 0) {
+            core.info('🎯 Latest release special handling:');
+            latestReleaseActions.forEach(analysis => {
+                core.info(`  • ${analysis.release.tag}: ${analysis.strategy}`);
+            });
+        }
+        core.endGroup();
+    }
+}
+/**
+ * Analyze releases and determine sync strategy based on commit existence and configuration
+ */
+async function analyzeReleases(sourceReleases, targetReleases, source, target, config) {
+    const timelineManager = new timelineUtils_1.TimelineManager();
+    const analyses = [];
+    try {
+        // Sort releases by creation date (newest first) to identify latest
+        const sortedReleases = [...sourceReleases].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        for (let i = 0; i < sortedReleases.length; i++) {
+            const sourceRelease = sortedReleases[i];
+            const isLatest = i === 0; // First in sorted array is latest
+            const targetRelease = targetReleases.find(r => r.tag === sourceRelease.tag);
+            // Check if commit exists in target repository
+            const commitExists = await timelineManager.commitExists(target, sourceRelease.commitSha || '');
+            // If commit doesn't exist, try to find an equivalent commit
+            let equivalentCommitSha = null;
+            if (!commitExists && sourceRelease.commitSha) {
+                const sourceCommitInfo = await timelineManager.getCommitInfo(source, sourceRelease.commitSha);
+                if (sourceCommitInfo) {
+                    equivalentCommitSha = await timelineManager.findEquivalentCommit(sourceCommitInfo, target, 'main');
+                    if (equivalentCommitSha) {
+                        core.info(`🔍 Found equivalent commit for release ${sourceRelease.tag}: ${equivalentCommitSha}`);
+                    }
+                }
+            }
+            let analysis;
+            if (!targetRelease) {
+                // Release doesn't exist in target
+                if (!commitExists && !equivalentCommitSha) {
+                    // Commit doesn't exist and no equivalent found - apply strategy
+                    if (isLatest && config.latestReleaseStrategy === 'point-to-latest') {
+                        analysis = {
+                            release: sourceRelease,
+                            action: 'create',
+                            reason: 'Latest release - will point to latest commit',
+                            commitExists: false,
+                            isLatest: true,
+                            strategy: 'point-to-latest'
+                        };
+                    }
+                    else if (config.divergentCommitStrategy === 'create-anyway') {
+                        analysis = {
+                            release: sourceRelease,
+                            action: 'create',
+                            reason: 'Creating anyway (divergent commit strategy)',
+                            commitExists: false,
+                            isLatest,
+                            strategy: 'normal'
+                        };
+                    }
+                    else {
+                        analysis = {
+                            release: sourceRelease,
+                            action: 'skip',
+                            reason: 'Commit does not exist in target repository',
+                            commitExists: false,
+                            isLatest,
+                            strategy: 'skip-diverged'
+                        };
+                    }
+                }
+                else {
+                    // Commit exists or equivalent found - normal creation
+                    const reason = equivalentCommitSha
+                        ? `New release with equivalent commit (${equivalentCommitSha})`
+                        : 'New release with existing commit';
+                    analysis = {
+                        release: equivalentCommitSha
+                            ? { ...sourceRelease, commitSha: equivalentCommitSha }
+                            : sourceRelease,
+                        action: 'create',
+                        reason,
+                        commitExists: true,
+                        isLatest,
+                        strategy: 'normal'
+                    };
+                }
+            }
+            else {
+                // Release exists - check if update needed
+                const sourceDate = new Date(sourceRelease.createdAt).getTime();
+                const targetDate = new Date(targetRelease.createdAt).getTime();
+                if (sourceDate > targetDate) {
+                    if (!commitExists &&
+                        !equivalentCommitSha &&
+                        isLatest &&
+                        config.latestReleaseStrategy === 'point-to-latest') {
+                        analysis = {
+                            release: sourceRelease,
+                            action: 'update',
+                            reason: 'Latest release - will point to latest commit',
+                            commitExists: false,
+                            isLatest: true,
+                            strategy: 'point-to-latest'
+                        };
+                    }
+                    else if (commitExists ||
+                        equivalentCommitSha ||
+                        config.divergentCommitStrategy === 'create-anyway') {
+                        const reason = equivalentCommitSha
+                            ? `Source release is newer - using equivalent commit (${equivalentCommitSha})`
+                            : 'Source release is newer';
+                        analysis = {
+                            release: equivalentCommitSha
+                                ? { ...sourceRelease, commitSha: equivalentCommitSha }
+                                : sourceRelease,
+                            action: 'update',
+                            reason,
+                            commitExists: commitExists || !!equivalentCommitSha,
+                            isLatest,
+                            strategy: 'normal'
+                        };
+                    }
+                    else {
+                        analysis = {
+                            release: sourceRelease,
+                            action: 'skip',
+                            reason: 'Commit does not exist in target repository',
+                            commitExists: false,
+                            isLatest,
+                            strategy: 'skip-diverged'
+                        };
+                    }
+                }
+                else {
+                    analysis = {
+                        release: sourceRelease,
+                        action: 'skip',
+                        reason: 'Target release is newer or same',
+                        commitExists,
+                        isLatest,
+                        strategy: 'normal'
+                    };
+                }
+            }
+            analyses.push(analysis);
+        }
+        return {
+            toCreate: analyses.filter(a => a.action === 'create'),
+            toUpdate: analyses.filter(a => a.action === 'update'),
+            toSkip: analyses.filter(a => a.action === 'skip'),
+            total: analyses.length
+        };
+    }
+    finally {
+        await timelineManager.cleanup();
+    }
 }
 async function syncReleases(source, target) {
     try {
         const sourceReleases = await source.syncReleases();
         const targetReleases = await target.syncReleases();
-        sourceReleases.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        // Get release configuration
+        const releaseConfig = source.config.github.sync?.releases || source.config.gitlab.sync?.releases;
+        if (!releaseConfig) {
+            core.warning('No release configuration found, using defaults');
+            return [];
+        }
         core.info('\n🔍 Release Sync Analysis:');
-        logSyncPlan(sourceReleases, targetReleases);
-        const releasesToSync = sourceReleases.filter(sourceRelease => {
-            const targetRelease = targetReleases.find(r => r.tag === sourceRelease.tag);
-            if (!targetRelease)
-                return true;
-            return (new Date(sourceRelease.createdAt).getTime() >
-                new Date(targetRelease.createdAt).getTime());
-        });
+        // Use enhanced analysis
+        const syncPlan = await analyzeReleases(sourceReleases, targetReleases, source, target, releaseConfig);
+        logEnhancedSyncPlan(syncPlan);
+        // Combine releases that need action
+        const releasesToSync = [...syncPlan.toCreate, ...syncPlan.toUpdate];
         core.info(`Found ${releasesToSync.length} releases to sync`);
         // Process releases in parallel with controlled concurrency
         const BATCH_SIZE = 3; // Process 3 releases at a time to avoid rate limits
@@ -55118,26 +55255,41 @@ async function syncReleases(source, target) {
             batches.push(releasesToSync.slice(i, i + BATCH_SIZE));
         }
         for (const batch of batches) {
-            const batchResults = await Promise.allSettled(batch.map(async (release) => {
+            const batchResults = await Promise.allSettled(batch.map(async (analysis) => {
                 try {
-                    const existingRelease = targetReleases.find(r => r.tag === release.tag);
-                    if (existingRelease) {
-                        await target.updateRelease(release);
+                    const release = analysis.release;
+                    let releaseToSync = { ...release };
+                    // Handle special strategies
+                    if (analysis.strategy === 'point-to-latest') {
+                        // Get latest commit from target repository
+                        const targetBranches = await target.fetchBranches();
+                        const mainBranch = targetBranches.find(b => b.name === 'main') || targetBranches[0];
+                        if (mainBranch) {
+                            releaseToSync.commitSha = mainBranch.sha;
+                            core.info(`🎯 Pointing release ${release.tag} to latest commit: ${mainBranch.sha}`);
+                        }
+                    }
+                    if (analysis.action === 'update') {
+                        await target.updateRelease(releaseToSync);
                         core.info(`Updated release ${release.tag}`);
                     }
                     else {
-                        await target.createRelease(release);
+                        await target.createRelease(releaseToSync);
                         core.info(`Created release ${release.tag}`);
                     }
-                    if (release.assets.length > 0) {
-                        await syncReleaseAssets(source, target, release);
+                    if (release.assets.length > 0 && releaseConfig.includeAssets) {
+                        await syncReleaseAssets(source, target, releaseToSync);
                     }
                     return { tag: release.tag, status: 'success' };
                 }
                 catch (error) {
                     const errorMessage = error instanceof Error ? error.message : String(error);
-                    core.warning(`Failed to sync release ${release.tag}: ${errorMessage}`);
-                    return { tag: release.tag, status: 'failed', error: errorMessage };
+                    core.warning(`Failed to sync release ${analysis.release.tag}: ${errorMessage}`);
+                    return {
+                        tag: analysis.release.tag,
+                        status: 'failed',
+                        error: errorMessage
+                    };
                 }
             }));
             // Log batch results
@@ -55191,6 +55343,9 @@ async function syncReleaseAssets(source, target, release) {
             const successful = batchResults.filter(r => r.status === 'fulfilled' && r.value.status === 'success');
             const failed = batchResults.filter(r => r.status === 'rejected' ||
                 (r.status === 'fulfilled' && r.value.status === 'failed'));
+            if (successful.length > 0) {
+                core.info(`✅ ${successful.length} assets synced successfully in this batch`);
+            }
             if (failed.length > 0) {
                 core.warning(`⚠️ ${failed.length} assets failed in this batch`);
             }
@@ -55330,13 +55485,25 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ConfigSchema = exports.GithubConfigSchema = exports.GitlabConfigSchema = exports.SyncConfigSchema = exports.IssueConfigSchema = exports.PRConfigSchema = exports.BranchConfigSchema = void 0;
+exports.ConfigSchema = exports.GithubConfigSchema = exports.GitlabConfigSchema = exports.SyncConfigSchema = exports.TagConfigSchema = exports.ReleaseConfigSchema = exports.IssueConfigSchema = exports.PRConfigSchema = exports.BranchConfigSchema = void 0;
 // src/types/config.ts
 const zod_1 = __nccwpck_require__(924);
 exports.BranchConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
     protected: zod_1.z.boolean(),
-    pattern: zod_1.z.string()
+    pattern: zod_1.z.string(),
+    historySync: zod_1.z
+        .object({
+        enabled: zod_1.z.boolean().default(true),
+        strategy: zod_1.z
+            .enum(['merge-timelines', 'skip-diverged', 'force-match'])
+            .default('merge-timelines'),
+        createMergeCommits: zod_1.z.boolean().default(true),
+        mergeMessage: zod_1.z
+            .string()
+            .default('Sync: Merge timeline from {source} to {target}')
+    })
+        .optional()
 });
 // Helper function to normalize labels from various YAML formats
 const normalizeLabels = (val) => {
@@ -55367,18 +55534,36 @@ exports.PRConfigSchema = zod_1.z.object({
 });
 exports.IssueConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
-    syncComments: zod_1.z.boolean(),
     labels: zod_1.z
         .any()
         .transform(normalizeLabels)
         .pipe(zod_1.z.union([zod_1.z.string(), zod_1.z.array(zod_1.z.string())]))
 });
+exports.ReleaseConfigSchema = zod_1.z.object({
+    enabled: zod_1.z.boolean(),
+    divergentCommitStrategy: zod_1.z
+        .enum(['skip', 'create-anyway', 'point-to-latest'])
+        .default('skip'),
+    latestReleaseStrategy: zod_1.z
+        .enum(['skip', 'point-to-latest', 'create-anyway'])
+        .default('point-to-latest'),
+    skipPreReleases: zod_1.z.boolean().default(false),
+    pattern: zod_1.z.string().default('*'),
+    includeAssets: zod_1.z.boolean().default(true)
+});
+exports.TagConfigSchema = zod_1.z.object({
+    enabled: zod_1.z.boolean(),
+    divergentCommitStrategy: zod_1.z
+        .enum(['skip', 'create-anyway', 'point-to-latest'])
+        .default('skip'),
+    pattern: zod_1.z.string().default('*')
+});
 exports.SyncConfigSchema = zod_1.z.object({
     branches: exports.BranchConfigSchema,
     pullRequests: exports.PRConfigSchema,
     issues: exports.IssueConfigSchema,
-    releases: zod_1.z.object({ enabled: zod_1.z.boolean() }),
-    tags: zod_1.z.object({ enabled: zod_1.z.boolean() })
+    releases: exports.ReleaseConfigSchema,
+    tags: exports.TagConfigSchema
 });
 exports.GitlabConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
@@ -55477,7 +55662,13 @@ function getDefaultConfig() {
                 branches: {
                     enabled: true,
                     protected: true,
-                    pattern: '*'
+                    pattern: '*',
+                    historySync: {
+                        enabled: true,
+                        strategy: 'merge-timelines',
+                        createMergeCommits: true,
+                        mergeMessage: 'Sync: Merge timeline from {source} to {target}'
+                    }
                 },
                 pullRequests: {
                     enabled: true,
@@ -55486,14 +55677,20 @@ function getDefaultConfig() {
                 },
                 issues: {
                     enabled: true,
-                    syncComments: false,
                     labels: ['synced']
                 },
                 releases: {
-                    enabled: true
+                    enabled: true,
+                    divergentCommitStrategy: 'skip',
+                    latestReleaseStrategy: 'point-to-latest',
+                    skipPreReleases: false,
+                    pattern: '*',
+                    includeAssets: true
                 },
                 tags: {
-                    enabled: true
+                    enabled: true,
+                    divergentCommitStrategy: 'skip',
+                    pattern: '*'
                 }
             }
         },
@@ -55503,7 +55700,13 @@ function getDefaultConfig() {
                 branches: {
                     enabled: true,
                     protected: true,
-                    pattern: '*'
+                    pattern: '*',
+                    historySync: {
+                        enabled: true,
+                        strategy: 'merge-timelines',
+                        createMergeCommits: true,
+                        mergeMessage: 'Sync: Merge timeline from {source} to {target}'
+                    }
                 },
                 pullRequests: {
                     enabled: true,
@@ -55512,14 +55715,20 @@ function getDefaultConfig() {
                 },
                 issues: {
                     enabled: true,
-                    syncComments: false,
                     labels: ['synced']
                 },
                 releases: {
-                    enabled: true
+                    enabled: true,
+                    divergentCommitStrategy: 'skip',
+                    latestReleaseStrategy: 'point-to-latest',
+                    skipPreReleases: false,
+                    pattern: '*',
+                    includeAssets: true
                 },
                 tags: {
-                    enabled: true
+                    enabled: true,
+                    divergentCommitStrategy: 'skip',
+                    pattern: '*'
                 }
             }
         }
@@ -55730,6 +55939,615 @@ function getGitLabRepo(config) {
         repo: config.gitlab.repo || context.repo.repo
     };
 }
+
+
+/***/ }),
+
+/***/ 4109:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TimelineManager = void 0;
+// src/utils/timelineUtils.ts
+const core = __importStar(__nccwpck_require__(7484));
+const exec = __importStar(__nccwpck_require__(5236));
+const fs = __importStar(__nccwpck_require__(9896));
+const path = __importStar(__nccwpck_require__(6928));
+const GitHub_1 = __nccwpck_require__(4821);
+/**
+ * TVA-style timeline analysis and merging utilities
+ */
+class TimelineManager {
+    tmpDir;
+    constructor() {
+        this.tmpDir = path.join(process.cwd(), `.tmp-timeline-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
+    }
+    /**
+     * Find the merge base (divergence point) between two repositories
+     */
+    async findMergeBase(sourceClient, targetClient, branchName = 'main') {
+        try {
+            await this.setupTempRepo();
+            // Add both remotes
+            await this.addRemote('source', this.getRepoUrl(sourceClient));
+            await this.addRemote('target', this.getRepoUrl(targetClient));
+            // Fetch both branches
+            await exec.exec('git', ['fetch', 'source', branchName], {
+                cwd: this.tmpDir
+            });
+            await exec.exec('git', ['fetch', 'target', branchName], {
+                cwd: this.tmpDir
+            });
+            // Find merge base
+            let mergeBase = '';
+            const exitCode = await exec.exec('git', ['merge-base', `source/${branchName}`, `target/${branchName}`], {
+                cwd: this.tmpDir,
+                listeners: {
+                    stdout: (data) => {
+                        mergeBase += data.toString().trim();
+                    }
+                },
+                ignoreReturnCode: true
+            });
+            return exitCode === 0 ? mergeBase : null;
+        }
+        catch (error) {
+            core.warning(`Failed to find merge base: ${error}`);
+            return null;
+        }
+    }
+    /**
+     * Analyze timeline divergence between repositories
+     */
+    async analyzeTimelineDivergence(sourceClient, targetClient, branchName = 'main') {
+        const mergeBase = await this.findMergeBase(sourceClient, targetClient, branchName);
+        if (!mergeBase) {
+            return {
+                hasCommonHistory: false,
+                sourceUniqueCommits: [],
+                targetUniqueCommits: []
+            };
+        }
+        try {
+            // Get commits unique to source
+            const sourceUniqueCommits = await this.getUniqueCommits(`source/${branchName}`, `target/${branchName}`);
+            // Get commits unique to target
+            const targetUniqueCommits = await this.getUniqueCommits(`target/${branchName}`, `source/${branchName}`);
+            return {
+                hasCommonHistory: true,
+                mergeBase,
+                divergencePoint: mergeBase,
+                sourceUniqueCommits,
+                targetUniqueCommits
+            };
+        }
+        catch (error) {
+            core.warning(`Failed to analyze timeline divergence: ${error}`);
+            return {
+                hasCommonHistory: false,
+                sourceUniqueCommits: [],
+                targetUniqueCommits: []
+            };
+        }
+    }
+    /**
+     * Check if a commit exists in a repository
+     */
+    async commitExists(client, commitSha) {
+        return await client.commitExists(commitSha);
+    }
+    /**
+     * Get commit information (simplified implementation)
+     */
+    async getCommitInfo(client, commitSha) {
+        const exists = await this.commitExists(client, commitSha);
+        if (!exists) {
+            return null;
+        }
+        // Return basic info - full implementation would fetch detailed commit data
+        return {
+            sha: commitSha,
+            message: 'Commit exists',
+            author: 'Unknown',
+            date: new Date().toISOString(),
+            exists: true
+        };
+    }
+    /**
+     * Create a timeline merge commit
+     */
+    async createTimelineMerge(sourceClient, targetClient, branchName, mergeMessage) {
+        try {
+            await this.setupTempRepo();
+            // Add remotes
+            await this.addRemote('source', this.getRepoUrl(sourceClient));
+            await this.addRemote('target', this.getRepoUrl(targetClient));
+            // Fetch branches
+            await exec.exec('git', ['fetch', 'source', branchName], {
+                cwd: this.tmpDir
+            });
+            await exec.exec('git', ['fetch', 'target', branchName], {
+                cwd: this.tmpDir
+            });
+            // Checkout target branch
+            await exec.exec('git', ['checkout', '-b', branchName, `target/${branchName}`], { cwd: this.tmpDir });
+            // Attempt merge
+            const mergeExitCode = await exec.exec('git', ['merge', `source/${branchName}`, '-m', mergeMessage], {
+                cwd: this.tmpDir,
+                ignoreReturnCode: true
+            });
+            if (mergeExitCode === 0) {
+                // Get the merge commit SHA
+                let mergeCommitSha = '';
+                await exec.exec('git', ['rev-parse', 'HEAD'], {
+                    cwd: this.tmpDir,
+                    listeners: {
+                        stdout: (data) => {
+                            mergeCommitSha = data.toString().trim();
+                        }
+                    }
+                });
+                return {
+                    success: true,
+                    mergeCommitSha,
+                    conflictsResolved: false
+                };
+            }
+            else {
+                // Handle merge conflicts with a simple strategy
+                core.info('🔀 Merge conflicts detected, attempting automatic resolution...');
+                // Accept both changes for most conflicts
+                await exec.exec('git', ['checkout', '--theirs', '.'], {
+                    cwd: this.tmpDir,
+                    ignoreReturnCode: true
+                });
+                await exec.exec('git', ['add', '.'], { cwd: this.tmpDir });
+                await exec.exec('git', ['commit', '-m', mergeMessage], {
+                    cwd: this.tmpDir
+                });
+                let mergeCommitSha = '';
+                await exec.exec('git', ['rev-parse', 'HEAD'], {
+                    cwd: this.tmpDir,
+                    listeners: {
+                        stdout: (data) => {
+                            mergeCommitSha = data.toString().trim();
+                        }
+                    }
+                });
+                return {
+                    success: true,
+                    mergeCommitSha,
+                    conflictsResolved: true
+                };
+            }
+        }
+        catch (error) {
+            return {
+                success: false,
+                conflictsResolved: false,
+                error: error instanceof Error ? error.message : String(error)
+            };
+        }
+    }
+    /**
+     * Find equivalent commit by advanced content matching
+     * Uses multiple strategies: message matching, author matching, tree comparison, and semantic analysis
+     */
+    async findEquivalentCommit(sourceCommit, targetClient, branchName = 'main') {
+        try {
+            core.info(`🔍 Searching for equivalent commit: ${sourceCommit.message.substring(0, 50)}...`);
+            // Get recent commits from target repository (last 100 commits)
+            const targetCommits = await this.getRecentCommits(targetClient, branchName, 100);
+            if (targetCommits.length === 0) {
+                core.debug('No commits found in target repository');
+                return null;
+            }
+            // Strategy 1: Exact message and author match
+            const exactMatch = await this.findExactMatch(sourceCommit, targetCommits);
+            if (exactMatch) {
+                core.info(`✅ Found exact match: ${exactMatch}`);
+                return exactMatch;
+            }
+            // Strategy 2: Message similarity with author match
+            const similarMatch = await this.findSimilarMatch(sourceCommit, targetCommits);
+            if (similarMatch) {
+                core.info(`✅ Found similar match: ${similarMatch}`);
+                return similarMatch;
+            }
+            // Strategy 3: Tree content comparison (most accurate but expensive)
+            const treeMatch = await this.findTreeMatch(sourceCommit, targetCommits, targetClient);
+            if (treeMatch) {
+                core.info(`✅ Found tree content match: ${treeMatch}`);
+                return treeMatch;
+            }
+            // Strategy 4: Semantic analysis of commit changes
+            const semanticMatch = await this.findSemanticMatch(sourceCommit, targetCommits, targetClient);
+            if (semanticMatch) {
+                core.info(`✅ Found semantic match: ${semanticMatch}`);
+                return semanticMatch;
+            }
+            core.debug(`No equivalent commit found for: ${sourceCommit.message}`);
+            return null;
+        }
+        catch (error) {
+            core.warning(`Failed to find equivalent commit: ${error}`);
+            return null;
+        }
+    }
+    /**
+     * Strategy 1: Find exact matches by message and author
+     */
+    async findExactMatch(sourceCommit, targetCommits) {
+        const exactMatch = targetCommits.find(commit => commit.message.trim() === sourceCommit.message.trim() &&
+            commit.author === sourceCommit.author);
+        return exactMatch ? exactMatch.sha : null;
+    }
+    /**
+     * Strategy 2: Find similar matches using fuzzy string matching
+     */
+    async findSimilarMatch(sourceCommit, targetCommits) {
+        const sourceMsg = sourceCommit.message.trim().toLowerCase();
+        const sourceAuthor = sourceCommit.author.toLowerCase();
+        // Find commits by same author with similar messages
+        const authorMatches = targetCommits.filter(commit => commit.author.toLowerCase() === sourceAuthor);
+        if (authorMatches.length === 0)
+            return null;
+        // Calculate similarity scores
+        const similarities = authorMatches.map(commit => ({
+            commit,
+            score: this.calculateMessageSimilarity(sourceMsg, commit.message.trim().toLowerCase())
+        }));
+        // Find best match with similarity > 80%
+        const bestMatch = similarities
+            .filter(s => s.score > 0.8)
+            .sort((a, b) => b.score - a.score)[0];
+        return bestMatch ? bestMatch.commit.sha : null;
+    }
+    /**
+     * Strategy 3: Compare file trees between commits
+     */
+    async findTreeMatch(sourceCommit, targetCommits, targetClient) {
+        try {
+            // This is computationally expensive, so we limit to recent commits by same author
+            const authorMatches = targetCommits
+                .filter(commit => commit.author === sourceCommit.author)
+                .slice(0, 20); // Limit to 20 most recent commits by same author
+            for (const targetCommit of authorMatches) {
+                const treesMatch = await this.compareCommitTrees(sourceCommit, targetCommit, targetClient);
+                if (treesMatch) {
+                    return targetCommit.sha;
+                }
+            }
+            return null;
+        }
+        catch (error) {
+            core.debug(`Tree comparison failed: ${error}`);
+            return null;
+        }
+    }
+    /**
+     * Strategy 4: Semantic analysis of commit changes
+     */
+    async findSemanticMatch(sourceCommit, targetCommits, targetClient) {
+        try {
+            // Look for commits with similar semantic patterns
+            const semanticCandidates = targetCommits.filter(commit => {
+                // Check for similar commit patterns
+                return this.haveSimilarSemanticPatterns(sourceCommit, commit);
+            });
+            if (semanticCandidates.length === 0)
+                return null;
+            // For semantic matches, we'll compare the actual changes
+            for (const candidate of semanticCandidates.slice(0, 10)) {
+                const changesMatch = await this.compareCommitChanges(sourceCommit, candidate, targetClient);
+                if (changesMatch) {
+                    return candidate.sha;
+                }
+            }
+            return null;
+        }
+        catch (error) {
+            core.debug(`Semantic analysis failed: ${error}`);
+            return null;
+        }
+    }
+    /**
+     * Get recent commits from a repository
+     */
+    async getRecentCommits(client, branchName, limit) {
+        try {
+            const commits = await client.getRecentCommits(branchName, limit);
+            if (client instanceof GitHub_1.GitHubClient) {
+                return commits.map(commit => ({
+                    sha: commit.sha,
+                    message: commit.commit.message,
+                    author: commit.commit.author?.name || 'Unknown',
+                    date: commit.commit.author?.date || new Date().toISOString(),
+                    exists: true
+                }));
+            }
+            else {
+                return commits.map(commit => ({
+                    sha: commit.id,
+                    message: commit.message,
+                    author: commit.author_name,
+                    date: commit.created_at,
+                    exists: true
+                }));
+            }
+        }
+        catch (error) {
+            core.debug(`Failed to get recent commits: ${error}`);
+            return [];
+        }
+    }
+    /**
+     * Calculate message similarity using Levenshtein distance
+     */
+    calculateMessageSimilarity(str1, str2) {
+        if (str1 === str2)
+            return 1.0;
+        if (str1.length === 0 || str2.length === 0)
+            return 0.0;
+        // Simple similarity based on common words and structure
+        const words1 = str1.toLowerCase().split(/\s+/);
+        const words2 = str2.toLowerCase().split(/\s+/);
+        // Calculate Jaccard similarity (intersection over union)
+        const set1 = new Set(words1);
+        const set2 = new Set(words2);
+        const intersection = new Set([...set1].filter(x => set2.has(x)));
+        const union = new Set([...set1, ...set2]);
+        const jaccardSimilarity = intersection.size / union.size;
+        // Bonus for similar length and structure
+        const lengthSimilarity = 1 -
+            Math.abs(str1.length - str2.length) / Math.max(str1.length, str2.length);
+        // Combined score
+        return jaccardSimilarity * 0.7 + lengthSimilarity * 0.3;
+    }
+    /**
+     * Compare commit trees to see if they represent the same changes
+     */
+    async compareCommitTrees(sourceCommit, targetCommit, _targetClient) {
+        try {
+            // This is a simplified implementation
+            // In a full implementation, you would compare the actual file trees
+            // For now, we'll use a heuristic based on commit message similarity and timing
+            const messageSimilarity = this.calculateMessageSimilarity(sourceCommit.message, targetCommit.message);
+            // Check if commits are close in time (within 7 days)
+            const sourceTime = new Date(sourceCommit.date).getTime();
+            const targetTime = new Date(targetCommit.date).getTime();
+            const timeDiff = Math.abs(sourceTime - targetTime);
+            const sevenDays = 7 * 24 * 60 * 60 * 1000;
+            const timeProximity = timeDiff < sevenDays;
+            // Consider it a tree match if message similarity > 90% and time is close
+            return messageSimilarity > 0.9 && timeProximity;
+        }
+        catch (error) {
+            core.debug(`Tree comparison error: ${error}`);
+            return false;
+        }
+    }
+    /**
+     * Check if two commits have similar semantic patterns
+     */
+    haveSimilarSemanticPatterns(sourceCommit, targetCommit) {
+        const sourceMsg = sourceCommit.message.toLowerCase();
+        const targetMsg = targetCommit.message.toLowerCase();
+        // Common semantic patterns in commit messages
+        const patterns = [
+            /^(feat|feature)[\(\:]/, // Feature commits
+            /^(fix|bugfix)[\(\:]/, // Bug fixes
+            /^(docs?)[\(\:]/, // Documentation
+            /^(style|format)[\(\:]/, // Style changes
+            /^(refactor)[\(\:]/, // Refactoring
+            /^(test)[\(\:]/, // Tests
+            /^(chore)[\(\:]/, // Chores
+            /^(build|ci)[\(\:]/, // Build/CI
+            /^(perf|performance)[\(\:]/, // Performance
+            /^(revert)[\(\:]/, // Reverts
+            /bump.*version/, // Version bumps
+            /update.*dependencies?/, // Dependency updates
+            /merge.*pull.*request/, // Merge commits
+            /initial.*commit/ // Initial commits
+        ];
+        // Check if both commits match the same semantic pattern
+        for (const pattern of patterns) {
+            if (pattern.test(sourceMsg) && pattern.test(targetMsg)) {
+                return true;
+            }
+        }
+        // Check for similar keywords
+        const sourceKeywords = this.extractKeywords(sourceMsg);
+        const targetKeywords = this.extractKeywords(targetMsg);
+        const commonKeywords = sourceKeywords.filter(k => targetKeywords.includes(k));
+        // Consider similar if they share significant keywords
+        return (commonKeywords.length >= 2 ||
+            (commonKeywords.length >= 1 && sourceKeywords.length <= 3));
+    }
+    /**
+     * Compare actual commit changes (simplified implementation)
+     */
+    async compareCommitChanges(sourceCommit, targetCommit, _targetClient) {
+        try {
+            // This would ideally compare the actual diff/patch content
+            // For now, we'll use a combination of heuristics
+            // 1. Message similarity
+            const messageSimilarity = this.calculateMessageSimilarity(sourceCommit.message, targetCommit.message);
+            // 2. Author match
+            const sameAuthor = sourceCommit.author === targetCommit.author;
+            // 3. Time proximity (within 30 days for semantic matches)
+            const sourceTime = new Date(sourceCommit.date).getTime();
+            const targetTime = new Date(targetCommit.date).getTime();
+            const timeDiff = Math.abs(sourceTime - targetTime);
+            const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+            const timeProximity = timeDiff < thirtyDays;
+            // Consider it a semantic match if:
+            // - High message similarity (>70%) AND same author
+            // - OR very high message similarity (>85%) regardless of author
+            // - AND commits are within reasonable time frame
+            return (timeProximity &&
+                ((messageSimilarity > 0.7 && sameAuthor) || messageSimilarity > 0.85));
+        }
+        catch (error) {
+            core.debug(`Commit changes comparison error: ${error}`);
+            return false;
+        }
+    }
+    /**
+     * Extract keywords from commit message for semantic analysis
+     */
+    extractKeywords(message) {
+        // Remove common words and extract meaningful keywords
+        const commonWords = new Set([
+            'the',
+            'a',
+            'an',
+            'and',
+            'or',
+            'but',
+            'in',
+            'on',
+            'at',
+            'to',
+            'for',
+            'of',
+            'with',
+            'by',
+            'from',
+            'up',
+            'about',
+            'into',
+            'through',
+            'during',
+            'before',
+            'after',
+            'above',
+            'below',
+            'between',
+            'among',
+            'is',
+            'are',
+            'was',
+            'were',
+            'be',
+            'been',
+            'being',
+            'have',
+            'has',
+            'had',
+            'do',
+            'does',
+            'did',
+            'will',
+            'would',
+            'could',
+            'should',
+            'may',
+            'might',
+            'must',
+            'can'
+        ]);
+        return message
+            .toLowerCase()
+            .replace(/[^\w\s]/g, ' ') // Remove punctuation
+            .split(/\s+/)
+            .filter(word => word.length > 2 && !commonWords.has(word))
+            .slice(0, 10); // Limit to first 10 keywords
+    }
+    /**
+     * Cleanup temporary directory
+     */
+    async cleanup() {
+        try {
+            if (fs.existsSync(this.tmpDir)) {
+                fs.rmSync(this.tmpDir, { recursive: true, force: true });
+            }
+        }
+        catch (error) {
+            core.warning(`Failed to cleanup temp directory: ${error}`);
+        }
+    }
+    // Private helper methods
+    async setupTempRepo() {
+        if (!fs.existsSync(this.tmpDir)) {
+            fs.mkdirSync(this.tmpDir, { recursive: true });
+        }
+        await exec.exec('git', ['init'], { cwd: this.tmpDir });
+        await exec.exec('git', ['config', 'user.name', 'advanced-git-sync'], {
+            cwd: this.tmpDir
+        });
+        await exec.exec('git', ['config', 'user.email', 'advanced-git-sync@users.noreply.github.com'], { cwd: this.tmpDir });
+    }
+    async addRemote(name, url) {
+        await exec.exec('git', ['remote', 'add', name, url], { cwd: this.tmpDir });
+    }
+    getRepoUrl(client) {
+        if (client instanceof GitHub_1.GitHubClient) {
+            const token = client.config.github.token;
+            return `https://${token}@github.com/${client.repo.owner}/${client.repo.repo}.git`;
+        }
+        else {
+            const token = client.config.gitlab.token;
+            const host = client.config.gitlab.host || 'https://gitlab.com';
+            return `https://${token}@${host.replace('https://', '')}/${client.config.gitlab.owner}/${client.config.gitlab.repo}.git`;
+        }
+    }
+    async getUniqueCommits(baseBranch, compareBranch) {
+        const commits = [];
+        await exec.exec('git', ['rev-list', `${baseBranch}..${compareBranch}`, '--oneline'], {
+            cwd: this.tmpDir,
+            listeners: {
+                stdout: (data) => {
+                    const lines = data.toString().trim().split('\n');
+                    for (const line of lines) {
+                        if (line.trim()) {
+                            const sha = line.split(' ')[0];
+                            commits.push(sha);
+                        }
+                    }
+                }
+            },
+            ignoreReturnCode: true
+        });
+        return commits;
+    }
+}
+exports.TimelineManager = TimelineManager;
 
 
 /***/ }),

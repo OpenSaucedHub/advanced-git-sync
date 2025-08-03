@@ -17,13 +17,20 @@ function logSyncPlan(sourcePRs: PullRequest[], targetPRs: PullRequest[]): void {
     return targetPR && sourcePR.state === 'closed' && targetPR.state === 'open'
   }).length
 
-  core.info(`
-📊 Pull Request Sync Plan:
-  - Create: ${toCreate} PRs
-  - Update: ${toUpdate} PRs 
-  - Close: ${toClose} PRs
-  - Skip: ${sourcePRs.length - (toCreate + toUpdate + toClose)} PRs (already in sync)
-`)
+  const totalActions = toCreate + toUpdate + toClose
+
+  if (totalActions === 0) {
+    core.info('✅ All pull requests are already in sync')
+    return
+  }
+
+  // Only log what we're actually doing
+  const actions: string[] = []
+  if (toCreate > 0) actions.push(`Create ${toCreate} PRs`)
+  if (toUpdate > 0) actions.push(`Update ${toUpdate} PRs`)
+  if (toClose > 0) actions.push(`Close ${toClose} PRs`)
+
+  core.info(`📊 Pull Request Sync Plan: ${actions.join(', ')}`)
 }
 
 export async function syncPullRequests(
@@ -37,27 +44,46 @@ export async function syncPullRequests(
 
     logSyncPlan(sourcePRs, targetPRs)
 
+    // Check if there are any actions to perform
+    const hasActions = sourcePRs.some(sourcePR => {
+      const targetPR = targetPRs.find(pr => pr.title === sourcePR.title)
+      return (
+        !targetPR ||
+        needsUpdate(sourcePR, targetPR) ||
+        (sourcePR.state === 'closed' && targetPR.state === 'open')
+      )
+    })
+
+    if (!hasActions) {
+      return sourcePRs
+    }
+
+    // Group detailed operations under collapsible section
+    core.startGroup('🔄 Pull Request Operations')
+
     // Process each source PR
     for (const sourcePR of sourcePRs) {
       const targetPR = targetPRs.find(pr => pr.title === sourcePR.title)
 
       if (!targetPR) {
-        core.info(`Creating new PR: ${sourcePR.title} (${sourcePR.state})`)
+        core.info(`🆕 Creating: ${sourcePR.title} (${sourcePR.state})`)
         await target.createPullRequest(sourcePR)
       } else {
         if (needsUpdate(sourcePR, targetPR)) {
           core.info(
-            `Updating PR: ${sourcePR.title} (${sourcePR.state} → ${targetPR.state})`
+            `🔄 Updating: ${sourcePR.title} (${targetPR.state} → ${sourcePR.state})`
           )
           await target.updatePullRequest(targetPR.number!, sourcePR)
         }
 
         if (sourcePR.state === 'closed' && targetPR.state === 'open') {
-          core.info(`Closing PR: ${sourcePR.title} (open → closed)`)
+          core.info(`🔒 Closing: ${sourcePR.title} (open → closed)`)
           await target.closePullRequest(targetPR.number!)
         }
       }
     }
+
+    core.endGroup()
 
     return sourcePRs
   } catch (error) {

@@ -9,7 +9,13 @@ export function getDefaultConfig(): Config {
         branches: {
           enabled: true,
           protected: true,
-          pattern: '*'
+          pattern: '*',
+          historySync: {
+            enabled: true,
+            strategy: 'merge-timelines',
+            createMergeCommits: true,
+            mergeMessage: 'Sync: Merge timeline from {source} to {target}'
+          }
         },
         pullRequests: {
           enabled: true,
@@ -18,14 +24,20 @@ export function getDefaultConfig(): Config {
         },
         issues: {
           enabled: true,
-          syncComments: false,
           labels: ['synced']
         },
         releases: {
-          enabled: true
+          enabled: true,
+          divergentCommitStrategy: 'skip',
+          latestReleaseStrategy: 'point-to-latest',
+          skipPreReleases: false,
+          pattern: '*',
+          includeAssets: true
         },
         tags: {
-          enabled: true
+          enabled: true,
+          divergentCommitStrategy: 'skip',
+          pattern: '*'
         }
       }
     },
@@ -35,7 +47,13 @@ export function getDefaultConfig(): Config {
         branches: {
           enabled: true,
           protected: true,
-          pattern: '*'
+          pattern: '*',
+          historySync: {
+            enabled: true,
+            strategy: 'merge-timelines',
+            createMergeCommits: true,
+            mergeMessage: 'Sync: Merge timeline from {source} to {target}'
+          }
         },
         pullRequests: {
           enabled: true,
@@ -44,14 +62,20 @@ export function getDefaultConfig(): Config {
         },
         issues: {
           enabled: true,
-          syncComments: false,
           labels: ['synced']
         },
         releases: {
-          enabled: true
+          enabled: true,
+          divergentCommitStrategy: 'skip',
+          latestReleaseStrategy: 'point-to-latest',
+          skipPreReleases: false,
+          pattern: '*',
+          includeAssets: true
         },
         tags: {
-          enabled: true
+          enabled: true,
+          divergentCommitStrategy: 'skip',
+          pattern: '*'
         }
       }
     }

@@ -5,7 +5,6 @@ import {
   Repository,
   Config,
   Issue,
-  Comment,
   PullRequest,
   Release,
   ReleaseAsset,
@@ -75,6 +74,31 @@ export class GitHubClient implements IClient {
     return this.branches.update(name, commitSha)
   }
 
+  async commitExists(commitSha: string): Promise<boolean> {
+    try {
+      await this.octokit.rest.git.getCommit({
+        ...this.repo,
+        commit_sha: commitSha
+      })
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+
+  async getRecentCommits(branchName: string, limit: number): Promise<any[]> {
+    try {
+      const { data: commits } = await this.octokit.rest.repos.listCommits({
+        ...this.repo,
+        sha: branchName,
+        per_page: limit
+      })
+      return commits
+    } catch (error) {
+      throw new Error(`Failed to get recent commits: ${error}`)
+    }
+  }
+
   async syncPullRequests(): Promise<PullRequest[]> {
     return this.pullRequest.syncPullRequests()
   }
@@ -95,9 +119,6 @@ export class GitHubClient implements IClient {
   async syncIssues(): Promise<Issue[]> {
     return this.issue.syncIssues()
   }
-  async getIssueComments(issueNumber: number): Promise<Comment[]> {
-    return this.issue.getIssueComments(issueNumber)
-  }
 
   async createIssue(issue: Issue): Promise<void> {
     return this.issue.createIssue(issue)
@@ -105,13 +126,6 @@ export class GitHubClient implements IClient {
 
   async updateIssue(issueNumber: number, issue: Issue): Promise<void> {
     return this.issue.updateIssue(issueNumber, issue)
-  }
-
-  async createIssueComment(
-    issueNumber: number,
-    comment: Comment
-  ): Promise<void> {
-    return this.issue.createIssueComment(issueNumber, comment)
   }
 
   // releases

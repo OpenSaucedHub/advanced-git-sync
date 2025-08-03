@@ -136,7 +136,6 @@ gitlab:
       labels: ['external-sync', 'github']
     issues:
       enabled: true
-      syncComments: true # Enable comment syncing
       labels: ['external-sync', 'github']
     releases:
       enabled: true
@@ -151,7 +150,6 @@ github:
       labels: ['external-sync', 'gitlab']
     issues:
       enabled: true
-      syncComments: true
       labels: ['external-sync', 'gitlab']
     releases:
       enabled: true
@@ -175,7 +173,6 @@ gitlab:
       labels: ['sync']
     issues:
       enabled: true
-      syncComments: false # Disable for performance
       labels: ['sync']
     releases:
       enabled: true
@@ -193,7 +190,6 @@ github:
       labels: ['sync']
     issues:
       enabled: true
-      syncComments: false # Disable for performance
       labels: ['sync']
     releases:
       enabled: true
@@ -219,7 +215,6 @@ gitlab:
       labels: ['dev-sync', 'testing']
     issues:
       enabled: true
-      syncComments: true # Full sync in dev
     releases:
       enabled: false # No releases in dev
 
@@ -234,7 +229,6 @@ github:
       labels: ['dev-sync']
     issues:
       enabled: true
-      syncComments: true
     releases:
       enabled: false
 ```
@@ -253,7 +247,6 @@ gitlab:
       labels: ['prod-sync']
     issues:
       enabled: true
-      syncComments: false # Performance optimization
     releases:
       enabled: true
 
@@ -268,7 +261,6 @@ github:
       labels: ['prod-sync']
     issues:
       enabled: true
-      syncComments: false
     releases:
       enabled: true
 ```
@@ -353,8 +345,6 @@ gitlab:
   sync:
     branches:
       pattern: 'main|release/*' # Specific patterns
-    issues:
-      syncComments: false # Skip comments
     pullRequests:
       enabled: true
     releases:

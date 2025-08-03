@@ -4,7 +4,19 @@ import { z } from 'zod'
 export const BranchConfigSchema = z.object({
   enabled: z.boolean(),
   protected: z.boolean(),
-  pattern: z.string()
+  pattern: z.string(),
+  historySync: z
+    .object({
+      enabled: z.boolean().default(true),
+      strategy: z
+        .enum(['merge-timelines', 'skip-diverged', 'force-match'])
+        .default('merge-timelines'),
+      createMergeCommits: z.boolean().default(true),
+      mergeMessage: z
+        .string()
+        .default('Sync: Merge timeline from {source} to {target}')
+    })
+    .optional()
 })
 
 // Helper function to normalize labels from various YAML formats
@@ -36,19 +48,39 @@ export const PRConfigSchema = z.object({
 
 export const IssueConfigSchema = z.object({
   enabled: z.boolean(),
-  syncComments: z.boolean(),
   labels: z
     .any()
     .transform(normalizeLabels)
     .pipe(z.union([z.string(), z.array(z.string())]))
 })
 
+export const ReleaseConfigSchema = z.object({
+  enabled: z.boolean(),
+  divergentCommitStrategy: z
+    .enum(['skip', 'create-anyway', 'point-to-latest'])
+    .default('skip'),
+  latestReleaseStrategy: z
+    .enum(['skip', 'point-to-latest', 'create-anyway'])
+    .default('point-to-latest'),
+  skipPreReleases: z.boolean().default(false),
+  pattern: z.string().default('*'),
+  includeAssets: z.boolean().default(true)
+})
+
+export const TagConfigSchema = z.object({
+  enabled: z.boolean(),
+  divergentCommitStrategy: z
+    .enum(['skip', 'create-anyway', 'point-to-latest'])
+    .default('skip'),
+  pattern: z.string().default('*')
+})
+
 export const SyncConfigSchema = z.object({
   branches: BranchConfigSchema,
   pullRequests: PRConfigSchema,
   issues: IssueConfigSchema,
-  releases: z.object({ enabled: z.boolean() }),
-  tags: z.object({ enabled: z.boolean() })
+  releases: ReleaseConfigSchema,
+  tags: TagConfigSchema
 })
 
 export const GitlabConfigSchema = z.object({
@@ -77,6 +109,8 @@ export const ConfigSchema = z.object({
 export type BranchConfig = z.infer<typeof BranchConfigSchema>
 export type PRConfig = z.infer<typeof PRConfigSchema>
 export type IssueConfig = z.infer<typeof IssueConfigSchema>
+export type ReleaseConfig = z.infer<typeof ReleaseConfigSchema>
+export type TagConfig = z.infer<typeof TagConfigSchema>
 export type SyncConfig = z.infer<typeof SyncConfigSchema>
 export type GitlabConfig = z.infer<typeof GitlabConfigSchema>
 export type GithubConfig = z.infer<typeof GithubConfigSchema>

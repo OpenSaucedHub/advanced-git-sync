@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { Repository, Config, Issue, Comment } from '@/src/types'
+import { Repository, Config, Issue } from '@/src/types'
 import { LabelHelper } from '@/src/utils/labelsUtils'
 
 export class githubIssueHelper {
@@ -58,54 +58,6 @@ export class githubIssueHelper {
     }
   }
 
-  async getIssueComments(issueNumber: number): Promise<Comment[]> {
-    // Check if comment sync is enabled
-    if (!this.config.gitlab.sync?.issues.syncComments) {
-      core.info('\x1b[33m⚠️ Issue Comments Sync Disabled\x1b[0m')
-      return []
-    }
-
-    try {
-      // Colorful console log for fetching comments
-      core.info(
-        `\x1b[36m💬 Fetching Comments for Issue #${issueNumber}...\x1b[0m`
-      )
-
-      // Fetch comments for a specific issue
-      const { data: comments } = await this.octokit.rest.issues.listComments({
-        ...this.repo,
-        issue_number: issueNumber
-      })
-
-      // Process and transform comments
-      const processedComments: Comment[] = comments.map(
-        (comment: {
-          id: number
-          body: string | null
-          created_at: string
-          user?: { login: string }
-        }): Comment => ({
-          id: comment.id,
-          body: comment.body || '',
-          createdAt: comment.created_at,
-          author: comment.user?.login || 'unknown'
-        })
-      )
-
-      // Log successful comment fetch
-      core.info(
-        `\x1b[32m✓ Comments Fetched: ${processedComments.length} comments\x1b[0m`
-      )
-      return processedComments
-    } catch (error) {
-      // Error handling with colorful console warning
-      core.warning(
-        `\x1b[31m❌ Failed to Fetch GitHub Issue Comments: ${error instanceof Error ? error.message : String(error)}\x1b[0m`
-      )
-      return []
-    }
-  }
-
   async createIssue(issue: Issue): Promise<void> {
     try {
       await this.octokit.rest.issues.create({
@@ -137,27 +89,6 @@ export class githubIssueHelper {
       // Throw a descriptive error if issue update fails
       throw new Error(
         `Failed to update issue #${issueNumber}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      )
-    }
-  }
-
-  async createIssueComment(
-    issueNumber: number,
-    comment: Comment
-  ): Promise<void> {
-    try {
-      // Create a new comment on a specific issue
-      await this.octokit.rest.issues.createComment({
-        ...this.repo,
-        issue_number: issueNumber,
-        body: comment.body
-      })
-    } catch (error) {
-      // Throw a descriptive error if comment creation fails
-      throw new Error(
-        `Failed to create comment on issue #${issueNumber}: ${
           error instanceof Error ? error.message : String(error)
         }`
       )

@@ -81,8 +81,6 @@ gitlab:
       enabled: false # Disable during testing
     tags:
       enabled: false # Disable during testing
-    issues:
-      syncComments: false # Reduce API calls
     branches:
       pattern: 'main' # Only sync main branch
 
@@ -92,8 +90,6 @@ github:
       enabled: false # Disable during testing
     tags:
       enabled: false # Disable during testing
-    issues:
-      syncComments: false # Reduce API calls
     branches:
       pattern: 'main' # Only sync main branch
 ```

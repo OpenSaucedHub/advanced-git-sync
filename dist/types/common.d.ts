@@ -47,6 +47,7 @@ export interface Release {
     prerelease: boolean;
     createdAt: string;
     publishedAt: string | null;
+    commitSha?: string;
     assets: ReleaseAsset[];
 }
 export interface Issue {
@@ -60,10 +61,6 @@ export interface IssueComparison {
     sourceIssue: Issue;
     targetIssue?: Issue;
     action: 'create' | 'update' | 'skip';
-}
-export interface CommentComparison {
-    sourceComment: Comment;
-    action: 'create' | 'skip';
 }
 export interface Branch {
     name: string;

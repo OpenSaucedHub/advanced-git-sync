@@ -127,10 +127,10 @@ describe('parseConfig', () => {
 
 ```bash
 # Format code with Prettier
-bun run format
+bun run f
 
 # Check formatting
-bun run format:check
+bun run f:check
 ```
 
 ### Linting
@@ -167,7 +167,9 @@ bun test
 # Build the project
 bun run build
 
-# Test the action locally (if possible)
+# Test the action locally
+bun s
+
 ```
 
 ### 4. Commit Your Changes
@@ -249,7 +251,7 @@ git push origin feature/your-feature-name
 - GitHub/GitLab versions
 - Any relevant details
 
-```
+````
 
 ## 💡 Feature Requests
 
@@ -260,7 +262,81 @@ We welcome feature requests! Please:
 3. Provide clear use cases
 4. Consider implementation complexity
 
-## 🏷️ Release Process
+## � Help Wanted Features
+
+We're looking for contributors to help implement these advanced features:
+
+### 💬 Enhanced Comment Synchronization
+
+**Current State**: Issue and PR comments are not synced to avoid confusion and maintain clean discussions.
+
+**Desired Enhancement**: Implement intelligent comment synchronization with proper attribution:
+
+```markdown
+**💬 Comment by @username on GitHub** ([original](https://github.com/user/repo/issues/123#issuecomment-456))
+
+> This is the original comment content that would be quoted
+> and properly attributed to maintain discussion context.
+
+---
+*Synced from GitHub on 2024-01-15*
+````
+
+**Technical Requirements**:
+
+- Quote original comments with proper attribution
+- Maintain source links to original comments
+- Handle comment threads and reply relationships
+- Manage @mentions and cross-references appropriately
+- Support comment updates and edits
+- Preserve formatting (code blocks, links, etc.)
+
+**Complexity**: High - requires significant API integration and formatting logic
+
+**Skills Needed**: TypeScript, GitHub/GitLab APIs, Markdown processing
+
+**Impact**: Would enable full discussion synchronization while maintaining clarity
+
+### 🔄 Advanced Timeline Merging
+
+**Current State**: Basic timeline merging with merge commits
+
+**Desired Enhancement**: Implement more sophisticated timeline merging strategies:
+
+- Interactive conflict resolution
+- Smart commit message analysis
+- Automatic rebase strategies
+- Timeline visualization
+
+**Complexity**: Very High
+
+**Skills Needed**: Git internals, conflict resolution algorithms, TypeScript
+
+### 🎯 Selective Sync Patterns
+
+**Current State**: Basic pattern matching for branches/tags/releases
+
+**Desired Enhancement**: Advanced filtering and routing:
+
+- Conditional sync based on labels/metadata
+- Time-based sync windows
+- User-based filtering
+- Custom sync rules engine
+
+**Complexity**: Medium
+
+**Skills Needed**: Pattern matching, rule engines, TypeScript
+
+---
+
+**Want to contribute?** Pick a feature above and:
+
+1. Open a discussion to coordinate with maintainers
+2. Break down the work into smaller tasks
+3. Submit a design proposal
+4. Implement incrementally with tests
+
+## �🏷️ Release Process
 
 Releases are automated using semantic-release:
 
@@ -303,9 +379,13 @@ Releases are automated using semantic-release:
 ## 🙏 Recognition
 
 Contributors are recognized in:
+
 - Release notes
 - Contributors section
 - Special thanks for significant contributions
 
 Thank you for contributing to making cross-platform development easier! 🎉
+
+```
+
 ```

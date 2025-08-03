@@ -71,22 +71,13 @@ export async function syncBranches(
 
   // Process branches in parallel with controlled concurrency
   const actionsToProcess = branchComparisons.filter(c => c.action !== 'skip')
-  const skippedBranches = branchComparisons.filter(c => c.action === 'skip')
-
-  // Log skipped branches
-  if (skippedBranches.length > 0) {
-    core.info(
-      `⏭️ Skipping ${skippedBranches.length} branches - already in sync`
-    )
-    skippedBranches.forEach(branch => {
-      core.debug(`  - ${branch.name}`)
-    })
-  }
 
   if (actionsToProcess.length === 0) {
-    core.info('✓ All branches are already in sync')
     return
   }
+
+  // Group detailed operations under collapsible section
+  core.startGroup('🔄 Branch Operations')
 
   // Process branch operations in parallel with controlled concurrency
   const BRANCH_BATCH_SIZE = 5 // Process 5 branches at a time
@@ -101,6 +92,7 @@ export async function syncBranches(
         try {
           switch (comparison.action) {
             case 'create':
+              core.info(`🆕 Creating: ${comparison.name}`)
               await createBranch(target, comparison)
               return {
                 name: comparison.name,
@@ -108,6 +100,7 @@ export async function syncBranches(
                 status: 'success'
               }
             case 'update':
+              core.info(`🔄 Updating: ${comparison.name}`)
               await updateBranch(target, comparison)
               return {
                 name: comparison.name,
@@ -158,6 +151,8 @@ export async function syncBranches(
       )
     }
   }
+
+  core.endGroup()
   core.info('✓ Branch synchronization completed')
 }
 
@@ -184,12 +179,17 @@ async function updateBranch(
 function logSyncPlan(comparisons: BranchComparison[]): void {
   const create = comparisons.filter(c => c.action === 'create').length
   const update = comparisons.filter(c => c.action === 'update').length
-  const skip = comparisons.filter(c => c.action === 'skip').length
+  const totalActions = create + update
 
-  core.info(`
-📊 Sync Plan Summary:
-  - Create: ${create} branches
-  - Update: ${update} branches
-  - Skip: ${skip} branches (already in sync)
-`)
+  if (totalActions === 0) {
+    core.info('✅ All branches are already in sync')
+    return
+  }
+
+  // Only log what we're actually doing
+  const actions: string[] = []
+  if (create > 0) actions.push(`Create ${create} branches`)
+  if (update > 0) actions.push(`Update ${update} branches`)
+
+  core.info(`📊 Branch Sync Plan: ${actions.join(', ')}`)
 }

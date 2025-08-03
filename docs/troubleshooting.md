@@ -259,9 +259,6 @@ Failed to merge MR #18: 405 Method Not Allowed
    # Reduce sync scope
    branches:
      pattern: 'main|develop' # Specific branches only
-
-   issues:
-     syncComments: false # Skip comments for performance
    ```
 
 2. **Use selective syncing:**
