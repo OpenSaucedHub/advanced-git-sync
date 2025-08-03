@@ -6,6 +6,38 @@ This guide helps you resolve common issues with the GitHub GitLab Sync Action.
 
 ### Authentication Issues
 
+#### Workflow Scope Error
+
+**Symptoms:**
+
+```
+refusing to allow a Personal Access Token to create or update workflow `.github/workflows/releases.yml` without `workflow` scope
+```
+
+**Cause:** The default `GITHUB_TOKEN` cannot modify workflow files for security reasons.
+
+**Solutions:**
+
+1. **Create a Personal Access Token with workflow scope:**
+   - Go to GitHub Settings → Developer settings → Personal access tokens
+   - Click "Generate new token (classic)"
+   - Select the `workflow` scope (and `repo` scope)
+   - Copy the token
+
+2. **Add the token to repository secrets:**
+   - Go to your repository → Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Name: `GH_TOKEN`
+   - Value: Your personal access token
+
+3. **Update your workflow:**
+   ```yaml
+   - uses: OpenSaucedHub/advanced-git-sync@v1.2.2
+     with:
+       GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+       GH_TOKEN: ${{ secrets.GH_TOKEN }}
+   ```
+
 #### "Invalid token" Error
 
 **Symptoms:**
@@ -114,6 +146,40 @@ This guide helps you resolve common issues with the GitHub GitLab Sync Action.
    ```
 
 ### Sync Issues
+
+#### Tag Synchronization Failures
+
+**Symptoms:**
+
+```
+Failed to sync tag v1.0.0: Failed to create tag v1.0.0: Not Found
+Failed to sync tag v1.1.0: Commit 98bc36f580aa5296a32805f54c279c0982759e5a does not exist in GitLab repository
+```
+
+**Cause:** Tags reference commits that exist in one repository but not the other.
+
+**Solutions:**
+
+1. **This is normal behavior** when repositories have different commit histories
+2. **The action will automatically skip** these tags and continue with other operations
+3. **To prevent this:** Ensure both repositories are properly synchronized before creating tags
+
+#### GitLab Merge Request Errors
+
+**Symptoms:**
+
+```
+Failed to merge MR #18: 405 Method Not Allowed
+```
+
+**Cause:** Attempting to merge a merge request that is already closed or cannot be merged.
+
+**Solutions:**
+
+1. **The action now handles this automatically** by:
+   - Checking the current state of merge requests before operations
+   - Closing merge requests instead of merging when appropriate
+   - Providing better error messages
 
 #### Branches Not Syncing
 

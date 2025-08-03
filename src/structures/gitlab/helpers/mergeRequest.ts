@@ -139,21 +139,39 @@ export class mergeRequestHelper {
     try {
       const projectId = await this.getProjectId()
 
+      // First get the current state of the MR
+      const currentMR = await this.gitlab.MergeRequests.show(projectId, number)
+
       if (pr.state === 'merged') {
-        // Try to merge the MR in GitLab
-        try {
-          await this.gitlab.MergeRequests.merge(projectId, number, {
-            should_remove_source_branch: true
-          })
-          return
-        } catch (mergeError: unknown) {
-          core.warning(
-            `Failed to merge MR #${number}: ${mergeError instanceof Error ? mergeError.message : String(mergeError)}`
+        // Only try to merge if the MR is currently open and mergeable
+        if (
+          currentMR.state === 'opened' &&
+          currentMR.merge_status === 'can_be_merged'
+        ) {
+          try {
+            await this.gitlab.MergeRequests.merge(projectId, number, {
+              should_remove_source_branch: true
+            })
+            return
+          } catch (mergeError: unknown) {
+            core.warning(
+              `Failed to merge MR #${number}: ${mergeError instanceof Error ? mergeError.message : String(mergeError)}`
+            )
+            // If merge fails, close it instead
+            await this.gitlab.MergeRequests.edit(projectId, number, {
+              stateEvent: 'close'
+            })
+          }
+        } else {
+          // MR is already merged/closed or cannot be merged, just close it
+          core.info(
+            `MR #${number} is already ${currentMR.state}, closing instead of merging`
           )
-          // If merge fails (e.g., due to missing branch), close it instead
-          await this.gitlab.MergeRequests.edit(projectId, number, {
-            stateEvent: 'close'
-          })
+          if (currentMR.state === 'opened') {
+            await this.gitlab.MergeRequests.edit(projectId, number, {
+              stateEvent: 'close'
+            })
+          }
         }
       } else {
         // Handle regular updates

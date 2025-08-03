@@ -69,6 +69,18 @@ export class tagsHelper {
   }
   async createTag(tag: Tag): Promise<void> {
     try {
+      // First verify the commit exists in the repository
+      try {
+        await this.octokit.rest.git.getCommit({
+          ...this.repo,
+          commit_sha: tag.commitSha
+        })
+      } catch (error) {
+        throw new Error(
+          `Commit ${tag.commitSha} does not exist in GitHub repository`
+        )
+      }
+
       // Create the tag reference
       await this.octokit.rest.git.createRef({
         ...this.repo,

@@ -2,16 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.2.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.1...v1.2.2) (2025-08-03)
-
-
 
 ## [1.2.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.1...v1.2.2) (2025-08-03)
 
 ### Bug Fixes
 
-* Refactor temporary directory creation in GitHub and GitLab branch helpers; streamline tag creation in GitLab tag helper ([a8b5f8c](https://github.com/OpenSaucedHub/advanced-git-sync/commit/a8b5f8cc915a5310b08c1b8339ea3edb2dd7387d))
+- Refactor temporary directory creation in GitHub and GitLab branch helpers; streamline tag creation
+  in GitLab tag helper
+  ([a8b5f8c](https://github.com/OpenSaucedHub/advanced-git-sync/commit/a8b5f8cc915a5310b08c1b8339ea3edb2dd7387d))
 
 # [v1.2.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.0...v1.2.1) (2025-08-03)
 

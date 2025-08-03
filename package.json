@@ -15,7 +15,10 @@
     "prepare": "husky",
     "test": "jest",
     "s": "bun src/index.ts",
-    "sync-deps": "node scripts/sync-action-deps.js"
+    "sync-deps": "bun scripts/sync-action-deps.js",
+    "dev:setup": "bun scripts/local-test.js",
+    "dev:sync": "bun run dev:setup && bun s",
+    "dev:config": "echo 'Edit sync-config.local.yml or .github/sync-config.yml for configuration'"
   },
   "keywords": [
     "github",

@@ -27,7 +27,9 @@ Create a `.github/sync-config.yml` file in your repository to customize the sync
 | `repo`      | GitLab repository name        | No       | GitHub repo name  |
 | `projectId` | GitLab project ID             | No       | Auto-detected     |
 
-> [!TIP] If `projectId` is provided, `owner` and `repo` are not required.
+> [!TIP]
+>
+> If `projectId` is provided, `owner` and `repo` are not required.
 
 ### GitHub Configuration (`github`)
 

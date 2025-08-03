@@ -99,40 +99,69 @@ export class gitlabBranchHelper {
       process.cwd(),
       `.tmp-git-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
     )
-    if (!fs.existsSync(tmpDir)) {
-      fs.mkdirSync(tmpDir, { recursive: true })
+
+    try {
+      if (!fs.existsSync(tmpDir)) {
+        fs.mkdirSync(tmpDir, { recursive: true })
+      }
+
+      await exec.exec('git', ['init'], { cwd: tmpDir })
+      await exec.exec('git', ['config', 'user.name', 'advanced-git-sync'], {
+        cwd: tmpDir
+      })
+      await exec.exec(
+        'git',
+        ['config', 'user.email', 'advanced-git-sync@users.noreply.github.com'],
+        { cwd: tmpDir }
+      )
+
+      const githubUrl = `https://x-access-token:${this.config.github.token}@github.com/${this.config.github.owner}/${this.config.github.repo}.git`
+      await exec.exec('git', ['remote', 'add', 'github', githubUrl], {
+        cwd: tmpDir
+      })
+
+      // Fetch the specific commit from GitHub with error handling
+      try {
+        await exec.exec('git', ['fetch', 'github', commitSha], { cwd: tmpDir })
+      } catch (fetchError) {
+        throw new Error(
+          `Failed to fetch commit ${commitSha} from GitHub: ${String(fetchError)}`
+        )
+      }
+
+      const gitlabAuthUrl = `https://oauth2:${this.config.gitlab.token}@${repoPath.replace('https://', '')}`
+      await exec.exec('git', ['remote', 'add', 'gitlab', gitlabAuthUrl], {
+        cwd: tmpDir
+      })
+
+      console.log(`git push -f gitlab ${commitSha}:refs/heads/${name}`)
+
+      // Push to GitLab with better error handling
+      try {
+        await exec.exec(
+          'git',
+          ['push', '-f', 'gitlab', `${commitSha}:refs/heads/${name}`],
+          { cwd: tmpDir }
+        )
+      } catch (pushError) {
+        const errorStr = String(pushError)
+        if (errorStr.includes('workflow') && errorStr.includes('scope')) {
+          throw new Error(
+            `Failed to push to GitLab: GitHub token lacks 'workflow' scope. Please use a Personal Access Token with workflow scope.`
+          )
+        }
+        throw new Error(`Failed to push branch ${name} to GitLab: ${errorStr}`)
+      }
+    } catch (error) {
+      throw new Error(
+        `Failed to update branch ${name} on GitLab: ${String(error)}`
+      )
+    } finally {
+      // Always cleanup temp directory
+      if (fs.existsSync(tmpDir)) {
+        fs.rmSync(tmpDir, { recursive: true, force: true })
+      }
     }
-
-    await exec.exec('git', ['init'], { cwd: tmpDir })
-    await exec.exec('git', ['config', 'user.name', 'advanced-git-sync'], {
-      cwd: tmpDir
-    })
-    await exec.exec(
-      'git',
-      ['config', 'user.email', 'advanced-git-sync@users.noreply.github.com'],
-      { cwd: tmpDir }
-    )
-
-    const githubUrl = `https://x-access-token:${this.config.github.token}@github.com/${this.config.github.owner}/${this.config.github.repo}.git`
-    await exec.exec('git', ['remote', 'add', 'github', githubUrl], {
-      cwd: tmpDir
-    })
-
-    await exec.exec('git', ['fetch', 'github', commitSha], { cwd: tmpDir })
-
-    const gitlabAuthUrl = `https://oauth2:${this.config.gitlab.token}@${repoPath.replace('https://', '')}`
-    await exec.exec('git', ['remote', 'add', 'gitlab', gitlabAuthUrl], {
-      cwd: tmpDir
-    })
-
-    console.log(`git push -f gitlab ${commitSha}:refs/heads/${name}`)
-    await exec.exec(
-      'git',
-      ['push', '-f', 'gitlab', `${commitSha}:refs/heads/${name}`],
-      { cwd: tmpDir }
-    )
-
-    fs.rmSync(tmpDir, { recursive: true, force: true })
   }
 
   async create(name: string, commitSha: string): Promise<void> {

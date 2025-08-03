@@ -40,9 +40,20 @@ export async function syncTags(
           core.info(`Created tag ${tag.name}`)
         }
       } catch (error) {
-        core.warning(
-          `Failed to sync tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`
-        )
+        const errorMessage =
+          error instanceof Error ? error.message : String(error)
+
+        // Check if this is a commit not found error and provide helpful message
+        if (
+          errorMessage.includes('does not exist in') ||
+          errorMessage.includes('Not Found')
+        ) {
+          core.warning(
+            `Skipping tag ${tag.name}: Commit ${tag.commitSha} does not exist in target repository. This is normal when repositories have different commit histories.`
+          )
+        } else {
+          core.warning(`Failed to sync tag ${tag.name}: ${errorMessage}`)
+        }
       }
     }
 

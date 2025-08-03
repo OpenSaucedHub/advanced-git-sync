@@ -1,5 +1,8 @@
 # Example configuration for advanced-git-sync action
 # This file demonstrates the correct YAML syntax for all configuration options
+#
+# IMPORTANT: If your sync includes workflow files (.github/workflows/), you MUST use
+# a Personal Access Token with 'workflow' scope as GH_TOKEN secret instead of GITHUB_TOKEN
 
 # GitLab Configuration
 # When gitlab.sync.[entity].enabled: true, entities will be synced FROM GitHub TO GitLab

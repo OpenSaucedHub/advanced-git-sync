@@ -50,15 +50,6 @@ module.exports = {
       }
     ],
 
-    // [
-    //   '@semantic-release/npm',
-    //   {
-    //     npmPublish: true,
-    //     pkgRoot: '.',
-    //     tarballDir: 'dist'
-    //   }
-    // ],
-
     [
       '@semantic-release/github',
       {
@@ -78,8 +69,12 @@ module.exports = {
     [
       '@semantic-release/exec',
       {
-        prepareCmd:
-          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' README.md"
+        prepareCmd: [
+          // Update README.md version references
+          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' README.md",
+          // Update package.json version
+          'npm version ${nextRelease.version} --no-git-tag-version'
+        ].join(' && ')
       }
     ],
 

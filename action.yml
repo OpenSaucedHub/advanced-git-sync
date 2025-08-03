@@ -3,9 +3,13 @@ description: "Synchronize GitHub repository with GitLab including branches, PRs,
 author: "vikshan"
 inputs:
   GITHUB_TOKEN:
-    description: "GitHub token for authentication"
+    description: "GitHub token for authentication (use GH_TOKEN secret for workflow scope)"
     required: false
     default: ${{ github.token }}
+
+  GH_TOKEN:
+    description: "GitHub Personal Access Token with workflow scope (recommended)"
+    required: false
 
   GITLAB_TOKEN:
     description: "GitLab token for authentication"
@@ -60,7 +64,7 @@ runs:
     - name: Run Advanced Git Sync
       shell: bash
       env:
-        INPUT_GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.GH_TOKEN || inputs.GITHUB_TOKEN }}
         INPUT_GITLAB_TOKEN: ${{ inputs.GITLAB_TOKEN }}
         INPUT_CONFIG_PATH: ${{ inputs.CONFIG_PATH }}
       run: bun run ${{ github.action_path }}/dist/index.js

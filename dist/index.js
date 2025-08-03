@@ -51987,15 +51987,49 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TokenManager = void 0;
 const core = __importStar(__nccwpck_require__(7484));
 const inputs_1 = __nccwpck_require__(8864);
+const fs = __importStar(__nccwpck_require__(9896));
+const path = __importStar(__nccwpck_require__(6928));
 /**
  * Manages token retrieval and basic validation
  */
 class TokenManager {
+    static envLoaded = false;
+    static loadEnvFile() {
+        if (this.envLoaded)
+            return;
+        try {
+            const envPath = path.join(process.cwd(), '.env');
+            if (fs.existsSync(envPath)) {
+                const envContent = fs.readFileSync(envPath, 'utf8');
+                const envLines = envContent.split('\n');
+                for (const line of envLines) {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine && !trimmedLine.startsWith('#')) {
+                        const [key, ...valueParts] = trimmedLine.split('=');
+                        if (key && valueParts.length > 0) {
+                            const value = valueParts.join('=').trim();
+                            // Only set if not already in environment
+                            if (!process.env[key]) {
+                                process.env[key] = value;
+                            }
+                        }
+                    }
+                }
+                core.debug('✓ Loaded .env file for local development');
+            }
+        }
+        catch (error) {
+            core.debug(`Could not load .env file: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        this.envLoaded = true;
+    }
     static setTokenEnvironment(tokenName, token) {
         core.setSecret(token);
         core.exportVariable(tokenName, token);
     }
     static getGitHubToken() {
+        // Load .env file for local development
+        this.loadEnvFile();
         const warnings = [];
         const inputToken = (0, inputs_1.getActionInput)('GITHUB_TOKEN');
         const envToken = process.env.GITHUB_TOKEN;
@@ -52009,6 +52043,8 @@ class TokenManager {
         return { token, warnings };
     }
     static getGitLabToken() {
+        // Load .env file for local development
+        this.loadEnvFile();
         const token = (0, inputs_1.getActionInput)('GITLAB_TOKEN', false);
         if (token) {
             this.setTokenEnvironment('GITLAB_TOKEN', token);

@@ -61,11 +61,12 @@ export class githubBranchHelper {
   }
 
   async update(name: string, commitSha: string): Promise<void> {
+    const tmpDir = path.join(
+      process.cwd(),
+      `.tmp-git-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+    )
+
     try {
-      const tmpDir = path.join(
-        process.cwd(),
-        `.tmp-git-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
-      )
       if (!fs.existsSync(tmpDir)) {
         fs.mkdirSync(tmpDir, { recursive: true })
       }
@@ -89,24 +90,45 @@ export class githubBranchHelper {
         cwd: tmpDir
       })
 
-      await exec.exec('git', ['fetch', 'gitlab', commitSha], { cwd: tmpDir })
+      // Fetch the specific commit from GitLab with error handling
+      try {
+        await exec.exec('git', ['fetch', 'gitlab', commitSha], { cwd: tmpDir })
+      } catch (fetchError) {
+        throw new Error(
+          `Failed to fetch commit ${commitSha} from GitLab: ${String(fetchError)}`
+        )
+      }
 
       const githubAuthUrl = `https://x-access-token:${this.config.github.token}@github.com/${this.config.github.owner}/${this.config.github.repo}.git`
       await exec.exec('git', ['remote', 'add', 'github', githubAuthUrl], {
         cwd: tmpDir
       })
 
-      await exec.exec(
-        'git',
-        ['push', '-f', 'github', `${commitSha}:refs/heads/${name}`],
-        { cwd: tmpDir }
-      )
-
-      fs.rmSync(tmpDir, { recursive: true, force: true })
+      // Push to GitHub with better error handling
+      try {
+        await exec.exec(
+          'git',
+          ['push', '-f', 'github', `${commitSha}:refs/heads/${name}`],
+          { cwd: tmpDir }
+        )
+      } catch (pushError) {
+        const errorStr = String(pushError)
+        if (errorStr.includes('workflow') && errorStr.includes('scope')) {
+          throw new Error(
+            `Failed to push to GitHub: Token lacks 'workflow' scope. Please use a Personal Access Token with workflow scope instead of GITHUB_TOKEN.`
+          )
+        }
+        throw new Error(`Failed to push branch ${name} to GitHub: ${errorStr}`)
+      }
     } catch (error) {
       throw new Error(
         `Failed to update branch ${name} on GitHub: ${String(error)}`
       )
+    } finally {
+      // Always cleanup temp directory
+      if (fs.existsSync(tmpDir)) {
+        fs.rmSync(tmpDir, { recursive: true, force: true })
+      }
     }
   }
 

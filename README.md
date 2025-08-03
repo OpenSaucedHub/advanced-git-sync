@@ -56,6 +56,7 @@ jobs:
         uses: OpenSaucedHub/advanced-git-sync@v1.2.2
         with:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 ```
 
 ### 2. Set Up Tokens
@@ -63,6 +64,12 @@ jobs:
 Add these secrets to your GitHub repository:
 
 - `GITLAB_TOKEN`: GitLab personal access token with `api` scope
+- `GH_TOKEN`: GitHub personal access token with `workflow` scope (required for syncing workflow
+  files)
+
+> **⚠️ Important**: If your sync includes workflow files (`.github/workflows/`), you **must** use a
+> Personal Access Token with the `workflow` scope instead of the default `GITHUB_TOKEN`. The default
+> token cannot modify workflow files for security reasons.
 
 ### 3. Basic Configuration (Optional)
 

@@ -21,6 +21,10 @@ you get started.
 
 ## 🛠️ Development Setup
 
+> [!TIP]
+>
+> Check out the [DEVELOPMENT.md](DEVELOPMENT.md) file for a quick start guide.
+
 ### 1. Fork and Clone
 
 ```bash
