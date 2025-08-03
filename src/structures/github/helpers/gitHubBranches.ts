@@ -3,6 +3,7 @@ import * as exec from '@actions/exec'
 import * as path from 'path'
 import * as fs from 'fs'
 import { Repository, Config, Branch, BranchFilterOptions } from '@src/types'
+import { globToRegex } from '@src/utils/repoUtils'
 
 export class githubBranchHelper {
   constructor(
@@ -42,7 +43,7 @@ export class githubBranchHelper {
         )
       }
       if (filterOptions.pattern) {
-        const regex = new RegExp(filterOptions.pattern)
+        const regex = globToRegex(filterOptions.pattern)
         processedBranches = processedBranches.filter(branch =>
           regex.test(branch.name)
         )

@@ -2,6 +2,33 @@
 import * as github from '@actions/github'
 import { Repository, Config } from '../types'
 
+/**
+ * Convert glob pattern to regex pattern
+ * Handles common glob patterns used for branch matching
+ */
+export function globToRegex(pattern: string): RegExp {
+  // Handle special case for "*" - match everything
+  if (pattern === '*') {
+    return /^.*$/
+  }
+
+  // Escape special regex characters except * and ?
+  let regexPattern = pattern
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&') // Escape regex special chars
+    .replace(/\*/g, '.*') // Convert * to .*
+    .replace(/\?/g, '.') // Convert ? to .
+
+  // Ensure the pattern matches the entire string
+  if (!regexPattern.startsWith('^')) {
+    regexPattern = '^' + regexPattern
+  }
+  if (!regexPattern.endsWith('$')) {
+    regexPattern = regexPattern + '$'
+  }
+
+  return new RegExp(regexPattern)
+}
+
 export function getGitHubRepo(config: Config): Repository {
   const context = github.context
   return {

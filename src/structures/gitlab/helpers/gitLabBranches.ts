@@ -1,6 +1,7 @@
 // src/structures/gitlab/helpers/gitlabBranches.ts
 
 import { Branch, Config, BranchFilterOptions } from '@/src/types'
+import { globToRegex } from '@/src/utils/repoUtils'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as path from 'path'
@@ -66,7 +67,7 @@ export class gitlabBranchHelper {
       }
 
       if (filterOptions.pattern) {
-        const regex = new RegExp(filterOptions.pattern)
+        const regex = globToRegex(filterOptions.pattern)
         processedBranches = processedBranches.filter(branch =>
           regex.test(branch.name)
         )

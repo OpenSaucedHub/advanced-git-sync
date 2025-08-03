@@ -52480,6 +52480,7 @@ const core = __importStar(__nccwpck_require__(7484));
 const exec = __importStar(__nccwpck_require__(5236));
 const path = __importStar(__nccwpck_require__(6928));
 const fs = __importStar(__nccwpck_require__(9896));
+const repoUtils_1 = __nccwpck_require__(9600);
 class githubBranchHelper {
     octokit;
     repo;
@@ -52507,7 +52508,7 @@ class githubBranchHelper {
                 processedBranches = processedBranches.filter(branch => !branch.protected);
             }
             if (filterOptions.pattern) {
-                const regex = new RegExp(filterOptions.pattern);
+                const regex = (0, repoUtils_1.globToRegex)(filterOptions.pattern);
                 processedBranches = processedBranches.filter(branch => regex.test(branch.name));
                 core.info(`\x1b[36m🔍 Filtering branches with pattern: ${filterOptions.pattern}\x1b[0m`);
             }
@@ -53265,14 +53266,31 @@ class pullRequestHelper {
     }
     async updatePullRequest(number, pr) {
         try {
-            await this.octokit.rest.pulls.update({
+            // Get current PR state to check if it's merged
+            const { data: currentPR } = await this.octokit.rest.pulls.get({
+                ...this.repo,
+                pull_number: number
+            });
+            // Prepare update payload
+            const updatePayload = {
                 ...this.repo,
                 pull_number: number,
                 title: pr.title,
-                body: pr.description,
-                state: pr.state === 'merged' ? 'closed' : pr.state
-            });
-            // Update labels
+                body: pr.description
+            };
+            // Only update state if the PR is not merged and the state change is valid
+            if (!currentPR.merged_at) {
+                // PR is not merged, we can update the state
+                if (pr.state === 'merged') {
+                    updatePayload.state = 'closed'; // GitHub doesn't have 'merged' state in update
+                }
+                else {
+                    updatePayload.state = pr.state;
+                }
+            }
+            // If PR is merged, we skip state updates as they're not allowed
+            await this.octokit.rest.pulls.update(updatePayload);
+            // Update labels (this is always allowed)
             await this.octokit.rest.issues.setLabels({
                 ...this.repo,
                 issue_number: number,
@@ -53533,6 +53551,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.gitlabBranchHelper = void 0;
+const repoUtils_1 = __nccwpck_require__(9600);
 const core = __importStar(__nccwpck_require__(7484));
 const exec = __importStar(__nccwpck_require__(5236));
 const path = __importStar(__nccwpck_require__(6928));
@@ -53582,7 +53601,7 @@ class gitlabBranchHelper {
                 processedBranches = processedBranches.filter(branch => !branch.protected);
             }
             if (filterOptions.pattern) {
-                const regex = new RegExp(filterOptions.pattern);
+                const regex = (0, repoUtils_1.globToRegex)(filterOptions.pattern);
                 processedBranches = processedBranches.filter(branch => regex.test(branch.name));
                 core.info(`\x1b[36m🔍 Filtering branches with pattern: ${filterOptions.pattern}\x1b[0m`);
             }
@@ -53735,8 +53754,7 @@ class gitlabIssueHelper {
     async createIssue(issue) {
         try {
             const projectId = await this.getProjectId();
-            await this.gitlab.Issues.create({
-                projectId: projectId,
+            await this.gitlab.Issues.create(projectId, {
                 title: issue.title,
                 description: issue.body,
                 labels: labelsUtils_1.LabelHelper.formatForGitLab(issue.labels),
@@ -53750,13 +53768,11 @@ class gitlabIssueHelper {
     async updateIssue(issueNumber, issue) {
         try {
             const projectId = await this.getProjectId();
-            await this.gitlab.Issues.edit({
-                projectId: projectId,
-                issueIid: issueNumber,
+            await this.gitlab.Issues.edit(projectId, issueNumber, {
                 title: issue.title,
                 description: issue.body,
                 labels: labelsUtils_1.LabelHelper.formatForGitLab(issue.labels),
-                stateEvent: issue.state === 'closed' ? 'close' : 'reopen'
+                state_event: issue.state === 'closed' ? 'close' : 'reopen'
             });
         }
         catch (error) {
@@ -53966,12 +53982,32 @@ class gitlabReleaseHelper {
     async createRelease(release) {
         try {
             const projectId = await this.getProjectId();
-            const createdRelease = await this.gitlab.ProjectReleases.create(projectId, {
+            // First check if the tag exists
+            let tagExists = false;
+            try {
+                await this.gitlab.Tags.show(projectId, release.tag);
+                tagExists = true;
+            }
+            catch (error) {
+                // Tag doesn't exist, we'll need to create the release without a tag reference
+                core.debug(`Tag ${release.tag} does not exist in GitLab repository`);
+            }
+            // Create release - if tag doesn't exist, GitLab will create it automatically
+            // when we use the tag_name parameter
+            const releaseParams = {
                 tag_name: release.tag,
                 name: release.name,
-                description: release.body,
-                ref: release.tag
-            });
+                description: release.body
+            };
+            // Only add ref if tag exists, otherwise let GitLab create the tag
+            if (tagExists) {
+                releaseParams.ref = release.tag;
+            }
+            else {
+                // Use main branch as fallback ref - GitLab will create the tag from this
+                releaseParams.ref = 'main';
+            }
+            const createdRelease = await this.gitlab.ProjectReleases.create(projectId, releaseParams);
             release.id = createdRelease.tag_name;
         }
         catch (error) {
@@ -54064,9 +54100,6 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.gitlabTagHelper = void 0;
 const core = __importStar(__nccwpck_require__(7484));
-const exec = __importStar(__nccwpck_require__(5236));
-const path = __importStar(__nccwpck_require__(6928));
-const fs = __importStar(__nccwpck_require__(9896));
 class gitlabTagHelper {
     gitlab;
     config;
@@ -54141,44 +54174,31 @@ class gitlabTagHelper {
     }
     async updateTag(tag) {
         try {
-            // Try getting path from sync first
-            if (!this.repoPath) {
-                await this.syncTags();
+            const projectId = await this.getProjectId();
+            // First verify the commit exists
+            try {
+                await this.gitlab.Commits.show(projectId, tag.commitSha);
             }
-            if (!this.repoPath) {
-                // If still no path, try getting path from config as last resort
-                this.repoPath = this.getRepoPathFromConfig();
-                if (!this.repoPath) {
-                    throw new Error('Could not determine repository path');
-                }
+            catch (error) {
+                throw new Error(`Commit ${tag.commitSha} does not exist in GitLab repository`);
             }
-            const gitlabUrl = this.config.gitlab.host || 'https://gitlab.com';
-            const repoPath = `${gitlabUrl}/${this.repoPath}.git`;
-            const tmpDir = path.join(process.cwd(), '.tmp-git');
-            if (!fs.existsSync(tmpDir)) {
-                fs.mkdirSync(tmpDir, { recursive: true });
+            // Delete existing tag first
+            try {
+                await this.gitlab.Tags.remove(projectId, tag.name);
             }
-            await exec.exec('git', ['init'], { cwd: tmpDir });
-            await exec.exec('git', ['config', 'user.name', 'advanced-git-sync'], {
-                cwd: tmpDir
+            catch (error) {
+                // Tag might not exist, continue
+                core.debug(`Tag ${tag.name} does not exist, will create new one`);
+            }
+            // Create new tag
+            await this.gitlab.Tags.create(projectId, {
+                tag_name: tag.name,
+                ref: tag.commitSha
             });
-            await exec.exec('git', ['config', 'user.email', 'advanced-git-sync@users.noreply.github.com'], { cwd: tmpDir });
-            const githubUrl = `https://x-access-token:${this.config.github.token}@github.com/${this.config.github.owner}/${this.config.github.repo}.git`;
-            await exec.exec('git', ['remote', 'add', 'gitHub', githubUrl], {
-                cwd: tmpDir
-            });
-            await exec.exec('git', ['fetch', 'gitHub', tag.commitSha], {
-                cwd: tmpDir
-            });
-            const gitlabAuthUrl = `https://oauth2:${this.config.gitlab.token}@${repoPath.replace('https://', '')}`;
-            await exec.exec('git', ['remote', 'add', 'gitlab', gitlabAuthUrl], {
-                cwd: tmpDir
-            });
-            await exec.exec('git', ['push', '-f', 'gitlab', `${tag.commitSha}:refs/tags/${tag.name}`], { cwd: tmpDir });
-            fs.rmSync(tmpDir, { recursive: true, force: true });
         }
         catch (error) {
-            throw new Error(`Failed to update tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw new Error(`Failed to update tag ${tag.name}: ${errorMessage}`);
         }
     }
 }
@@ -54896,10 +54916,20 @@ async function syncPullRequests(source, target) {
     }
 }
 function needsUpdate(sourcePR, targetPR) {
-    return (sourcePR.title !== targetPR.title ||
+    // Check basic fields that can always be updated
+    const basicFieldsChanged = sourcePR.title !== targetPR.title ||
         sourcePR.description !== targetPR.description ||
-        !arraysEqual(sourcePR.labels, targetPR.labels) ||
-        sourcePR.state !== targetPR.state);
+        !arraysEqual(sourcePR.labels, targetPR.labels);
+    // Check state changes - be careful about invalid transitions
+    const stateChanged = sourcePR.state !== targetPR.state;
+    const validStateChange = stateChanged &&
+        // Allow closing an open PR
+        ((sourcePR.state === 'closed' && targetPR.state === 'open') ||
+            // Allow reopening a closed (but not merged) PR
+            (sourcePR.state === 'open' && targetPR.state === 'closed') ||
+            // Don't try to change state of merged PRs
+            targetPR.state !== 'merged');
+    return basicFieldsChanged || validStateChange;
 }
 function arraysEqual(a, b) {
     return JSON.stringify(a.sort()) === JSON.stringify(b.sort());
@@ -55544,10 +55574,34 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.globToRegex = globToRegex;
 exports.getGitHubRepo = getGitHubRepo;
 exports.getGitLabRepo = getGitLabRepo;
 // src/utils/repository.ts
 const github = __importStar(__nccwpck_require__(3228));
+/**
+ * Convert glob pattern to regex pattern
+ * Handles common glob patterns used for branch matching
+ */
+function globToRegex(pattern) {
+    // Handle special case for "*" - match everything
+    if (pattern === '*') {
+        return /^.*$/;
+    }
+    // Escape special regex characters except * and ?
+    let regexPattern = pattern
+        .replace(/[.+^${}()|[\]\\]/g, '\\$&') // Escape regex special chars
+        .replace(/\*/g, '.*') // Convert * to .*
+        .replace(/\?/g, '.'); // Convert ? to .
+    // Ensure the pattern matches the entire string
+    if (!regexPattern.startsWith('^')) {
+        regexPattern = '^' + regexPattern;
+    }
+    if (!regexPattern.endsWith('$')) {
+        regexPattern = regexPattern + '$';
+    }
+    return new RegExp(regexPattern);
+}
 function getGitHubRepo(config) {
     const context = github.context;
     return {

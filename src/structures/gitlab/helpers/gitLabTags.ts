@@ -99,63 +99,34 @@ export class gitlabTagHelper {
 
   async updateTag(tag: Tag): Promise<void> {
     try {
-      // Try getting path from sync first
-      if (!this.repoPath) {
-        await this.syncTags()
-      }
-      if (!this.repoPath) {
-        // If still no path, try getting path from config as last resort
-        this.repoPath = this.getRepoPathFromConfig()
+      const projectId = await this.getProjectId()
 
-        if (!this.repoPath) {
-          throw new Error('Could not determine repository path')
-        }
+      // First verify the commit exists
+      try {
+        await this.gitlab.Commits.show(projectId, tag.commitSha)
+      } catch (error) {
+        throw new Error(
+          `Commit ${tag.commitSha} does not exist in GitLab repository`
+        )
       }
 
-      const gitlabUrl = this.config.gitlab.host || 'https://gitlab.com'
-      const repoPath = `${gitlabUrl}/${this.repoPath}.git`
-      const tmpDir = path.join(process.cwd(), '.tmp-git')
-      if (!fs.existsSync(tmpDir)) {
-        fs.mkdirSync(tmpDir, { recursive: true })
+      // Delete existing tag first
+      try {
+        await this.gitlab.Tags.remove(projectId, tag.name)
+      } catch (error) {
+        // Tag might not exist, continue
+        core.debug(`Tag ${tag.name} does not exist, will create new one`)
       }
 
-      await exec.exec('git', ['init'], { cwd: tmpDir })
-      await exec.exec('git', ['config', 'user.name', 'advanced-git-sync'], {
-        cwd: tmpDir
+      // Create new tag
+      await this.gitlab.Tags.create(projectId, {
+        tag_name: tag.name,
+        ref: tag.commitSha
       })
-      await exec.exec(
-        'git',
-        ['config', 'user.email', 'advanced-git-sync@users.noreply.github.com'],
-        { cwd: tmpDir }
-      )
-
-      const githubUrl = `https://x-access-token:${this.config.github.token}@github.com/${this.config.github.owner}/${this.config.github.repo}.git`
-      await exec.exec('git', ['remote', 'add', 'gitHub', githubUrl], {
-        cwd: tmpDir
-      })
-
-      await exec.exec('git', ['fetch', 'gitHub', tag.commitSha], {
-        cwd: tmpDir
-      })
-
-      const gitlabAuthUrl = `https://oauth2:${this.config.gitlab.token}@${repoPath.replace('https://', '')}`
-      await exec.exec('git', ['remote', 'add', 'gitlab', gitlabAuthUrl], {
-        cwd: tmpDir
-      })
-
-      await exec.exec(
-        'git',
-        ['push', '-f', 'gitlab', `${tag.commitSha}:refs/tags/${tag.name}`],
-        { cwd: tmpDir }
-      )
-
-      fs.rmSync(tmpDir, { recursive: true, force: true })
     } catch (error) {
-      throw new Error(
-        `Failed to update tag ${tag.name}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      )
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
+      throw new Error(`Failed to update tag ${tag.name}: ${errorMessage}`)
     }
   }
 }

@@ -154,15 +154,34 @@ export class pullRequestHelper {
 
   async updatePullRequest(number: number, pr: PullRequest): Promise<void> {
     try {
-      await this.octokit.rest.pulls.update({
+      // Get current PR state to check if it's merged
+      const { data: currentPR } = await this.octokit.rest.pulls.get({
+        ...this.repo,
+        pull_number: number
+      })
+
+      // Prepare update payload
+      const updatePayload: any = {
         ...this.repo,
         pull_number: number,
         title: pr.title,
-        body: pr.description,
-        state: pr.state === 'merged' ? 'closed' : pr.state
-      })
+        body: pr.description
+      }
 
-      // Update labels
+      // Only update state if the PR is not merged and the state change is valid
+      if (!currentPR.merged_at) {
+        // PR is not merged, we can update the state
+        if (pr.state === 'merged') {
+          updatePayload.state = 'closed' // GitHub doesn't have 'merged' state in update
+        } else {
+          updatePayload.state = pr.state
+        }
+      }
+      // If PR is merged, we skip state updates as they're not allowed
+
+      await this.octokit.rest.pulls.update(updatePayload)
+
+      // Update labels (this is always allowed)
       await this.octokit.rest.issues.setLabels({
         ...this.repo,
         issue_number: number,

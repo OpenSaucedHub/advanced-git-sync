@@ -82,8 +82,7 @@ export class gitlabIssueHelper {
   async createIssue(issue: Issue): Promise<void> {
     try {
       const projectId = await this.getProjectId()
-      await this.gitlab.Issues.create({
-        projectId: projectId,
+      await this.gitlab.Issues.create(projectId, {
         title: issue.title,
         description: issue.body,
         labels: LabelHelper.formatForGitLab(issue.labels),
@@ -99,13 +98,11 @@ export class gitlabIssueHelper {
   async updateIssue(issueNumber: number, issue: Issue): Promise<void> {
     try {
       const projectId = await this.getProjectId()
-      await this.gitlab.Issues.edit({
-        projectId: projectId,
-        issueIid: issueNumber,
+      await this.gitlab.Issues.edit(projectId, issueNumber, {
         title: issue.title,
         description: issue.body,
         labels: LabelHelper.formatForGitLab(issue.labels),
-        stateEvent: issue.state === 'closed' ? 'close' : 'reopen'
+        state_event: issue.state === 'closed' ? 'close' : 'reopen'
       })
     } catch (error) {
       throw new Error(

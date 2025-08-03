@@ -69,12 +69,24 @@ export async function syncPullRequests(
 }
 
 function needsUpdate(sourcePR: PullRequest, targetPR: PullRequest): boolean {
-  return (
+  // Check basic fields that can always be updated
+  const basicFieldsChanged =
     sourcePR.title !== targetPR.title ||
     sourcePR.description !== targetPR.description ||
-    !arraysEqual(sourcePR.labels, targetPR.labels) ||
-    sourcePR.state !== targetPR.state
-  )
+    !arraysEqual(sourcePR.labels, targetPR.labels)
+
+  // Check state changes - be careful about invalid transitions
+  const stateChanged = sourcePR.state !== targetPR.state
+  const validStateChange =
+    stateChanged &&
+    // Allow closing an open PR
+    ((sourcePR.state === 'closed' && targetPR.state === 'open') ||
+      // Allow reopening a closed (but not merged) PR
+      (sourcePR.state === 'open' && targetPR.state === 'closed') ||
+      // Don't try to change state of merged PRs
+      targetPR.state !== 'merged')
+
+  return basicFieldsChanged || validStateChange
 }
 
 function arraysEqual(a: string[], b: string[]): boolean {

@@ -64,14 +64,36 @@ export class gitlabReleaseHelper {
   async createRelease(release: Release): Promise<void> {
     try {
       const projectId = await this.getProjectId()
+
+      // First check if the tag exists
+      let tagExists = false
+      try {
+        await this.gitlab.Tags.show(projectId, release.tag)
+        tagExists = true
+      } catch (error) {
+        // Tag doesn't exist, we'll need to create the release without a tag reference
+        core.debug(`Tag ${release.tag} does not exist in GitLab repository`)
+      }
+
+      // Create release - if tag doesn't exist, GitLab will create it automatically
+      // when we use the tag_name parameter
+      const releaseParams: any = {
+        tag_name: release.tag,
+        name: release.name,
+        description: release.body
+      }
+
+      // Only add ref if tag exists, otherwise let GitLab create the tag
+      if (tagExists) {
+        releaseParams.ref = release.tag
+      } else {
+        // Use main branch as fallback ref - GitLab will create the tag from this
+        releaseParams.ref = 'main'
+      }
+
       const createdRelease = await this.gitlab.ProjectReleases.create(
         projectId,
-        {
-          tag_name: release.tag,
-          name: release.name,
-          description: release.body,
-          ref: release.tag
-        }
+        releaseParams
       )
 
       release.id = createdRelease.tag_name
