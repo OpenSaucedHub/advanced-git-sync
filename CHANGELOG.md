@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.2.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.2...v1.2.3) (2025-08-03)
+
+
+
+## [1.2.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.2...v1.2.3) (2025-08-03)
+
+### Bug Fixes
+
+* Enhance documentation and improve local development setup ([101974f](https://github.com/OpenSaucedHub/advanced-git-sync/commit/101974f2d1e119b1074a8f0b9257e7235190a071))
+
 # [v1.2.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.1...v1.2.2) (2025-08-03)
 
 ## [1.2.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.1...v1.2.2) (2025-08-03)
