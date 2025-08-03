@@ -2,16 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.2.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.0...v1.2.1) (2025-08-03)
-
-
 
 ## [1.2.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.0...v1.2.1) (2025-08-03)
 
 ### Bug Fixes
 
-* add globToRegex utility for branch pattern matching ([987fdf2](https://github.com/OpenSaucedHub/advanced-git-sync/commit/987fdf24a6a30b7af58921cb2f47b5683e8ddb65))
+- add globToRegex utility for branch pattern matching
+  ([987fdf2](https://github.com/OpenSaucedHub/advanced-git-sync/commit/987fdf24a6a30b7af58921cb2f47b5683e8ddb65))
 
 # [v1.2.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.1.6...v1.2.0) (2025-08-01)
 

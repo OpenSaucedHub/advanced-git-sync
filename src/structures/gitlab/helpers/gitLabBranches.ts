@@ -95,7 +95,10 @@ export class gitlabBranchHelper {
 
     const gitlabUrl = this.config.gitlab.host || 'https://gitlab.com'
     const repoPath = `${gitlabUrl}/${this.repoPath}.git`
-    const tmpDir = path.join(process.cwd(), '.tmp-git')
+    const tmpDir = path.join(
+      process.cwd(),
+      `.tmp-git-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+    )
     if (!fs.existsSync(tmpDir)) {
       fs.mkdirSync(tmpDir, { recursive: true })
     }

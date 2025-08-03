@@ -62,7 +62,10 @@ export class githubBranchHelper {
 
   async update(name: string, commitSha: string): Promise<void> {
     try {
-      const tmpDir = path.join(process.cwd(), '.tmp-git')
+      const tmpDir = path.join(
+        process.cwd(),
+        `.tmp-git-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+      )
       if (!fs.existsSync(tmpDir)) {
         fs.mkdirSync(tmpDir, { recursive: true })
       }

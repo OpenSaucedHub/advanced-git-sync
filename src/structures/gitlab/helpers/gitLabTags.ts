@@ -85,11 +85,8 @@ export class gitlabTagHelper {
         )
       }
 
-      // Create tag with additional parameters
-      await this.gitlab.Tags.create(projectId, {
-        tag_name: tag.name,
-        ref: tag.commitSha
-      })
+      // Create tag with correct API parameters
+      await this.gitlab.Tags.create(projectId, tag.name, tag.commitSha)
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error)
@@ -119,10 +116,7 @@ export class gitlabTagHelper {
       }
 
       // Create new tag
-      await this.gitlab.Tags.create(projectId, {
-        tag_name: tag.name,
-        ref: tag.commitSha
-      })
+      await this.gitlab.Tags.create(projectId, tag.name, tag.commitSha)
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error)

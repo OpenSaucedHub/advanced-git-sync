@@ -52519,7 +52519,7 @@ class githubBranchHelper {
     }
     async update(name, commitSha) {
         try {
-            const tmpDir = path.join(process.cwd(), '.tmp-git');
+            const tmpDir = path.join(process.cwd(), `.tmp-git-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
             if (!fs.existsSync(tmpDir)) {
                 fs.mkdirSync(tmpDir, { recursive: true });
             }
@@ -53619,7 +53619,7 @@ class gitlabBranchHelper {
         }
         const gitlabUrl = this.config.gitlab.host || 'https://gitlab.com';
         const repoPath = `${gitlabUrl}/${this.repoPath}.git`;
-        const tmpDir = path.join(process.cwd(), '.tmp-git');
+        const tmpDir = path.join(process.cwd(), `.tmp-git-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
         if (!fs.existsSync(tmpDir)) {
             fs.mkdirSync(tmpDir, { recursive: true });
         }
@@ -54161,11 +54161,8 @@ class gitlabTagHelper {
             catch (error) {
                 throw new Error(`Commit ${tag.commitSha} does not exist in GitLab repository`);
             }
-            // Create tag with additional parameters
-            await this.gitlab.Tags.create(projectId, {
-                tag_name: tag.name,
-                ref: tag.commitSha
-            });
+            // Create tag with correct API parameters
+            await this.gitlab.Tags.create(projectId, tag.name, tag.commitSha);
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -54191,10 +54188,7 @@ class gitlabTagHelper {
                 core.debug(`Tag ${tag.name} does not exist, will create new one`);
             }
             // Create new tag
-            await this.gitlab.Tags.create(projectId, {
-                tag_name: tag.name,
-                ref: tag.commitSha
-            });
+            await this.gitlab.Tags.create(projectId, tag.name, tag.commitSha);
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
