@@ -52554,8 +52554,8 @@ class githubBranchHelper {
         return processedBranches;
     }
     async update(name, commitSha) {
+        const tmpDir = path.join(process.cwd(), `.tmp-git-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
         try {
-            const tmpDir = path.join(process.cwd(), `.tmp-git-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
             if (!fs.existsSync(tmpDir)) {
                 fs.mkdirSync(tmpDir, { recursive: true });
             }
@@ -52571,16 +52571,37 @@ class githubBranchHelper {
             await exec.exec('git', ['remote', 'add', 'gitlab', gitlabRepoPath], {
                 cwd: tmpDir
             });
-            await exec.exec('git', ['fetch', 'gitlab', commitSha], { cwd: tmpDir });
+            // Fetch the specific commit from GitLab with error handling
+            try {
+                await exec.exec('git', ['fetch', 'gitlab', commitSha], { cwd: tmpDir });
+            }
+            catch (fetchError) {
+                throw new Error(`Failed to fetch commit ${commitSha} from GitLab: ${String(fetchError)}`);
+            }
             const githubAuthUrl = `https://x-access-token:${this.config.github.token}@github.com/${this.config.github.owner}/${this.config.github.repo}.git`;
             await exec.exec('git', ['remote', 'add', 'github', githubAuthUrl], {
                 cwd: tmpDir
             });
-            await exec.exec('git', ['push', '-f', 'github', `${commitSha}:refs/heads/${name}`], { cwd: tmpDir });
-            fs.rmSync(tmpDir, { recursive: true, force: true });
+            // Push to GitHub with better error handling
+            try {
+                await exec.exec('git', ['push', '-f', 'github', `${commitSha}:refs/heads/${name}`], { cwd: tmpDir });
+            }
+            catch (pushError) {
+                const errorStr = String(pushError);
+                if (errorStr.includes('workflow') && errorStr.includes('scope')) {
+                    throw new Error(`Failed to push to GitHub: Token lacks 'workflow' scope. Please use a Personal Access Token with workflow scope instead of GITHUB_TOKEN.`);
+                }
+                throw new Error(`Failed to push branch ${name} to GitHub: ${errorStr}`);
+            }
         }
         catch (error) {
             throw new Error(`Failed to update branch ${name} on GitHub: ${String(error)}`);
+        }
+        finally {
+            // Always cleanup temp directory
+            if (fs.existsSync(tmpDir)) {
+                fs.rmSync(tmpDir, { recursive: true, force: true });
+            }
         }
     }
     async create(name, commitSha) {
@@ -53099,6 +53120,16 @@ class tagsHelper {
     }
     async createTag(tag) {
         try {
+            // First verify the commit exists in the repository
+            try {
+                await this.octokit.rest.git.getCommit({
+                    ...this.repo,
+                    commit_sha: tag.commitSha
+                });
+            }
+            catch (error) {
+                throw new Error(`Commit ${tag.commitSha} does not exist in GitHub repository`);
+            }
             // Create the tag reference
             await this.octokit.rest.git.createRef({
                 ...this.repo,
@@ -53656,26 +53687,52 @@ class gitlabBranchHelper {
         const gitlabUrl = this.config.gitlab.host || 'https://gitlab.com';
         const repoPath = `${gitlabUrl}/${this.repoPath}.git`;
         const tmpDir = path.join(process.cwd(), `.tmp-git-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
-        if (!fs.existsSync(tmpDir)) {
-            fs.mkdirSync(tmpDir, { recursive: true });
+        try {
+            if (!fs.existsSync(tmpDir)) {
+                fs.mkdirSync(tmpDir, { recursive: true });
+            }
+            await exec.exec('git', ['init'], { cwd: tmpDir });
+            await exec.exec('git', ['config', 'user.name', 'advanced-git-sync'], {
+                cwd: tmpDir
+            });
+            await exec.exec('git', ['config', 'user.email', 'advanced-git-sync@users.noreply.github.com'], { cwd: tmpDir });
+            const githubUrl = `https://x-access-token:${this.config.github.token}@github.com/${this.config.github.owner}/${this.config.github.repo}.git`;
+            await exec.exec('git', ['remote', 'add', 'github', githubUrl], {
+                cwd: tmpDir
+            });
+            // Fetch the specific commit from GitHub with error handling
+            try {
+                await exec.exec('git', ['fetch', 'github', commitSha], { cwd: tmpDir });
+            }
+            catch (fetchError) {
+                throw new Error(`Failed to fetch commit ${commitSha} from GitHub: ${String(fetchError)}`);
+            }
+            const gitlabAuthUrl = `https://oauth2:${this.config.gitlab.token}@${repoPath.replace('https://', '')}`;
+            await exec.exec('git', ['remote', 'add', 'gitlab', gitlabAuthUrl], {
+                cwd: tmpDir
+            });
+            console.log(`git push -f gitlab ${commitSha}:refs/heads/${name}`);
+            // Push to GitLab with better error handling
+            try {
+                await exec.exec('git', ['push', '-f', 'gitlab', `${commitSha}:refs/heads/${name}`], { cwd: tmpDir });
+            }
+            catch (pushError) {
+                const errorStr = String(pushError);
+                if (errorStr.includes('workflow') && errorStr.includes('scope')) {
+                    throw new Error(`Failed to push to GitLab: GitHub token lacks 'workflow' scope. Please use a Personal Access Token with workflow scope.`);
+                }
+                throw new Error(`Failed to push branch ${name} to GitLab: ${errorStr}`);
+            }
         }
-        await exec.exec('git', ['init'], { cwd: tmpDir });
-        await exec.exec('git', ['config', 'user.name', 'advanced-git-sync'], {
-            cwd: tmpDir
-        });
-        await exec.exec('git', ['config', 'user.email', 'advanced-git-sync@users.noreply.github.com'], { cwd: tmpDir });
-        const githubUrl = `https://x-access-token:${this.config.github.token}@github.com/${this.config.github.owner}/${this.config.github.repo}.git`;
-        await exec.exec('git', ['remote', 'add', 'github', githubUrl], {
-            cwd: tmpDir
-        });
-        await exec.exec('git', ['fetch', 'github', commitSha], { cwd: tmpDir });
-        const gitlabAuthUrl = `https://oauth2:${this.config.gitlab.token}@${repoPath.replace('https://', '')}`;
-        await exec.exec('git', ['remote', 'add', 'gitlab', gitlabAuthUrl], {
-            cwd: tmpDir
-        });
-        console.log(`git push -f gitlab ${commitSha}:refs/heads/${name}`);
-        await exec.exec('git', ['push', '-f', 'gitlab', `${commitSha}:refs/heads/${name}`], { cwd: tmpDir });
-        fs.rmSync(tmpDir, { recursive: true, force: true });
+        catch (error) {
+            throw new Error(`Failed to update branch ${name} on GitLab: ${String(error)}`);
+        }
+        finally {
+            // Always cleanup temp directory
+            if (fs.existsSync(tmpDir)) {
+                fs.rmSync(tmpDir, { recursive: true, force: true });
+            }
+        }
     }
     async create(name, commitSha) {
         await this.update(name, commitSha);
@@ -54397,20 +54454,34 @@ class mergeRequestHelper {
     async updatePullRequest(number, pr) {
         try {
             const projectId = await this.getProjectId();
+            // First get the current state of the MR
+            const currentMR = await this.gitlab.MergeRequests.show(projectId, number);
             if (pr.state === 'merged') {
-                // Try to merge the MR in GitLab
-                try {
-                    await this.gitlab.MergeRequests.merge(projectId, number, {
-                        should_remove_source_branch: true
-                    });
-                    return;
+                // Only try to merge if the MR is currently open and mergeable
+                if (currentMR.state === 'opened' &&
+                    currentMR.merge_status === 'can_be_merged') {
+                    try {
+                        await this.gitlab.MergeRequests.merge(projectId, number, {
+                            should_remove_source_branch: true
+                        });
+                        return;
+                    }
+                    catch (mergeError) {
+                        core.warning(`Failed to merge MR #${number}: ${mergeError instanceof Error ? mergeError.message : String(mergeError)}`);
+                        // If merge fails, close it instead
+                        await this.gitlab.MergeRequests.edit(projectId, number, {
+                            stateEvent: 'close'
+                        });
+                    }
                 }
-                catch (mergeError) {
-                    core.warning(`Failed to merge MR #${number}: ${mergeError instanceof Error ? mergeError.message : String(mergeError)}`);
-                    // If merge fails (e.g., due to missing branch), close it instead
-                    await this.gitlab.MergeRequests.edit(projectId, number, {
-                        stateEvent: 'close'
-                    });
+                else {
+                    // MR is already merged/closed or cannot be merged, just close it
+                    core.info(`MR #${number} is already ${currentMR.state}, closing instead of merging`);
+                    if (currentMR.state === 'opened') {
+                        await this.gitlab.MergeRequests.edit(projectId, number, {
+                            stateEvent: 'close'
+                        });
+                    }
                 }
             }
             else {
@@ -55211,7 +55282,15 @@ async function syncTags(source, target) {
                 }
             }
             catch (error) {
-                core.warning(`Failed to sync tag ${tag.name}: ${error instanceof Error ? error.message : String(error)}`);
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                // Check if this is a commit not found error and provide helpful message
+                if (errorMessage.includes('does not exist in') ||
+                    errorMessage.includes('Not Found')) {
+                    core.warning(`Skipping tag ${tag.name}: Commit ${tag.commitSha} does not exist in target repository. This is normal when repositories have different commit histories.`);
+                }
+                else {
+                    core.warning(`Failed to sync tag ${tag.name}: ${errorMessage}`);
+                }
             }
         }
         return tagsToSync;

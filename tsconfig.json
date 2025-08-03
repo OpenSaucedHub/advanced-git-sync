@@ -20,7 +20,7 @@
       "@/*": ["./*"],
       "@src/*": ["./src/*"],
       "@utils/*": ["./src/utils/*"],
-      "@handlers/*": ["src/handlers/*"]
+      "@handlers/*": ["./src/handlers/*"]
     },
     "typeRoots": ["node_modules/@types", "@types"]
   },
