@@ -52674,6 +52674,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.githubIssueHelper = void 0;
 const core = __importStar(__nccwpck_require__(7484));
 const labelsUtils_1 = __nccwpck_require__(7569);
+const commentUtils_1 = __nccwpck_require__(1383);
 class githubIssueHelper {
     octokit;
     repo;
@@ -52694,20 +52695,53 @@ class githubIssueHelper {
                 state: 'all',
                 per_page: 100
             });
-            const processedIssues = issues
+            const commentSyncOptions = (0, commentUtils_1.getCommentSyncOptions)(this.config, 'issues');
+            const processedIssues = await Promise.all(issues
                 .filter((issue) => !issue.pull_request)
-                .map((issue) => ({
-                title: issue.title,
-                body: issue.body || '',
-                labels: labelsUtils_1.LabelHelper.combineLabels(issue.labels, this.config, 'github'),
-                number: issue.number,
-                state: issue.state
+                .map(async (issue) => {
+                let comments = [];
+                // Fetch comments if comment sync is enabled
+                if (commentSyncOptions.enabled) {
+                    comments = await this.fetchIssueComments(issue.number);
+                }
+                return {
+                    title: issue.title,
+                    body: issue.body || '',
+                    labels: labelsUtils_1.LabelHelper.combineLabels(issue.labels, this.config, 'github'),
+                    number: issue.number,
+                    state: issue.state,
+                    comments
+                };
             }));
             core.info(`\x1b[32m✓ Issues Fetched: ${processedIssues.length} total issues\x1b[0m`);
             return processedIssues;
         }
         catch (error) {
             core.warning(`\x1b[31m❌ Failed to Fetch GitHub Issues: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+            return [];
+        }
+    }
+    /**
+     * Fetch comments for a specific issue
+     */
+    async fetchIssueComments(issueNumber) {
+        try {
+            const { data: comments } = await this.octokit.rest.issues.listComments({
+                ...this.repo,
+                issue_number: issueNumber,
+                per_page: 100
+            });
+            return comments.map((comment) => ({
+                id: comment.id,
+                body: comment.body || '',
+                author: comment.user?.login || '',
+                createdAt: comment.created_at,
+                updatedAt: comment.updated_at,
+                sourceUrl: comment.html_url
+            }));
+        }
+        catch (error) {
+            core.warning(`Failed to fetch comments for issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
             return [];
         }
     }
@@ -52740,6 +52774,36 @@ class githubIssueHelper {
         catch (error) {
             // Throw a descriptive error if issue update fails
             throw new Error(`Failed to update issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    /**
+     * Create a comment on an issue
+     */
+    async createIssueComment(issueNumber, body) {
+        try {
+            await this.octokit.rest.issues.createComment({
+                ...this.repo,
+                issue_number: issueNumber,
+                body
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to create comment on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    /**
+     * Update a comment on an issue
+     */
+    async updateIssueComment(commentId, body) {
+        try {
+            await this.octokit.rest.issues.updateComment({
+                ...this.repo,
+                comment_id: commentId,
+                body
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update comment #${commentId}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }
@@ -53290,7 +53354,7 @@ class pullRequestHelper {
                     labels: normalizedLabels
                 });
             }
-            // Sync comments
+            // Sync comments (formatting will be handled in PR sync logic)
             if (pr.comments) {
                 for (const comment of pr.comments) {
                     await this.octokit.rest.issues.createComment({
@@ -53776,6 +53840,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.gitlabIssueHelper = void 0;
 const core = __importStar(__nccwpck_require__(7484));
 const labelsUtils_1 = __nccwpck_require__(7569);
+const commentUtils_1 = __nccwpck_require__(1383);
 class gitlabIssueHelper {
     gitlab;
     config;
@@ -53795,18 +53860,49 @@ class gitlabIssueHelper {
             const issues = await this.gitlab.Issues.all({
                 projectId: projectId
             });
-            const processedIssues = issues.map((issue) => ({
-                title: issue.title,
-                body: issue.description || '',
-                labels: labelsUtils_1.LabelHelper.combineLabels(issue.labels, this.config, 'gitlab'),
-                number: issue.iid,
-                state: (issue.state === 'opened' ? 'open' : 'closed')
+            const commentSyncOptions = (0, commentUtils_1.getCommentSyncOptions)(this.config, 'issues');
+            const processedIssues = await Promise.all(issues.map(async (issue) => {
+                let comments = [];
+                // Fetch comments if comment sync is enabled
+                if (commentSyncOptions.enabled) {
+                    comments = await this.fetchIssueComments(projectId, issue.iid);
+                }
+                return {
+                    title: issue.title,
+                    body: issue.description || '',
+                    labels: labelsUtils_1.LabelHelper.combineLabels(issue.labels, this.config, 'gitlab'),
+                    number: issue.iid,
+                    state: (issue.state === 'opened' ? 'open' : 'closed'),
+                    comments
+                };
             }));
             core.info(`\x1b[32m✓ Issues Fetched: ${processedIssues.length} total issues\x1b[0m`);
             return processedIssues;
         }
         catch (error) {
             core.warning(`\x1b[31m❌ Failed to Fetch GitLab Issues: ${error instanceof Error ? error.message : String(error)}\x1b[0m`);
+            return [];
+        }
+    }
+    /**
+     * Fetch comments (notes) for a specific issue
+     */
+    async fetchIssueComments(projectId, issueIid) {
+        try {
+            const notes = await this.gitlab.IssueNotes.all(projectId, issueIid);
+            return notes
+                .filter((note) => !note.system) // Filter out system notes
+                .map((note) => ({
+                id: note.id,
+                body: note.body || '',
+                author: note.author?.username || '',
+                createdAt: note.created_at,
+                updatedAt: note.updated_at,
+                sourceUrl: `${this.config.gitlab.host || 'https://gitlab.com'}/${this.config.gitlab.owner}/${this.config.gitlab.repo}/-/issues/${issueIid}#note_${note.id}`
+            }));
+        }
+        catch (error) {
+            core.warning(`Failed to fetch comments for issue #${issueIid}: ${error instanceof Error ? error.message : String(error)}`);
             return [];
         }
     }
@@ -53836,6 +53932,32 @@ class gitlabIssueHelper {
         }
         catch (error) {
             throw new Error(`Failed to update issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    /**
+     * Create a comment (note) on an issue
+     */
+    async createIssueComment(issueNumber, body) {
+        try {
+            const projectId = await this.getProjectId();
+            await this.gitlab.IssueNotes.create(projectId, issueNumber, body);
+        }
+        catch (error) {
+            throw new Error(`Failed to create comment on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    /**
+     * Update a comment (note) on an issue
+     */
+    async updateIssueComment(issueNumber, noteId, body) {
+        try {
+            const projectId = await this.getProjectId();
+            await this.gitlab.IssueNotes.edit(projectId, issueNumber, noteId, {
+                body
+            });
+        }
+        catch (error) {
+            throw new Error(`Failed to update comment #${noteId} on issue #${issueNumber}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 }
@@ -54705,6 +54827,7 @@ exports.syncIssues = syncIssues;
 // src/sync/issues.ts
 const core = __importStar(__nccwpck_require__(7484));
 const GitHub_1 = __nccwpck_require__(4821);
+const commentUtils_1 = __nccwpck_require__(1383);
 function arraysEqual(a, b) {
     return a.length === b.length && a.every((val, index) => val === b[index]);
 }
@@ -54789,6 +54912,11 @@ async function syncIssues(source, target) {
                             sourceIssue: issueToCreate,
                             action: 'create'
                         });
+                        // Sync comments if enabled
+                        if (comparison.sourceIssue.comments &&
+                            comparison.sourceIssue.comments.length > 0) {
+                            await syncIssueComments(source, target, comparison.sourceIssue, issueToCreate);
+                        }
                         break;
                     }
                     case 'update':
@@ -54803,6 +54931,11 @@ async function syncIssues(source, target) {
                             ...comparison,
                             sourceIssue: issueToUpdate
                         });
+                        // Sync comments if enabled
+                        if (comparison.sourceIssue.comments &&
+                            comparison.sourceIssue.comments.length > 0) {
+                            await syncIssueComments(source, target, comparison.sourceIssue, issueToUpdate);
+                        }
                         break;
                     case 'skip':
                         core.debug(`⏭️ Skipping "${comparison.sourceIssue.title}" - already in sync`);
@@ -54839,6 +54972,101 @@ async function updateIssue(target, comparison) {
         labels: comparison.sourceIssue.labels
     }, null, 2));
     await target.updateIssue(comparison.targetIssue.number, comparison.sourceIssue);
+}
+/**
+ * Synchronize comments between source and target issues
+ */
+async function syncIssueComments(source, target, sourceIssue, targetIssue) {
+    if (!sourceIssue.comments || !targetIssue.number) {
+        return;
+    }
+    const commentSyncOptions = (0, commentUtils_1.getCommentSyncOptions)(source.config, 'issues');
+    if (!commentSyncOptions.enabled) {
+        return;
+    }
+    core.info(`💬 Syncing ${sourceIssue.comments.length} comments for issue "${sourceIssue.title}"`);
+    try {
+        // Fetch existing comments on target issue to avoid duplicates
+        const existingComments = await getExistingTargetComments(target, targetIssue.number);
+        for (const sourceComment of sourceIssue.comments) {
+            // Skip if comment is already synced
+            const existingComment = findExistingComment(sourceComment, existingComments);
+            if (existingComment) {
+                // Check if update is needed
+                if (commentSyncOptions.handleUpdates &&
+                    commentUtils_1.CommentFormatter.needsCommentUpdate(sourceComment, existingComment)) {
+                    const formattedComment = commentUtils_1.CommentFormatter.formatSyncedComment(sourceComment, source, sourceIssue.number, commentSyncOptions);
+                    await updateTargetComment(target, targetIssue.number, existingComment.id, formattedComment);
+                    core.info(`🔄 Updated comment by @${sourceComment.author}`);
+                }
+            }
+            else {
+                // Create new comment
+                const formattedComment = commentUtils_1.CommentFormatter.formatSyncedComment(sourceComment, source, sourceIssue.number, commentSyncOptions);
+                await createTargetComment(target, targetIssue.number, formattedComment);
+                core.info(`💬 Created comment by @${sourceComment.author}`);
+            }
+        }
+    }
+    catch (error) {
+        core.warning(`Failed to sync comments for issue "${sourceIssue.title}": ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+/**
+ * Get existing comments on target issue
+ */
+async function getExistingTargetComments(target, issueNumber) {
+    if (target instanceof GitHub_1.GitHubClient) {
+        return await target.issue.fetchIssueComments(issueNumber);
+    }
+    else {
+        // For GitLab, we need to get the project ID through the helper
+        // Since getProjectId is private, we'll use a workaround
+        try {
+            // Try to fetch comments directly through the issues helper
+            const projectId = await target.getProjectId();
+            return await target.issues.fetchIssueComments(projectId, issueNumber);
+        }
+        catch (error) {
+            core.warning(`Failed to fetch existing comments: ${error}`);
+            return [];
+        }
+    }
+}
+/**
+ * Find existing comment that matches the source comment
+ */
+function findExistingComment(sourceComment, existingComments) {
+    return existingComments.find(comment => {
+        // Check if this is a synced comment from the same source
+        if (!commentUtils_1.CommentFormatter.isCommentSynced(comment.body)) {
+            return false;
+        }
+        const originalCommentId = commentUtils_1.CommentFormatter.extractOriginalCommentId(comment.body);
+        return originalCommentId === sourceComment.id;
+    });
+}
+/**
+ * Create a comment on target issue
+ */
+async function createTargetComment(target, issueNumber, body) {
+    if (target instanceof GitHub_1.GitHubClient) {
+        await target.issue.createIssueComment(issueNumber, body);
+    }
+    else {
+        await target.issues.createIssueComment(issueNumber, body);
+    }
+}
+/**
+ * Update a comment on target issue
+ */
+async function updateTargetComment(target, issueNumber, commentId, body) {
+    if (target instanceof GitHub_1.GitHubClient) {
+        await target.issue.updateIssueComment(commentId, body);
+    }
+    else {
+        await target.issues.updateIssueComment(issueNumber, commentId, body);
+    }
 }
 function logSyncPlan(comparisons) {
     const create = comparisons.filter(c => c.action === 'create').length;
@@ -54901,6 +55129,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.syncPullRequests = syncPullRequests;
 const core = __importStar(__nccwpck_require__(7484));
+const commentUtils_1 = __nccwpck_require__(1383);
 function logSyncPlan(sourcePRs, targetPRs) {
     const toCreate = sourcePRs.filter(sourcePR => !targetPRs.find(pr => pr.title === sourcePR.title)).length;
     const toUpdate = sourcePRs.filter(sourcePR => {
@@ -54948,7 +55177,9 @@ async function syncPullRequests(source, target) {
             const targetPR = targetPRs.find(pr => pr.title === sourcePR.title);
             if (!targetPR) {
                 core.info(`🆕 Creating: ${sourcePR.title} (${sourcePR.state})`);
-                await target.createPullRequest(sourcePR);
+                // Format comments with proper attribution before creating PR
+                const prToCreate = await formatPRComments(source, sourcePR);
+                await target.createPullRequest(prToCreate);
             }
             else {
                 if (needsUpdate(sourcePR, targetPR)) {
@@ -54987,6 +55218,29 @@ function needsUpdate(sourcePR, targetPR) {
 }
 function arraysEqual(a, b) {
     return JSON.stringify(a.sort()) === JSON.stringify(b.sort());
+}
+/**
+ * Format PR comments with proper attribution
+ */
+async function formatPRComments(source, sourcePR) {
+    if (!sourcePR.comments || sourcePR.comments.length === 0) {
+        return sourcePR;
+    }
+    const commentSyncOptions = (0, commentUtils_1.getCommentSyncOptions)(source.config, 'pullRequests');
+    if (!commentSyncOptions.enabled) {
+        return sourcePR;
+    }
+    const formattedComments = sourcePR.comments.map(comment => {
+        const formattedBody = commentUtils_1.CommentFormatter.formatSyncedComment(comment, source, sourcePR.number, commentSyncOptions);
+        return {
+            ...comment,
+            body: formattedBody
+        };
+    });
+    return {
+        ...sourcePR,
+        comments: formattedComments
+    };
 }
 
 
@@ -55530,14 +55784,78 @@ exports.PRConfigSchema = zod_1.z.object({
     labels: zod_1.z
         .any()
         .transform(normalizeLabels)
-        .pipe(zod_1.z.union([zod_1.z.string(), zod_1.z.array(zod_1.z.string())]))
+        .pipe(zod_1.z.union([zod_1.z.string(), zod_1.z.array(zod_1.z.string())])),
+    comments: zod_1.z
+        .object({
+        enabled: zod_1.z.boolean().default(false),
+        attribution: zod_1.z
+            .object({
+            includeAuthor: zod_1.z.boolean().default(true),
+            includeTimestamp: zod_1.z.boolean().default(true),
+            includeSourceLink: zod_1.z.boolean().default(true),
+            format: zod_1.z.enum(['quoted', 'inline', 'minimal']).default('quoted')
+        })
+            .default({
+            includeAuthor: true,
+            includeTimestamp: true,
+            includeSourceLink: true,
+            format: 'quoted'
+        }),
+        handleUpdates: zod_1.z.boolean().default(true),
+        preserveFormatting: zod_1.z.boolean().default(true),
+        syncReplies: zod_1.z.boolean().default(true)
+    })
+        .default({
+        enabled: false,
+        attribution: {
+            includeAuthor: true,
+            includeTimestamp: true,
+            includeSourceLink: true,
+            format: 'quoted'
+        },
+        handleUpdates: true,
+        preserveFormatting: true,
+        syncReplies: true
+    })
 });
 exports.IssueConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
     labels: zod_1.z
         .any()
         .transform(normalizeLabels)
-        .pipe(zod_1.z.union([zod_1.z.string(), zod_1.z.array(zod_1.z.string())]))
+        .pipe(zod_1.z.union([zod_1.z.string(), zod_1.z.array(zod_1.z.string())])),
+    comments: zod_1.z
+        .object({
+        enabled: zod_1.z.boolean().default(false),
+        attribution: zod_1.z
+            .object({
+            includeAuthor: zod_1.z.boolean().default(true),
+            includeTimestamp: zod_1.z.boolean().default(true),
+            includeSourceLink: zod_1.z.boolean().default(true),
+            format: zod_1.z.enum(['quoted', 'inline', 'minimal']).default('quoted')
+        })
+            .default({
+            includeAuthor: true,
+            includeTimestamp: true,
+            includeSourceLink: true,
+            format: 'quoted'
+        }),
+        handleUpdates: zod_1.z.boolean().default(true),
+        preserveFormatting: zod_1.z.boolean().default(true),
+        syncReplies: zod_1.z.boolean().default(true)
+    })
+        .default({
+        enabled: false,
+        attribution: {
+            includeAuthor: true,
+            includeTimestamp: true,
+            includeSourceLink: true,
+            format: 'quoted'
+        },
+        handleUpdates: true,
+        preserveFormatting: true,
+        syncReplies: true
+    })
 });
 exports.ReleaseConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
@@ -55617,6 +55935,194 @@ __exportStar(__nccwpck_require__(2857), exports);
 
 /***/ }),
 
+/***/ 1383:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CommentFormatter = void 0;
+exports.getCommentSyncOptions = getCommentSyncOptions;
+const GitHub_1 = __nccwpck_require__(4821);
+class CommentFormatter {
+    /**
+     * Format a comment with proper attribution for synchronization
+     */
+    static formatSyncedComment(comment, sourceClient, issueNumber, options) {
+        const repoInfo = sourceClient.getRepoInfo();
+        const platform = sourceClient instanceof GitHub_1.GitHubClient ? 'GitHub' : 'GitLab';
+        let formattedComment = '';
+        // Add attribution header based on format
+        switch (options.attribution.format) {
+            case 'quoted':
+                formattedComment = this.formatQuotedComment(comment, repoInfo, platform, issueNumber, options);
+                break;
+            case 'inline':
+                formattedComment = this.formatInlineComment(comment, repoInfo, platform, issueNumber, options);
+                break;
+            case 'minimal':
+                formattedComment = this.formatMinimalComment(comment, repoInfo, platform, issueNumber, options);
+                break;
+        }
+        return formattedComment;
+    }
+    /**
+     * Format comment in quoted style (default)
+     */
+    static formatQuotedComment(comment, repoInfo, platform, issueNumber, options) {
+        let header = `**💬 Comment by @${comment.author || 'unknown'} on ${platform}**`;
+        if (options.attribution.includeSourceLink && comment.sourceUrl) {
+            header += ` ([original](${comment.sourceUrl}))`;
+        }
+        let body = comment.body;
+        if (options.preserveFormatting) {
+            body = this.preserveMarkdownFormatting(body);
+        }
+        let quotedBody = body
+            .split('\n')
+            .map(line => `> ${line}`)
+            .join('\n');
+        let footer = '';
+        if (options.attribution.includeTimestamp && comment.createdAt) {
+            const date = new Date(comment.createdAt).toISOString().split('T')[0];
+            footer = `\n---\n*Synced from ${platform} on ${date}*`;
+        }
+        return `${header}\n\n${quotedBody}${footer}`;
+    }
+    /**
+     * Format comment in inline style
+     */
+    static formatInlineComment(comment, repoInfo, platform, issueNumber, options) {
+        let prefix = `**@${comment.author || 'unknown'}** (${platform}): `;
+        if (options.attribution.includeSourceLink && comment.sourceUrl) {
+            prefix += `[🔗](${comment.sourceUrl}) `;
+        }
+        let body = comment.body;
+        if (options.preserveFormatting) {
+            body = this.preserveMarkdownFormatting(body);
+        }
+        return `${prefix}${body}`;
+    }
+    /**
+     * Format comment in minimal style
+     */
+    static formatMinimalComment(comment, repoInfo, platform, issueNumber, options) {
+        let body = comment.body;
+        if (options.preserveFormatting) {
+            body = this.preserveMarkdownFormatting(body);
+        }
+        let suffix = '';
+        if (options.attribution.includeAuthor) {
+            suffix = ` — @${comment.author || 'unknown'}`;
+        }
+        return `${body}${suffix}`;
+    }
+    /**
+     * Preserve markdown formatting in comments
+     */
+    static preserveMarkdownFormatting(body) {
+        // Handle code blocks
+        body = body.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+            return `\`\`\`${lang || ''}\n${code}\`\`\``;
+        });
+        // Handle inline code
+        body = body.replace(/`([^`]+)`/g, '`$1`');
+        // Handle links - preserve them as-is
+        body = body.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '[$1]($2)');
+        // Handle @mentions - convert to plain text to avoid unwanted notifications
+        body = body.replace(/@(\w+)/g, '\\@$1');
+        // Handle issue/PR references - convert to plain text
+        body = body.replace(/#(\d+)/g, '\\#$1');
+        return body;
+    }
+    /**
+     * Generate source URL for a comment
+     */
+    static generateCommentSourceUrl(sourceClient, issueNumber, commentId) {
+        const repoInfo = sourceClient.getRepoInfo();
+        if (sourceClient instanceof GitHub_1.GitHubClient) {
+            return `${repoInfo.url}/issues/${issueNumber}#issuecomment-${commentId}`;
+        }
+        else {
+            // GitLab
+            return `${repoInfo.url}/-/issues/${issueNumber}#note_${commentId}`;
+        }
+    }
+    /**
+     * Check if a comment is already synced (to avoid duplicates)
+     */
+    static isCommentSynced(commentBody) {
+        return (commentBody.includes('💬 Comment by @') ||
+            commentBody.includes('Synced from GitHub') ||
+            commentBody.includes('Synced from GitLab'));
+    }
+    /**
+     * Extract original comment ID from synced comment
+     */
+    static extractOriginalCommentId(commentBody) {
+        const match = commentBody.match(/issuecomment-(\d+)|note_(\d+)/);
+        if (match) {
+            return parseInt(match[1] || match[2]);
+        }
+        return null;
+    }
+    /**
+     * Compare comments to determine if update is needed
+     */
+    static needsCommentUpdate(sourceComment, targetComment) {
+        // Extract the original body from the synced comment
+        const targetBody = this.extractOriginalBody(targetComment.body);
+        return (sourceComment.body !== targetBody ||
+            sourceComment.updatedAt !== targetComment.updatedAt);
+    }
+    /**
+     * Extract original comment body from synced comment
+     */
+    static extractOriginalBody(syncedBody) {
+        // For quoted format, extract content between > markers
+        if (syncedBody.includes('> ')) {
+            const lines = syncedBody.split('\n');
+            const quotedLines = lines.filter(line => line.startsWith('> '));
+            return quotedLines.map(line => line.substring(2)).join('\n');
+        }
+        // For inline format, extract content after the prefix
+        const inlineMatch = syncedBody.match(/\*\*@\w+\*\* \([^)]+\): (.+)/);
+        if (inlineMatch) {
+            return inlineMatch[1];
+        }
+        // For minimal format, extract content before the suffix
+        const minimalMatch = syncedBody.match(/(.+) — @\w+$/);
+        if (minimalMatch) {
+            return minimalMatch[1];
+        }
+        return syncedBody;
+    }
+}
+exports.CommentFormatter = CommentFormatter;
+/**
+ * Helper to get comment sync options from config
+ */
+function getCommentSyncOptions(config, type) {
+    const syncConfig = type === 'issues'
+        ? config.github.sync?.issues || config.gitlab.sync?.issues
+        : config.github.sync?.pullRequests || config.gitlab.sync?.pullRequests;
+    return {
+        enabled: syncConfig?.comments?.enabled || false,
+        attribution: {
+            includeAuthor: syncConfig?.comments?.attribution?.includeAuthor ?? true,
+            includeTimestamp: syncConfig?.comments?.attribution?.includeTimestamp ?? true,
+            includeSourceLink: syncConfig?.comments?.attribution?.includeSourceLink ?? true,
+            format: syncConfig?.comments?.attribution?.format || 'quoted'
+        },
+        handleUpdates: syncConfig?.comments?.handleUpdates ?? true,
+        preserveFormatting: syncConfig?.comments?.preserveFormatting ?? true,
+        syncReplies: syncConfig?.comments?.syncReplies ?? true
+    };
+}
+
+
+/***/ }),
+
 /***/ 4325:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -55673,11 +56179,35 @@ function getDefaultConfig() {
                 pullRequests: {
                     enabled: true,
                     autoMerge: false,
-                    labels: ['synced']
+                    labels: ['synced'],
+                    comments: {
+                        enabled: false,
+                        attribution: {
+                            includeAuthor: true,
+                            includeTimestamp: true,
+                            includeSourceLink: true,
+                            format: 'quoted'
+                        },
+                        handleUpdates: true,
+                        preserveFormatting: true,
+                        syncReplies: true
+                    }
                 },
                 issues: {
                     enabled: true,
-                    labels: ['synced']
+                    labels: ['synced'],
+                    comments: {
+                        enabled: false,
+                        attribution: {
+                            includeAuthor: true,
+                            includeTimestamp: true,
+                            includeSourceLink: true,
+                            format: 'quoted'
+                        },
+                        handleUpdates: true,
+                        preserveFormatting: true,
+                        syncReplies: true
+                    }
                 },
                 releases: {
                     enabled: true,
@@ -55711,11 +56241,35 @@ function getDefaultConfig() {
                 pullRequests: {
                     enabled: true,
                     autoMerge: false,
-                    labels: ['synced']
+                    labels: ['synced'],
+                    comments: {
+                        enabled: false,
+                        attribution: {
+                            includeAuthor: true,
+                            includeTimestamp: true,
+                            includeSourceLink: true,
+                            format: 'quoted'
+                        },
+                        handleUpdates: true,
+                        preserveFormatting: true,
+                        syncReplies: true
+                    }
                 },
                 issues: {
                     enabled: true,
-                    labels: ['synced']
+                    labels: ['synced'],
+                    comments: {
+                        enabled: false,
+                        attribution: {
+                            includeAuthor: true,
+                            includeTimestamp: true,
+                            includeSourceLink: true,
+                            format: 'quoted'
+                        },
+                        handleUpdates: true,
+                        preserveFormatting: true,
+                        syncReplies: true
+                    }
                 },
                 releases: {
                     enabled: true,

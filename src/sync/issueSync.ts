@@ -2,8 +2,9 @@
 import * as core from '@actions/core'
 import { GitHubClient } from '../structures/github/GitHub'
 
-import { IssueComparison, Issue } from '../types'
+import { IssueComparison, Issue, Comment } from '../types'
 import { GitLabClient } from '../structures/gitlab/GitLab'
+import { getCommentSyncOptions, CommentFormatter } from '../utils/commentUtils'
 
 function arraysEqual(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((val, index) => val === b[index])
@@ -117,6 +118,19 @@ export async function syncIssues(
               sourceIssue: issueToCreate,
               action: 'create'
             })
+
+            // Sync comments if enabled
+            if (
+              comparison.sourceIssue.comments &&
+              comparison.sourceIssue.comments.length > 0
+            ) {
+              await syncIssueComments(
+                source,
+                target,
+                comparison.sourceIssue,
+                issueToCreate
+              )
+            }
             break
           }
           case 'update':
@@ -131,6 +145,19 @@ export async function syncIssues(
               ...comparison,
               sourceIssue: issueToUpdate
             })
+
+            // Sync comments if enabled
+            if (
+              comparison.sourceIssue.comments &&
+              comparison.sourceIssue.comments.length > 0
+            ) {
+              await syncIssueComments(
+                source,
+                target,
+                comparison.sourceIssue,
+                issueToUpdate
+              )
+            }
             break
           case 'skip':
             core.debug(
@@ -195,6 +222,158 @@ async function updateIssue(
     comparison.targetIssue.number,
     comparison.sourceIssue
   )
+}
+
+/**
+ * Synchronize comments between source and target issues
+ */
+async function syncIssueComments(
+  source: GitHubClient | GitLabClient,
+  target: GitHubClient | GitLabClient,
+  sourceIssue: Issue,
+  targetIssue: Issue
+): Promise<void> {
+  if (!sourceIssue.comments || !targetIssue.number) {
+    return
+  }
+
+  const commentSyncOptions = getCommentSyncOptions(source.config, 'issues')
+
+  if (!commentSyncOptions.enabled) {
+    return
+  }
+
+  core.info(
+    `💬 Syncing ${sourceIssue.comments.length} comments for issue "${sourceIssue.title}"`
+  )
+
+  try {
+    // Fetch existing comments on target issue to avoid duplicates
+    const existingComments = await getExistingTargetComments(
+      target,
+      targetIssue.number
+    )
+
+    for (const sourceComment of sourceIssue.comments) {
+      // Skip if comment is already synced
+      const existingComment = findExistingComment(
+        sourceComment,
+        existingComments
+      )
+
+      if (existingComment) {
+        // Check if update is needed
+        if (
+          commentSyncOptions.handleUpdates &&
+          CommentFormatter.needsCommentUpdate(sourceComment, existingComment)
+        ) {
+          const formattedComment = CommentFormatter.formatSyncedComment(
+            sourceComment,
+            source,
+            sourceIssue.number!,
+            commentSyncOptions
+          )
+          await updateTargetComment(
+            target,
+            targetIssue.number,
+            existingComment.id!,
+            formattedComment
+          )
+          core.info(`🔄 Updated comment by @${sourceComment.author}`)
+        }
+      } else {
+        // Create new comment
+        const formattedComment = CommentFormatter.formatSyncedComment(
+          sourceComment,
+          source,
+          sourceIssue.number!,
+          commentSyncOptions
+        )
+        await createTargetComment(target, targetIssue.number, formattedComment)
+        core.info(`💬 Created comment by @${sourceComment.author}`)
+      }
+    }
+  } catch (error) {
+    core.warning(
+      `Failed to sync comments for issue "${sourceIssue.title}": ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
+}
+
+/**
+ * Get existing comments on target issue
+ */
+async function getExistingTargetComments(
+  target: GitHubClient | GitLabClient,
+  issueNumber: number
+): Promise<Comment[]> {
+  if (target instanceof GitHubClient) {
+    return await target.issue.fetchIssueComments(issueNumber)
+  } else {
+    // For GitLab, we need to get the project ID through the helper
+    // Since getProjectId is private, we'll use a workaround
+    try {
+      // Try to fetch comments directly through the issues helper
+      const projectId = await (target as any).getProjectId()
+      return await target.issues.fetchIssueComments(projectId, issueNumber)
+    } catch (error) {
+      core.warning(`Failed to fetch existing comments: ${error}`)
+      return []
+    }
+  }
+}
+
+/**
+ * Find existing comment that matches the source comment
+ */
+function findExistingComment(
+  sourceComment: Comment,
+  existingComments: Comment[]
+): Comment | undefined {
+  return existingComments.find(comment => {
+    // Check if this is a synced comment from the same source
+    if (!CommentFormatter.isCommentSynced(comment.body)) {
+      return false
+    }
+
+    const originalCommentId = CommentFormatter.extractOriginalCommentId(
+      comment.body
+    )
+    return originalCommentId === sourceComment.id
+  })
+}
+
+/**
+ * Create a comment on target issue
+ */
+async function createTargetComment(
+  target: GitHubClient | GitLabClient,
+  issueNumber: number,
+  body: string
+): Promise<void> {
+  if (target instanceof GitHubClient) {
+    await target.issue.createIssueComment(issueNumber, body)
+  } else {
+    await target.issues.createIssueComment(issueNumber, body)
+  }
+}
+
+/**
+ * Update a comment on target issue
+ */
+async function updateTargetComment(
+  target: GitHubClient | GitLabClient,
+  issueNumber: number,
+  commentId: number,
+  body: string
+): Promise<void> {
+  if (target instanceof GitHubClient) {
+    await target.issue.updateIssueComment(commentId, body)
+  } else {
+    await target.issues.updateIssueComment(issueNumber, commentId, body)
+  }
 }
 
 function logSyncPlan(comparisons: IssueComparison[]): void {

@@ -18,10 +18,42 @@ export declare const PRConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     autoMerge: z.ZodBoolean;
     labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+    comments: z.ZodDefault<z.ZodObject<{
+        enabled: z.ZodDefault<z.ZodBoolean>;
+        attribution: z.ZodDefault<z.ZodObject<{
+            includeAuthor: z.ZodDefault<z.ZodBoolean>;
+            includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+            includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+            format: z.ZodDefault<z.ZodEnum<{
+                quoted: "quoted";
+                inline: "inline";
+                minimal: "minimal";
+            }>>;
+        }, z.core.$strip>>;
+        handleUpdates: z.ZodDefault<z.ZodBoolean>;
+        preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+        syncReplies: z.ZodDefault<z.ZodBoolean>;
+    }, z.core.$strip>>;
 }, z.core.$strip>;
 export declare const IssueConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+    comments: z.ZodDefault<z.ZodObject<{
+        enabled: z.ZodDefault<z.ZodBoolean>;
+        attribution: z.ZodDefault<z.ZodObject<{
+            includeAuthor: z.ZodDefault<z.ZodBoolean>;
+            includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+            includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+            format: z.ZodDefault<z.ZodEnum<{
+                quoted: "quoted";
+                inline: "inline";
+                minimal: "minimal";
+            }>>;
+        }, z.core.$strip>>;
+        handleUpdates: z.ZodDefault<z.ZodBoolean>;
+        preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+        syncReplies: z.ZodDefault<z.ZodBoolean>;
+    }, z.core.$strip>>;
 }, z.core.$strip>;
 export declare const ReleaseConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
@@ -68,10 +100,42 @@ export declare const SyncConfigSchema: z.ZodObject<{
         enabled: z.ZodBoolean;
         autoMerge: z.ZodBoolean;
         labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+        comments: z.ZodDefault<z.ZodObject<{
+            enabled: z.ZodDefault<z.ZodBoolean>;
+            attribution: z.ZodDefault<z.ZodObject<{
+                includeAuthor: z.ZodDefault<z.ZodBoolean>;
+                includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+                includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+                format: z.ZodDefault<z.ZodEnum<{
+                    quoted: "quoted";
+                    inline: "inline";
+                    minimal: "minimal";
+                }>>;
+            }, z.core.$strip>>;
+            handleUpdates: z.ZodDefault<z.ZodBoolean>;
+            preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+            syncReplies: z.ZodDefault<z.ZodBoolean>;
+        }, z.core.$strip>>;
     }, z.core.$strip>;
     issues: z.ZodObject<{
         enabled: z.ZodBoolean;
         labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+        comments: z.ZodDefault<z.ZodObject<{
+            enabled: z.ZodDefault<z.ZodBoolean>;
+            attribution: z.ZodDefault<z.ZodObject<{
+                includeAuthor: z.ZodDefault<z.ZodBoolean>;
+                includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+                includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+                format: z.ZodDefault<z.ZodEnum<{
+                    quoted: "quoted";
+                    inline: "inline";
+                    minimal: "minimal";
+                }>>;
+            }, z.core.$strip>>;
+            handleUpdates: z.ZodDefault<z.ZodBoolean>;
+            preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+            syncReplies: z.ZodDefault<z.ZodBoolean>;
+        }, z.core.$strip>>;
     }, z.core.$strip>;
     releases: z.ZodObject<{
         enabled: z.ZodBoolean;
@@ -126,10 +190,42 @@ export declare const GitlabConfigSchema: z.ZodObject<{
             enabled: z.ZodBoolean;
             autoMerge: z.ZodBoolean;
             labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+            comments: z.ZodDefault<z.ZodObject<{
+                enabled: z.ZodDefault<z.ZodBoolean>;
+                attribution: z.ZodDefault<z.ZodObject<{
+                    includeAuthor: z.ZodDefault<z.ZodBoolean>;
+                    includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+                    includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+                    format: z.ZodDefault<z.ZodEnum<{
+                        quoted: "quoted";
+                        inline: "inline";
+                        minimal: "minimal";
+                    }>>;
+                }, z.core.$strip>>;
+                handleUpdates: z.ZodDefault<z.ZodBoolean>;
+                preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+                syncReplies: z.ZodDefault<z.ZodBoolean>;
+            }, z.core.$strip>>;
         }, z.core.$strip>;
         issues: z.ZodObject<{
             enabled: z.ZodBoolean;
             labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+            comments: z.ZodDefault<z.ZodObject<{
+                enabled: z.ZodDefault<z.ZodBoolean>;
+                attribution: z.ZodDefault<z.ZodObject<{
+                    includeAuthor: z.ZodDefault<z.ZodBoolean>;
+                    includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+                    includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+                    format: z.ZodDefault<z.ZodEnum<{
+                        quoted: "quoted";
+                        inline: "inline";
+                        minimal: "minimal";
+                    }>>;
+                }, z.core.$strip>>;
+                handleUpdates: z.ZodDefault<z.ZodBoolean>;
+                preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+                syncReplies: z.ZodDefault<z.ZodBoolean>;
+            }, z.core.$strip>>;
         }, z.core.$strip>;
         releases: z.ZodObject<{
             enabled: z.ZodBoolean;
@@ -183,10 +279,42 @@ export declare const GithubConfigSchema: z.ZodObject<{
             enabled: z.ZodBoolean;
             autoMerge: z.ZodBoolean;
             labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+            comments: z.ZodDefault<z.ZodObject<{
+                enabled: z.ZodDefault<z.ZodBoolean>;
+                attribution: z.ZodDefault<z.ZodObject<{
+                    includeAuthor: z.ZodDefault<z.ZodBoolean>;
+                    includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+                    includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+                    format: z.ZodDefault<z.ZodEnum<{
+                        quoted: "quoted";
+                        inline: "inline";
+                        minimal: "minimal";
+                    }>>;
+                }, z.core.$strip>>;
+                handleUpdates: z.ZodDefault<z.ZodBoolean>;
+                preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+                syncReplies: z.ZodDefault<z.ZodBoolean>;
+            }, z.core.$strip>>;
         }, z.core.$strip>;
         issues: z.ZodObject<{
             enabled: z.ZodBoolean;
             labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+            comments: z.ZodDefault<z.ZodObject<{
+                enabled: z.ZodDefault<z.ZodBoolean>;
+                attribution: z.ZodDefault<z.ZodObject<{
+                    includeAuthor: z.ZodDefault<z.ZodBoolean>;
+                    includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+                    includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+                    format: z.ZodDefault<z.ZodEnum<{
+                        quoted: "quoted";
+                        inline: "inline";
+                        minimal: "minimal";
+                    }>>;
+                }, z.core.$strip>>;
+                handleUpdates: z.ZodDefault<z.ZodBoolean>;
+                preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+                syncReplies: z.ZodDefault<z.ZodBoolean>;
+            }, z.core.$strip>>;
         }, z.core.$strip>;
         releases: z.ZodObject<{
             enabled: z.ZodBoolean;
@@ -243,10 +371,42 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 autoMerge: z.ZodBoolean;
                 labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+                comments: z.ZodDefault<z.ZodObject<{
+                    enabled: z.ZodDefault<z.ZodBoolean>;
+                    attribution: z.ZodDefault<z.ZodObject<{
+                        includeAuthor: z.ZodDefault<z.ZodBoolean>;
+                        includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+                        includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+                        format: z.ZodDefault<z.ZodEnum<{
+                            quoted: "quoted";
+                            inline: "inline";
+                            minimal: "minimal";
+                        }>>;
+                    }, z.core.$strip>>;
+                    handleUpdates: z.ZodDefault<z.ZodBoolean>;
+                    preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+                    syncReplies: z.ZodDefault<z.ZodBoolean>;
+                }, z.core.$strip>>;
             }, z.core.$strip>;
             issues: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+                comments: z.ZodDefault<z.ZodObject<{
+                    enabled: z.ZodDefault<z.ZodBoolean>;
+                    attribution: z.ZodDefault<z.ZodObject<{
+                        includeAuthor: z.ZodDefault<z.ZodBoolean>;
+                        includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+                        includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+                        format: z.ZodDefault<z.ZodEnum<{
+                            quoted: "quoted";
+                            inline: "inline";
+                            minimal: "minimal";
+                        }>>;
+                    }, z.core.$strip>>;
+                    handleUpdates: z.ZodDefault<z.ZodBoolean>;
+                    preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+                    syncReplies: z.ZodDefault<z.ZodBoolean>;
+                }, z.core.$strip>>;
             }, z.core.$strip>;
             releases: z.ZodObject<{
                 enabled: z.ZodBoolean;
@@ -300,10 +460,42 @@ export declare const ConfigSchema: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 autoMerge: z.ZodBoolean;
                 labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+                comments: z.ZodDefault<z.ZodObject<{
+                    enabled: z.ZodDefault<z.ZodBoolean>;
+                    attribution: z.ZodDefault<z.ZodObject<{
+                        includeAuthor: z.ZodDefault<z.ZodBoolean>;
+                        includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+                        includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+                        format: z.ZodDefault<z.ZodEnum<{
+                            quoted: "quoted";
+                            inline: "inline";
+                            minimal: "minimal";
+                        }>>;
+                    }, z.core.$strip>>;
+                    handleUpdates: z.ZodDefault<z.ZodBoolean>;
+                    preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+                    syncReplies: z.ZodDefault<z.ZodBoolean>;
+                }, z.core.$strip>>;
             }, z.core.$strip>;
             issues: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
+                comments: z.ZodDefault<z.ZodObject<{
+                    enabled: z.ZodDefault<z.ZodBoolean>;
+                    attribution: z.ZodDefault<z.ZodObject<{
+                        includeAuthor: z.ZodDefault<z.ZodBoolean>;
+                        includeTimestamp: z.ZodDefault<z.ZodBoolean>;
+                        includeSourceLink: z.ZodDefault<z.ZodBoolean>;
+                        format: z.ZodDefault<z.ZodEnum<{
+                            quoted: "quoted";
+                            inline: "inline";
+                            minimal: "minimal";
+                        }>>;
+                    }, z.core.$strip>>;
+                    handleUpdates: z.ZodDefault<z.ZodBoolean>;
+                    preserveFormatting: z.ZodDefault<z.ZodBoolean>;
+                    syncReplies: z.ZodDefault<z.ZodBoolean>;
+                }, z.core.$strip>>;
             }, z.core.$strip>;
             releases: z.ZodObject<{
                 enabled: z.ZodBoolean;

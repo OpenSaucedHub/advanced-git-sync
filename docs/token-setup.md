@@ -32,11 +32,14 @@ The GitLab token is required for syncing to/from GitLab repositories.
 
 #### Required Permissions
 
-| Permission         | Description              | Required |
-| ------------------ | ------------------------ | -------- |
-| `api`              | Full API access          | ✅ Yes   |
-| `read_repository`  | Read repository content  | ✅ Yes   |
-| `write_repository` | Write repository content | ✅ Yes   |
+| Permission         | Description              | Required | Comment Sync |
+| ------------------ | ------------------------ | -------- | ------------ |
+| `api`              | Full API access          | ✅ Yes   | ✅ Yes       |
+| `read_repository`  | Read repository content  | ✅ Yes   | ✅ Yes       |
+| `write_repository` | Write repository content | ✅ Yes   | ✅ Yes       |
+
+> **💬 Comment Synchronization**: The `api` scope includes access to issue notes (comments). The
+> existing permissions are sufficient for comment synchronization.
 
 ### GitHub Token (Optional)
 
@@ -71,10 +74,13 @@ The GitHub token is optional - the action will use the default `GITHUB_TOKEN` if
 
 #### Required Permissions
 
-| Permission | Description            | Required |
-| ---------- | ---------------------- | -------- |
-| `repo`     | Full repository access | ✅ Yes   |
-| `workflow` | Workflow access        | Optional |
+| Permission | Description            | Required | Comment Sync |
+| ---------- | ---------------------- | -------- | ------------ |
+| `repo`     | Full repository access | ✅ Yes   | ✅ Yes       |
+| `workflow` | Workflow access        | Optional | No           |
+
+> **💬 Comment Synchronization**: The `repo` scope includes access to issue and PR comments. No
+> additional permissions are needed for comment synchronization.
 
 ## Adding Tokens to GitHub Secrets
 

@@ -15,6 +15,7 @@ repositories. Keep your projects in sync across platforms automatically.
 
 - 🔄 **Bi-directional sync** between GitHub and GitLab
 - 🌳 **Branches, PRs/MRs, issues, releases, and tags**
+- 💬 **Enhanced comment synchronization** with proper attribution
 - ⚙️ **Highly configurable** with sensible defaults
 - 🔒 **Secure** with token-based authentication
 - 🏷️ **Smart labeling** of synced content

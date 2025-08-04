@@ -2,6 +2,10 @@
 import * as core from '@actions/core'
 import { Repository, Config, PullRequest, Comment, Review } from '@/src/types'
 import { LabelHelper } from '@/src/utils/labelsUtils'
+import {
+  getCommentSyncOptions,
+  CommentFormatter
+} from '@/src/utils/commentUtils'
 
 export class pullRequestHelper {
   constructor(
@@ -135,7 +139,7 @@ export class pullRequestHelper {
         })
       }
 
-      // Sync comments
+      // Sync comments (formatting will be handled in PR sync logic)
       if (pr.comments) {
         for (const comment of pr.comments) {
           await this.octokit.rest.issues.createComment({

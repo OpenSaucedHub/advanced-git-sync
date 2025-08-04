@@ -1,5 +1,6 @@
 # Example configuration for advanced-git-sync action
 # This file demonstrates the correct YAML syntax for all configuration options
+# Includes examples for enhanced comment synchronization with proper attribution
 #
 # IMPORTANT: If your sync includes workflow files (.github/workflows/), you MUST use
 # a Personal Access Token with 'workflow' scope as GH_TOKEN secret instead of GITHUB_TOKEN
@@ -25,9 +26,29 @@ gitlab:
       enabled: true
       autoMerge: false # Don't auto-merge synced PRs
       labels: ["synced", "github-origin"] # Labels to add to synced PRs
+      comments: # Enhanced comment synchronization
+        enabled: false # Enable to sync PR comments with attribution
+        attribution:
+          includeAuthor: true # Include original comment author
+          includeTimestamp: true # Include sync timestamp
+          includeSourceLink: true # Include link to original comment
+          format: "quoted" # quoted | inline | minimal
+        handleUpdates: true # Sync comment updates/edits
+        preserveFormatting: true # Preserve markdown formatting
+        syncReplies: true # Sync comment threads and replies
     issues:
       enabled: true
       labels: ["synced", "github-origin"] # Labels to add to synced issues
+      comments: # Enhanced comment synchronization
+        enabled: false # Enable to sync issue comments with attribution
+        attribution:
+          includeAuthor: true # Include original comment author
+          includeTimestamp: true # Include sync timestamp
+          includeSourceLink: true # Include link to original comment
+          format: "quoted" # quoted | inline | minimal
+        handleUpdates: true # Sync comment updates/edits
+        preserveFormatting: true # Preserve markdown formatting
+        syncReplies: true # Sync comment threads and replies
     releases:
       enabled: true # Sync releases and their assets
       divergentCommitStrategy: "skip" # skip | create-anyway | point-to-latest
@@ -59,9 +80,29 @@ github:
       enabled: true
       autoMerge: false # Don't auto-merge synced PRs
       labels: ["synced", "gitlab-origin"] # Labels to add to synced PRs
+      comments: # Enhanced comment synchronization
+        enabled: false # Enable to sync PR comments with attribution
+        attribution:
+          includeAuthor: true # Include original comment author
+          includeTimestamp: true # Include sync timestamp
+          includeSourceLink: true # Include link to original comment
+          format: "quoted" # quoted | inline | minimal
+        handleUpdates: true # Sync comment updates/edits
+        preserveFormatting: true # Preserve markdown formatting
+        syncReplies: true # Sync comment threads and replies
     issues:
       enabled: true
       labels: ["synced", "gitlab-origin"] # Labels to add to synced issues
+      comments: # Enhanced comment synchronization
+        enabled: false # Enable to sync issue comments with attribution
+        attribution:
+          includeAuthor: true # Include original comment author
+          includeTimestamp: true # Include sync timestamp
+          includeSourceLink: true # Include link to original comment
+          format: "quoted" # quoted | inline | minimal
+        handleUpdates: true # Sync comment updates/edits
+        preserveFormatting: true # Preserve markdown formatting
+        syncReplies: true # Sync comment threads and replies
     releases:
       enabled: true # Sync releases and their assets
       divergentCommitStrategy: "skip" # skip | create-anyway | point-to-latest
@@ -105,4 +146,78 @@ github:
 # - Use specific branch patterns instead of "*" if you have many branches
 # - Consider disabling releases/tags sync if not needed
 # - The action runs operations in parallel for better performance
-# - Issue comments are not synced to avoid confusion and maintain performance
+
+# ========================================
+# ENHANCED COMMENT SYNCHRONIZATION EXAMPLE
+# ========================================
+# Uncomment and modify the sections below to enable comment synchronization
+# with proper attribution and formatting preservation.
+
+# gitlab:
+#   sync:
+#     issues:
+#       comments:
+#         enabled: true # Enable comment synchronization
+#         attribution:
+#           includeAuthor: true # Show original comment author
+#           includeTimestamp: true # Show when comment was synced
+#           includeSourceLink: true # Link back to original comment
+#           format: "quoted" # quoted | inline | minimal
+#         handleUpdates: true # Sync comment edits and updates
+#         preserveFormatting: true # Keep markdown formatting intact
+#         syncReplies: true # Include comment threads and replies
+#
+#     pullRequests:
+#       comments:
+#         enabled: true # Enable PR comment synchronization
+#         attribution:
+#           format: "inline" # Use inline format for PRs
+#           includeAuthor: true
+#           includeTimestamp: true
+#           includeSourceLink: true
+#         handleUpdates: true
+#         preserveFormatting: true
+#         syncReplies: true
+
+# github:
+#   sync:
+#     issues:
+#       comments:
+#         enabled: true # Enable comment synchronization from GitLab
+#         attribution:
+#           format: "quoted" # Use quoted format for clear attribution
+#           includeAuthor: true
+#           includeTimestamp: true
+#           includeSourceLink: true
+#         handleUpdates: true
+#         preserveFormatting: true
+#         syncReplies: true
+#
+#     pullRequests:
+#       comments:
+#         enabled: true
+#         attribution:
+#           format: "inline"
+#           includeAuthor: true
+#           includeTimestamp: true
+#           includeSourceLink: true
+#         handleUpdates: true
+#         preserveFormatting: true
+#         syncReplies: true
+
+# Comment Attribution Format Examples:
+#
+# QUOTED FORMAT (Default):
+# **💬 Comment by @username on GitHub** ([original](https://github.com/user/repo/issues/123#issuecomment-456))
+#
+# > This is the original comment content that would be quoted
+# > and properly attributed to maintain discussion context.
+#
+# ---
+# *Synced from GitHub on 2024-01-15*
+#
+# INLINE FORMAT:
+# **@username** (GitHub): [🔗](https://github.com/user/repo/issues/123#issuecomment-456) This is the comment content.
+#
+# MINIMAL FORMAT:
+# This is the comment content with minimal attribution. — @username

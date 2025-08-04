@@ -7,6 +7,10 @@ export interface Comment {
     body: string;
     author?: string;
     createdAt?: string;
+    updatedAt?: string;
+    sourceUrl?: string;
+    isReply?: boolean;
+    parentCommentId?: number;
 }
 export interface PullRequest {
     id?: number;
@@ -56,6 +60,7 @@ export interface Issue {
     number?: number;
     state?: 'open' | 'closed';
     labels: string[];
+    comments?: Comment[];
 }
 export interface IssueComparison {
     sourceIssue: Issue;

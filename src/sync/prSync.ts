@@ -3,6 +3,7 @@ import { GitHubClient } from '../structures/github/GitHub'
 import { GitLabClient } from '../structures/gitlab/GitLab'
 
 import { PullRequest } from '../types'
+import { getCommentSyncOptions, CommentFormatter } from '../utils/commentUtils'
 
 function logSyncPlan(sourcePRs: PullRequest[], targetPRs: PullRequest[]): void {
   const toCreate = sourcePRs.filter(
@@ -67,7 +68,10 @@ export async function syncPullRequests(
 
       if (!targetPR) {
         core.info(`🆕 Creating: ${sourcePR.title} (${sourcePR.state})`)
-        await target.createPullRequest(sourcePR)
+
+        // Format comments with proper attribution before creating PR
+        const prToCreate = await formatPRComments(source, sourcePR)
+        await target.createPullRequest(prToCreate)
       } else {
         if (needsUpdate(sourcePR, targetPR)) {
           core.info(
@@ -117,4 +121,44 @@ function needsUpdate(sourcePR: PullRequest, targetPR: PullRequest): boolean {
 
 function arraysEqual(a: string[], b: string[]): boolean {
   return JSON.stringify(a.sort()) === JSON.stringify(b.sort())
+}
+
+/**
+ * Format PR comments with proper attribution
+ */
+async function formatPRComments(
+  source: GitHubClient | GitLabClient,
+  sourcePR: PullRequest
+): Promise<PullRequest> {
+  if (!sourcePR.comments || sourcePR.comments.length === 0) {
+    return sourcePR
+  }
+
+  const commentSyncOptions = getCommentSyncOptions(
+    source.config,
+    'pullRequests'
+  )
+
+  if (!commentSyncOptions.enabled) {
+    return sourcePR
+  }
+
+  const formattedComments = sourcePR.comments.map(comment => {
+    const formattedBody = CommentFormatter.formatSyncedComment(
+      comment,
+      source,
+      sourcePR.number!,
+      commentSyncOptions
+    )
+
+    return {
+      ...comment,
+      body: formattedBody
+    }
+  })
+
+  return {
+    ...sourcePR,
+    comments: formattedComments
+  }
 }

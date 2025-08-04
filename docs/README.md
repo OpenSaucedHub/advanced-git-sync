@@ -112,6 +112,89 @@ branches:
 | `enabled` | Enable issue sync              | No       | true    |
 | `labels`  | Labels to add to synced issues | No       | synced  |
 
+#### 💬 Comment Synchronization
+
+Both issues and pull requests support enhanced comment synchronization with proper attribution. This
+powerful feature maintains complete discussion context across GitHub and GitLab platforms.
+
+**Quick Start:**
+
+```yaml
+github:
+  sync:
+    issues:
+      comments:
+        enabled: true
+        attribution:
+          format: quoted # quoted, inline, or minimal
+          includeAuthor: true
+          includeTimestamp: true
+          includeSourceLink: true
+        handleUpdates: true
+        preserveFormatting: true
+    pullRequests:
+      comments:
+        enabled: true
+        # Same options as issues
+```
+
+**Comment Attribution Formats:**
+
+**1. Quoted Format (Default)** - Clearest attribution, recommended for most use cases:
+
+```markdown
+**💬 Comment by @username on GitHub**
+([original](https://github.com/user/repo/issues/123#issuecomment-456))
+
+> This is the original comment content that would be quoted and properly attributed to maintain
+> discussion context.
+
+---
+
+_Synced from GitHub on 2024-01-15_
+```
+
+**2. Inline Format** - Compact representation:
+
+```markdown
+**@username** (GitHub): [🔗](https://github.com/user/repo/issues/123#issuecomment-456) This is the
+comment content with inline attribution.
+```
+
+**3. Minimal Format** - Least visual clutter:
+
+```markdown
+This is the comment content with minimal attribution. — @username
+```
+
+**Configuration Options:**
+
+| Option                          | Type    | Default    | Description                              |
+| ------------------------------- | ------- | ---------- | ---------------------------------------- |
+| `enabled`                       | boolean | `false`    | Enable/disable comment synchronization   |
+| `attribution.includeAuthor`     | boolean | `true`     | Include original comment author          |
+| `attribution.includeTimestamp`  | boolean | `true`     | Include sync timestamp                   |
+| `attribution.includeSourceLink` | boolean | `true`     | Include link to original comment         |
+| `attribution.format`            | string  | `"quoted"` | Format: `quoted`, `inline`, or `minimal` |
+| `handleUpdates`                 | boolean | `true`     | Sync comment edits and updates           |
+| `preserveFormatting`            | boolean | `true`     | Preserve markdown formatting             |
+| `syncReplies`                   | boolean | `true`     | Include comment threads and replies      |
+
+**Key Features:**
+
+- 🛡️ **Intelligent Deduplication** - Prevents duplicate comments
+- 📝 **Markdown Preservation** - Maintains code blocks, links, formatting
+- 🔒 **@Mention Escaping** - Prevents unwanted notifications (`@user` → `\@user`)
+- 🔄 **Update Handling** - Syncs comment edits and modifications
+- 🔗 **Source Links** - Direct links to original comments
+- ⚡ **Error Resilience** - Graceful handling of API failures
+
+**Important Considerations:**
+
+- Comment sync adds API calls and may increase sync duration
+- Be aware of platform rate limits (GitHub: 5,000/hour, GitLab: 2,000/minute)
+- Comments are disabled by default to maintain backward compatibility
+
 ### Releases
 
 | Option    | Description         | Required | Default |
@@ -213,10 +296,30 @@ gitlab:
       enabled: true
       autoMerge: false
       labels: ['synced']
+      comments:
+        enabled: false # Enable to sync PR comments with attribution
+        attribution:
+          includeAuthor: true
+          includeTimestamp: true
+          includeSourceLink: true
+          format: 'quoted' # quoted | inline | minimal
+        handleUpdates: true
+        preserveFormatting: true
+        syncReplies: true
 
     issues:
       enabled: true
       labels: ['synced']
+      comments:
+        enabled: false # Enable to sync issue comments with attribution
+        attribution:
+          includeAuthor: true
+          includeTimestamp: true
+          includeSourceLink: true
+          format: 'quoted' # quoted | inline | minimal
+        handleUpdates: true
+        preserveFormatting: true
+        syncReplies: true
 
     releases:
       enabled: true
@@ -251,10 +354,30 @@ github:
       enabled: true
       autoMerge: false
       labels: ['synced']
+      comments:
+        enabled: false # Enable to sync PR comments with attribution
+        attribution:
+          includeAuthor: true
+          includeTimestamp: true
+          includeSourceLink: true
+          format: 'quoted' # quoted | inline | minimal
+        handleUpdates: true
+        preserveFormatting: true
+        syncReplies: true
 
     issues:
       enabled: true
       labels: ['synced']
+      comments:
+        enabled: false # Enable to sync issue comments with attribution
+        attribution:
+          includeAuthor: true
+          includeTimestamp: true
+          includeSourceLink: true
+          format: 'quoted' # quoted | inline | minimal
+        handleUpdates: true
+        preserveFormatting: true
+        syncReplies: true
 
     releases:
       enabled: true

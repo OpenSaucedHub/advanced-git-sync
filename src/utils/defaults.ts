@@ -20,11 +20,35 @@ export function getDefaultConfig(): Config {
         pullRequests: {
           enabled: true,
           autoMerge: false,
-          labels: ['synced']
+          labels: ['synced'],
+          comments: {
+            enabled: false,
+            attribution: {
+              includeAuthor: true,
+              includeTimestamp: true,
+              includeSourceLink: true,
+              format: 'quoted'
+            },
+            handleUpdates: true,
+            preserveFormatting: true,
+            syncReplies: true
+          }
         },
         issues: {
           enabled: true,
-          labels: ['synced']
+          labels: ['synced'],
+          comments: {
+            enabled: false,
+            attribution: {
+              includeAuthor: true,
+              includeTimestamp: true,
+              includeSourceLink: true,
+              format: 'quoted'
+            },
+            handleUpdates: true,
+            preserveFormatting: true,
+            syncReplies: true
+          }
         },
         releases: {
           enabled: true,
@@ -58,11 +82,35 @@ export function getDefaultConfig(): Config {
         pullRequests: {
           enabled: true,
           autoMerge: false,
-          labels: ['synced']
+          labels: ['synced'],
+          comments: {
+            enabled: false,
+            attribution: {
+              includeAuthor: true,
+              includeTimestamp: true,
+              includeSourceLink: true,
+              format: 'quoted'
+            },
+            handleUpdates: true,
+            preserveFormatting: true,
+            syncReplies: true
+          }
         },
         issues: {
           enabled: true,
-          labels: ['synced']
+          labels: ['synced'],
+          comments: {
+            enabled: false,
+            attribution: {
+              includeAuthor: true,
+              includeTimestamp: true,
+              includeSourceLink: true,
+              format: 'quoted'
+            },
+            handleUpdates: true,
+            preserveFormatting: true,
+            syncReplies: true
+          }
         },
         releases: {
           enabled: true,

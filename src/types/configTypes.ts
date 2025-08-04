@@ -43,7 +43,39 @@ export const PRConfigSchema = z.object({
   labels: z
     .any()
     .transform(normalizeLabels)
-    .pipe(z.union([z.string(), z.array(z.string())]))
+    .pipe(z.union([z.string(), z.array(z.string())])),
+  comments: z
+    .object({
+      enabled: z.boolean().default(false),
+      attribution: z
+        .object({
+          includeAuthor: z.boolean().default(true),
+          includeTimestamp: z.boolean().default(true),
+          includeSourceLink: z.boolean().default(true),
+          format: z.enum(['quoted', 'inline', 'minimal']).default('quoted')
+        })
+        .default({
+          includeAuthor: true,
+          includeTimestamp: true,
+          includeSourceLink: true,
+          format: 'quoted'
+        }),
+      handleUpdates: z.boolean().default(true),
+      preserveFormatting: z.boolean().default(true),
+      syncReplies: z.boolean().default(true)
+    })
+    .default({
+      enabled: false,
+      attribution: {
+        includeAuthor: true,
+        includeTimestamp: true,
+        includeSourceLink: true,
+        format: 'quoted'
+      },
+      handleUpdates: true,
+      preserveFormatting: true,
+      syncReplies: true
+    })
 })
 
 export const IssueConfigSchema = z.object({
@@ -51,7 +83,39 @@ export const IssueConfigSchema = z.object({
   labels: z
     .any()
     .transform(normalizeLabels)
-    .pipe(z.union([z.string(), z.array(z.string())]))
+    .pipe(z.union([z.string(), z.array(z.string())])),
+  comments: z
+    .object({
+      enabled: z.boolean().default(false),
+      attribution: z
+        .object({
+          includeAuthor: z.boolean().default(true),
+          includeTimestamp: z.boolean().default(true),
+          includeSourceLink: z.boolean().default(true),
+          format: z.enum(['quoted', 'inline', 'minimal']).default('quoted')
+        })
+        .default({
+          includeAuthor: true,
+          includeTimestamp: true,
+          includeSourceLink: true,
+          format: 'quoted'
+        }),
+      handleUpdates: z.boolean().default(true),
+      preserveFormatting: z.boolean().default(true),
+      syncReplies: z.boolean().default(true)
+    })
+    .default({
+      enabled: false,
+      attribution: {
+        includeAuthor: true,
+        includeTimestamp: true,
+        includeSourceLink: true,
+        format: 'quoted'
+      },
+      handleUpdates: true,
+      preserveFormatting: true,
+      syncReplies: true
+    })
 })
 
 export const ReleaseConfigSchema = z.object({
