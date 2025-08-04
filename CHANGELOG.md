@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.3.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.3...v1.3.0) (2025-08-04)
+
+
+
+## [1.3.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.3...v1.3.0) (2025-08-04)
+
+### ⚠ BREAKING CHANGES
+
+* enhance release synchronization with detailed analysis and logging
+
+### Features
+
+* enhance release synchronization with detailed analysis and logging ([09f9d27](https://github.com/OpenSaucedHub/advanced-git-sync/commit/09f9d27f0673fb7857a448ec186e09ea3b784b1f))
+* Implement comment synchronization between GitHub and GitLab ([cd05a7a](https://github.com/OpenSaucedHub/advanced-git-sync/commit/cd05a7a937e6768aeabf65c23348293eb0f437c2))
+
 # [v1.2.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.2...v1.2.3) (2025-08-03)
 
 ## [1.2.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.2...v1.2.3) (2025-08-03)
