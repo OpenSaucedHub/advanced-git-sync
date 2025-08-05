@@ -125,11 +125,7 @@ export class pullRequestHelper {
       })
 
       // Use LabelHelper to handle labels
-      const normalizedLabels = LabelHelper.combineLabels(
-        pr.labels,
-        this.config,
-        'github'
-      )
+      const normalizedLabels = LabelHelper.combineLabels(pr.labels, 'github')
 
       if (normalizedLabels.length > 0) {
         await this.octokit.rest.issues.addLabels({
@@ -185,11 +181,13 @@ export class pullRequestHelper {
 
       await this.octokit.rest.pulls.update(updatePayload)
 
-      // Update labels (this is always allowed)
+      // Update labels with proper combination (this is always allowed)
+      const normalizedLabels = LabelHelper.combineLabels(pr.labels, 'github')
+
       await this.octokit.rest.issues.setLabels({
         ...this.repo,
         issue_number: number,
-        labels: pr.labels
+        labels: normalizedLabels
       })
     } catch (error) {
       throw new Error(

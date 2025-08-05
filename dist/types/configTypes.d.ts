@@ -17,7 +17,6 @@ export declare const BranchConfigSchema: z.ZodObject<{
 export declare const PRConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     autoMerge: z.ZodBoolean;
-    labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
     comments: z.ZodDefault<z.ZodObject<{
         enabled: z.ZodDefault<z.ZodBoolean>;
         attribution: z.ZodDefault<z.ZodObject<{
@@ -37,7 +36,6 @@ export declare const PRConfigSchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const IssueConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
-    labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
     comments: z.ZodDefault<z.ZodObject<{
         enabled: z.ZodDefault<z.ZodBoolean>;
         attribution: z.ZodDefault<z.ZodObject<{
@@ -99,7 +97,6 @@ export declare const SyncConfigSchema: z.ZodObject<{
     pullRequests: z.ZodObject<{
         enabled: z.ZodBoolean;
         autoMerge: z.ZodBoolean;
-        labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
         comments: z.ZodDefault<z.ZodObject<{
             enabled: z.ZodDefault<z.ZodBoolean>;
             attribution: z.ZodDefault<z.ZodObject<{
@@ -119,7 +116,6 @@ export declare const SyncConfigSchema: z.ZodObject<{
     }, z.core.$strip>;
     issues: z.ZodObject<{
         enabled: z.ZodBoolean;
-        labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
         comments: z.ZodDefault<z.ZodObject<{
             enabled: z.ZodDefault<z.ZodBoolean>;
             attribution: z.ZodDefault<z.ZodObject<{
@@ -189,7 +185,6 @@ export declare const GitlabConfigSchema: z.ZodObject<{
         pullRequests: z.ZodObject<{
             enabled: z.ZodBoolean;
             autoMerge: z.ZodBoolean;
-            labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
             comments: z.ZodDefault<z.ZodObject<{
                 enabled: z.ZodDefault<z.ZodBoolean>;
                 attribution: z.ZodDefault<z.ZodObject<{
@@ -209,7 +204,6 @@ export declare const GitlabConfigSchema: z.ZodObject<{
         }, z.core.$strip>;
         issues: z.ZodObject<{
             enabled: z.ZodBoolean;
-            labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
             comments: z.ZodDefault<z.ZodObject<{
                 enabled: z.ZodDefault<z.ZodBoolean>;
                 attribution: z.ZodDefault<z.ZodObject<{
@@ -278,7 +272,6 @@ export declare const GithubConfigSchema: z.ZodObject<{
         pullRequests: z.ZodObject<{
             enabled: z.ZodBoolean;
             autoMerge: z.ZodBoolean;
-            labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
             comments: z.ZodDefault<z.ZodObject<{
                 enabled: z.ZodDefault<z.ZodBoolean>;
                 attribution: z.ZodDefault<z.ZodObject<{
@@ -298,7 +291,6 @@ export declare const GithubConfigSchema: z.ZodObject<{
         }, z.core.$strip>;
         issues: z.ZodObject<{
             enabled: z.ZodBoolean;
-            labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
             comments: z.ZodDefault<z.ZodObject<{
                 enabled: z.ZodDefault<z.ZodBoolean>;
                 attribution: z.ZodDefault<z.ZodObject<{
@@ -370,7 +362,6 @@ export declare const ConfigSchema: z.ZodObject<{
             pullRequests: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 autoMerge: z.ZodBoolean;
-                labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
                 comments: z.ZodDefault<z.ZodObject<{
                     enabled: z.ZodDefault<z.ZodBoolean>;
                     attribution: z.ZodDefault<z.ZodObject<{
@@ -390,7 +381,6 @@ export declare const ConfigSchema: z.ZodObject<{
             }, z.core.$strip>;
             issues: z.ZodObject<{
                 enabled: z.ZodBoolean;
-                labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
                 comments: z.ZodDefault<z.ZodObject<{
                     enabled: z.ZodDefault<z.ZodBoolean>;
                     attribution: z.ZodDefault<z.ZodObject<{
@@ -459,7 +449,6 @@ export declare const ConfigSchema: z.ZodObject<{
             pullRequests: z.ZodObject<{
                 enabled: z.ZodBoolean;
                 autoMerge: z.ZodBoolean;
-                labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
                 comments: z.ZodDefault<z.ZodObject<{
                     enabled: z.ZodDefault<z.ZodBoolean>;
                     attribution: z.ZodDefault<z.ZodObject<{
@@ -479,7 +468,6 @@ export declare const ConfigSchema: z.ZodObject<{
             }, z.core.$strip>;
             issues: z.ZodObject<{
                 enabled: z.ZodBoolean;
-                labels: z.ZodPipe<z.ZodPipe<z.ZodAny, z.ZodTransform<string | string[], any>>, z.ZodUnion<readonly [z.ZodString, z.ZodArray<z.ZodString>]>>;
                 comments: z.ZodDefault<z.ZodObject<{
                     enabled: z.ZodDefault<z.ZodBoolean>;
                     attribution: z.ZodDefault<z.ZodObject<{

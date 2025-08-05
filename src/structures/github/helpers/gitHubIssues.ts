@@ -51,11 +51,7 @@ export class githubIssueHelper {
               return {
                 title: issue.title,
                 body: issue.body || '',
-                labels: LabelHelper.combineLabels(
-                  issue.labels,
-                  this.config,
-                  'github'
-                ),
+                labels: LabelHelper.combineLabels(issue.labels, 'github'),
                 number: issue.number,
                 state: issue.state as 'open' | 'closed',
                 comments
@@ -114,11 +110,14 @@ export class githubIssueHelper {
 
   async createIssue(issue: Issue): Promise<void> {
     try {
+      // Ensure labels include 'synced' label
+      const normalizedLabels = LabelHelper.combineLabels(issue.labels, 'github')
+
       await this.octokit.rest.issues.create({
         ...this.repo,
         title: issue.title,
         body: issue.body,
-        labels: issue.labels,
+        labels: normalizedLabels,
         state: issue.state
       })
     } catch (error) {
@@ -130,13 +129,16 @@ export class githubIssueHelper {
 
   async updateIssue(issueNumber: number, issue: Issue): Promise<void> {
     try {
+      // Ensure labels include 'synced' label
+      const normalizedLabels = LabelHelper.combineLabels(issue.labels, 'github')
+
       // Update an existing issue with the provided details
       await this.octokit.rest.issues.update({
         ...this.repo,
         issue_number: issueNumber,
         title: issue.title,
         body: issue.body,
-        labels: issue.labels,
+        labels: normalizedLabels,
         state: issue.state
       })
     } catch (error) {

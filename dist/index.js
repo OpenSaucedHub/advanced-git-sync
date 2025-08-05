@@ -51697,12 +51697,29 @@ async function validateConfig(config) {
             if (config.gitlab.enabled && !token) {
                 errors.push(new errors_1.ValidationError('EAUTH3', 'GitHub token is required when syncing between GitLab and GitHub', { platform: 'GitHub', syncTarget: 'GitLab' }));
             }
-            // Automatically enable tags if releases are enabled but tags are disabled
-            if (config.github.sync?.releases.enabled &&
-                !config.github.sync?.tags.enabled) {
-                (0, errors_1.logWarning)('ECFG01', 'GitHub releases are enabled but tags are disabled. Automatically enabling tag syncing to prevent orphaning releases.', { platform: 'GitHub' });
-                if (updatedConfig.github.sync) {
+            // Enhanced dependency logic for GitHub
+            if (updatedConfig.github.sync) {
+                // 1. Automatically enable tags if releases are enabled but tags are disabled
+                if (config.github.sync?.releases.enabled &&
+                    !config.github.sync?.tags.enabled) {
+                    (0, errors_1.logWarning)('ECFG01', 'GitHub releases are enabled but tags are disabled. Automatically enabling tag syncing to prevent orphaning releases.', { platform: 'GitHub' });
                     updatedConfig.github.sync.tags.enabled = true;
+                }
+                // 2. Automatically enable historySync if tags or releases are enabled
+                if ((config.github.sync?.tags.enabled ||
+                    config.github.sync?.releases.enabled) &&
+                    !config.github.sync?.branches.historySync?.enabled) {
+                    (0, errors_1.logWarning)('ECFG02', 'GitHub tags/releases are enabled but branch historySync is disabled. Automatically enabling historySync to ensure proper timeline synchronization.', { platform: 'GitHub' });
+                    if (updatedConfig.github.sync.branches.historySync) {
+                        updatedConfig.github.sync.branches.historySync.enabled = true;
+                    }
+                }
+                // 3. Automatically enable branches if pullRequests or issues are enabled
+                if ((config.github.sync?.pullRequests.enabled ||
+                    config.github.sync?.issues.enabled) &&
+                    !config.github.sync?.branches.enabled) {
+                    (0, errors_1.logWarning)('ECFG01', "GitHub pull requests/issues are enabled but branches are disabled. Automatically enabling branch syncing as it's required for PR/issue synchronization.", { platform: 'GitHub' });
+                    updatedConfig.github.sync.branches.enabled = true;
                 }
             }
             updatedConfig.github = {
@@ -51717,12 +51734,31 @@ async function validateConfig(config) {
             if (config.github.enabled && !token) {
                 errors.push(new errors_1.ValidationError('EAUTH3', 'GitLab token is required when syncing between GitLab and GitHub', { platform: 'GitLab', syncTarget: 'GitHub' }));
             }
-            // Automatically enable tags if releases are enabled but tags are disabled
-            if (config.gitlab.sync?.releases?.enabled &&
-                !config.gitlab.sync?.tags?.enabled) {
-                (0, errors_1.logWarning)('ECFG01', 'GitLab releases are enabled but tags are disabled. Automatically enabling tag syncing to prevent orphaning releases.', { platform: 'GitLab' });
-                if (updatedConfig.gitlab.sync) {
+            // Enhanced dependency logic for GitLab
+            if (updatedConfig.gitlab.sync) {
+                // 1. Automatically enable tags if releases are enabled but tags are disabled
+                if (config.gitlab.sync?.releases?.enabled &&
+                    !config.gitlab.sync?.tags?.enabled) {
+                    (0, errors_1.logWarning)('ECFG01', 'GitLab releases are enabled but tags are disabled. Automatically enabling tag syncing to prevent orphaning releases.', { platform: 'GitLab' });
                     updatedConfig.gitlab.sync.tags.enabled = true;
+                }
+                // 2. Automatically enable historySync if tags or releases are enabled
+                if ((config.gitlab.sync?.tags?.enabled ||
+                    config.gitlab.sync?.releases?.enabled) &&
+                    !config.gitlab.sync?.branches?.historySync?.enabled) {
+                    (0, errors_1.logWarning)('ECFG02', 'GitLab tags/releases are enabled but branch historySync is disabled. Automatically enabling historySync to ensure proper timeline synchronization.', { platform: 'GitLab' });
+                    if (updatedConfig.gitlab.sync.branches?.historySync) {
+                        updatedConfig.gitlab.sync.branches.historySync.enabled = true;
+                    }
+                }
+                // 3. Automatically enable branches if pullRequests or issues are enabled
+                if ((config.gitlab.sync?.pullRequests?.enabled ||
+                    config.gitlab.sync?.issues?.enabled) &&
+                    !config.gitlab.sync?.branches?.enabled) {
+                    (0, errors_1.logWarning)('ECFG01', "GitLab pull requests/issues are enabled but branches are disabled. Automatically enabling branch syncing as it's required for PR/issue synchronization.", { platform: 'GitLab' });
+                    if (updatedConfig.gitlab.sync.branches) {
+                        updatedConfig.gitlab.sync.branches.enabled = true;
+                    }
                 }
             }
             updatedConfig.gitlab = {
@@ -52124,9 +52160,12 @@ async function run() {
         }
         if (config.github.enabled && config.gitlab.enabled) {
             core.info('\x1b[36m🔄 Starting bi-directional sync between GitHub and GitLab\x1b[0m');
-            // Sync tracking
-            const syncOperations = [
-                // GitHub to GitLab sync operations
+            // Sync operations organized by chronological dependencies
+            // CRITICAL: Branches must be synced first (foundation)
+            // HIGH: Tags and Releases depend on branch history
+            // MEDIUM: PRs and Issues can run in parallel after core sync
+            const coreOperations = [
+                // PHASE 1: Branches (CRITICAL - must run first, sequentially)
                 {
                     name: '\x1b[34m🌿 Branches (GitHub → GitLab)\x1b[0m',
                     enabled: config.github.sync?.branches.enabled || false,
@@ -52135,39 +52174,20 @@ async function run() {
                     }
                 },
                 {
-                    name: '\x1b[36m🏷 Tags (GitHub → GitLab)\x1b[0m',
-                    enabled: config.github.sync?.tags.enabled || false,
-                    operation: async () => {
-                        await (0, tagSync_1.syncTags)(githubClient, gitlabClient);
-                    }
-                },
-                {
-                    name: '\x1b[33m🏷️ Releases (GitHub → GitLab)\x1b[0m',
-                    enabled: config.github.sync?.releases.enabled || false,
-                    operation: async () => {
-                        await (0, releaseSync_1.syncReleases)(githubClient, gitlabClient);
-                    }
-                },
-                {
-                    name: '\x1b[32m🔀 Pull Requests (GitHub → GitLab)\x1b[0m',
-                    enabled: config.github.sync?.pullRequests.enabled || false,
-                    operation: async () => {
-                        await (0, prSync_1.syncPullRequests)(githubClient, gitlabClient);
-                    }
-                },
-                {
-                    name: '\x1b[35m❗ Issues (GitHub → GitLab)\x1b[0m',
-                    enabled: config.github.sync?.issues.enabled || false,
-                    operation: async () => {
-                        await (0, issueSync_1.syncIssues)(githubClient, gitlabClient);
-                    }
-                },
-                // GitLab to GitHub sync operations
-                {
                     name: '\x1b[34m🌿 Branches (GitLab → GitHub)\x1b[0m',
                     enabled: config.gitlab.sync?.branches.enabled || false,
                     operation: async () => {
                         await (0, branchSync_1.syncBranches)(gitlabClient, githubClient);
+                    }
+                }
+            ];
+            const tagOperations = [
+                // PHASE 2: Tags (HIGH - depend on branch history)
+                {
+                    name: '\x1b[36m🏷 Tags (GitHub → GitLab)\x1b[0m',
+                    enabled: config.github.sync?.tags.enabled || false,
+                    operation: async () => {
+                        await (0, tagSync_1.syncTags)(githubClient, gitlabClient);
                     }
                 },
                 {
@@ -52176,12 +52196,32 @@ async function run() {
                     operation: async () => {
                         await (0, tagSync_1.syncTags)(gitlabClient, githubClient);
                     }
+                }
+            ];
+            const releaseOperations = [
+                // PHASE 3: Releases (HIGH - depend on tags)
+                {
+                    name: '\x1b[33m🏷️ Releases (GitHub → GitLab)\x1b[0m',
+                    enabled: config.github.sync?.releases.enabled || false,
+                    operation: async () => {
+                        await (0, releaseSync_1.syncReleases)(githubClient, gitlabClient);
+                    }
                 },
                 {
                     name: '\x1b[33m🏷️ Releases (GitLab → GitHub)\x1b[0m',
                     enabled: config.gitlab.sync?.releases.enabled || false,
                     operation: async () => {
                         await (0, releaseSync_1.syncReleases)(gitlabClient, githubClient);
+                    }
+                }
+            ];
+            const socialOperations = [
+                // PHASE 4: Social features (MEDIUM - can run in parallel)
+                {
+                    name: '\x1b[32m🔀 Pull Requests (GitHub → GitLab)\x1b[0m',
+                    enabled: config.github.sync?.pullRequests.enabled || false,
+                    operation: async () => {
+                        await (0, prSync_1.syncPullRequests)(githubClient, gitlabClient);
                     }
                 },
                 {
@@ -52192,6 +52232,13 @@ async function run() {
                     }
                 },
                 {
+                    name: '\x1b[35m❗ Issues (GitHub → GitLab)\x1b[0m',
+                    enabled: config.github.sync?.issues.enabled || false,
+                    operation: async () => {
+                        await (0, issueSync_1.syncIssues)(githubClient, gitlabClient);
+                    }
+                },
+                {
                     name: '\x1b[35m❗ Issues (GitLab → GitHub)\x1b[0m',
                     enabled: config.gitlab.sync?.issues.enabled || false,
                     operation: async () => {
@@ -52199,30 +52246,115 @@ async function run() {
                     }
                 }
             ];
-            // Execute enabled sync operations in parallel
-            const enabledOperations = syncOperations.filter(op => op.enabled);
+            // Execute sync operations in chronological order
+            const allOperations = [
+                ...coreOperations,
+                ...tagOperations,
+                ...releaseOperations,
+                ...socialOperations
+            ];
+            const enabledOperations = allOperations.filter(op => op.enabled);
             if (enabledOperations.length === 0) {
                 core.warning('No sync operations are enabled');
                 return;
             }
-            core.info(`\x1b[90m➜ Starting ${enabledOperations.length} sync operations in parallel...\x1b[0m`);
-            const results = await Promise.allSettled(enabledOperations.map(async (syncOp) => {
-                try {
-                    core.info(`\x1b[90m➜ Starting: ${syncOp.name}\x1b[0m`);
-                    await syncOp.operation();
-                    core.info(`\x1b[32m✓ Completed: ${syncOp.name}\x1b[0m`);
-                    return { name: syncOp.name, status: 'success' };
+            core.info(`\x1b[90m➜ Starting ${enabledOperations.length} sync operations with chronological dependencies...\x1b[0m`);
+            // Execute operations in phases to respect dependencies
+            const results = [];
+            // PHASE 1: Core operations (branches) - sequential within phase
+            const enabledCoreOps = coreOperations.filter(op => op.enabled);
+            if (enabledCoreOps.length > 0) {
+                core.info('\x1b[90m📋 Phase 1: Branch synchronization (foundation)\x1b[0m');
+                for (const syncOp of enabledCoreOps) {
+                    try {
+                        core.info(`\x1b[90m➜ Starting: ${syncOp.name}\x1b[0m`);
+                        await syncOp.operation();
+                        core.info(`\x1b[32m✓ Completed: ${syncOp.name}\x1b[0m`);
+                        results.push({ name: syncOp.name, status: 'success' });
+                    }
+                    catch (error) {
+                        const errorMessage = error instanceof Error ? error.message : String(error);
+                        core.error(`\x1b[31m❌ Failed: ${syncOp.name} - ${errorMessage}\x1b[0m`);
+                        results.push({
+                            name: syncOp.name,
+                            status: 'failed',
+                            error: errorMessage
+                        });
+                    }
                 }
-                catch (error) {
-                    const errorMessage = error instanceof Error ? error.message : String(error);
-                    core.error(`\x1b[31m❌ Failed: ${syncOp.name} - ${errorMessage}\x1b[0m`);
-                    return { name: syncOp.name, status: 'failed', error: errorMessage };
-                }
-            }));
+            }
+            // PHASE 2: Tag operations - parallel within phase
+            const enabledTagOps = tagOperations.filter(op => op.enabled);
+            if (enabledTagOps.length > 0) {
+                core.info('\x1b[90m📋 Phase 2: Tag synchronization\x1b[0m');
+                const tagResults = await Promise.allSettled(enabledTagOps.map(async (syncOp) => {
+                    try {
+                        core.info(`\x1b[90m➜ Starting: ${syncOp.name}\x1b[0m`);
+                        await syncOp.operation();
+                        core.info(`\x1b[32m✓ Completed: ${syncOp.name}\x1b[0m`);
+                        return { name: syncOp.name, status: 'success' };
+                    }
+                    catch (error) {
+                        const errorMessage = error instanceof Error ? error.message : String(error);
+                        core.error(`\x1b[31m❌ Failed: ${syncOp.name} - ${errorMessage}\x1b[0m`);
+                        return {
+                            name: syncOp.name,
+                            status: 'failed',
+                            error: errorMessage
+                        };
+                    }
+                }));
+                results.push(...tagResults.map(r => r.status === 'fulfilled' ? r.value : r.reason));
+            }
+            // PHASE 3: Release operations - parallel within phase
+            const enabledReleaseOps = releaseOperations.filter(op => op.enabled);
+            if (enabledReleaseOps.length > 0) {
+                core.info('\x1b[90m📋 Phase 3: Release synchronization\x1b[0m');
+                const releaseResults = await Promise.allSettled(enabledReleaseOps.map(async (syncOp) => {
+                    try {
+                        core.info(`\x1b[90m➜ Starting: ${syncOp.name}\x1b[0m`);
+                        await syncOp.operation();
+                        core.info(`\x1b[32m✓ Completed: ${syncOp.name}\x1b[0m`);
+                        return { name: syncOp.name, status: 'success' };
+                    }
+                    catch (error) {
+                        const errorMessage = error instanceof Error ? error.message : String(error);
+                        core.error(`\x1b[31m❌ Failed: ${syncOp.name} - ${errorMessage}\x1b[0m`);
+                        return {
+                            name: syncOp.name,
+                            status: 'failed',
+                            error: errorMessage
+                        };
+                    }
+                }));
+                results.push(...releaseResults.map(r => r.status === 'fulfilled' ? r.value : r.reason));
+            }
+            // PHASE 4: Social operations - parallel within phase
+            const enabledSocialOps = socialOperations.filter(op => op.enabled);
+            if (enabledSocialOps.length > 0) {
+                core.info('\x1b[90m📋 Phase 4: Social feature synchronization (PRs & Issues)\x1b[0m');
+                const socialResults = await Promise.allSettled(enabledSocialOps.map(async (syncOp) => {
+                    try {
+                        core.info(`\x1b[90m➜ Starting: ${syncOp.name}\x1b[0m`);
+                        await syncOp.operation();
+                        core.info(`\x1b[32m✓ Completed: ${syncOp.name}\x1b[0m`);
+                        return { name: syncOp.name, status: 'success' };
+                    }
+                    catch (error) {
+                        const errorMessage = error instanceof Error ? error.message : String(error);
+                        core.error(`\x1b[31m❌ Failed: ${syncOp.name} - ${errorMessage}\x1b[0m`);
+                        return {
+                            name: syncOp.name,
+                            status: 'failed',
+                            error: errorMessage
+                        };
+                    }
+                }));
+                results.push(...socialResults.map(r => r.status === 'fulfilled' ? r.value : r.reason));
+            }
             // Report results
-            const successful = results.filter(r => r.status === 'fulfilled' && r.value.status === 'success');
-            const failed = results.filter(r => r.status === 'rejected' ||
-                (r.status === 'fulfilled' && r.value.status === 'failed'));
+            const successful = results.filter(r => r.status === 'success');
+            const failed = results.filter(r => r.status === 'failed');
             core.info(`\x1b[32m✓ Completed: ${successful.length} operations successful\x1b[0m`);
             if (failed.length > 0) {
                 core.warning(`\x1b[33m⚠️ Failed: ${failed.length} operations failed\x1b[0m`);
@@ -52707,7 +52839,7 @@ class githubIssueHelper {
                 return {
                     title: issue.title,
                     body: issue.body || '',
-                    labels: labelsUtils_1.LabelHelper.combineLabels(issue.labels, this.config, 'github'),
+                    labels: labelsUtils_1.LabelHelper.combineLabels(issue.labels, 'github'),
                     number: issue.number,
                     state: issue.state,
                     comments
@@ -52747,11 +52879,13 @@ class githubIssueHelper {
     }
     async createIssue(issue) {
         try {
+            // Ensure labels include 'synced' label
+            const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(issue.labels, 'github');
             await this.octokit.rest.issues.create({
                 ...this.repo,
                 title: issue.title,
                 body: issue.body,
-                labels: issue.labels,
+                labels: normalizedLabels,
                 state: issue.state
             });
         }
@@ -52761,13 +52895,15 @@ class githubIssueHelper {
     }
     async updateIssue(issueNumber, issue) {
         try {
+            // Ensure labels include 'synced' label
+            const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(issue.labels, 'github');
             // Update an existing issue with the provided details
             await this.octokit.rest.issues.update({
                 ...this.repo,
                 issue_number: issueNumber,
                 title: issue.title,
                 body: issue.body,
-                labels: issue.labels,
+                labels: normalizedLabels,
                 state: issue.state
             });
         }
@@ -53346,7 +53482,7 @@ class pullRequestHelper {
                 base: pr.targetBranch
             });
             // Use LabelHelper to handle labels
-            const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(pr.labels, this.config, 'github');
+            const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(pr.labels, 'github');
             if (normalizedLabels.length > 0) {
                 await this.octokit.rest.issues.addLabels({
                     ...this.repo,
@@ -53395,11 +53531,12 @@ class pullRequestHelper {
             }
             // If PR is merged, we skip state updates as they're not allowed
             await this.octokit.rest.pulls.update(updatePayload);
-            // Update labels (this is always allowed)
+            // Update labels with proper combination (this is always allowed)
+            const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(pr.labels, 'github');
             await this.octokit.rest.issues.setLabels({
                 ...this.repo,
                 issue_number: number,
-                labels: pr.labels
+                labels: normalizedLabels
             });
         }
         catch (error) {
@@ -53870,7 +54007,7 @@ class gitlabIssueHelper {
                 return {
                     title: issue.title,
                     body: issue.description || '',
-                    labels: labelsUtils_1.LabelHelper.combineLabels(issue.labels, this.config, 'gitlab'),
+                    labels: labelsUtils_1.LabelHelper.combineLabels(issue.labels, 'gitlab'),
                     number: issue.iid,
                     state: (issue.state === 'opened' ? 'open' : 'closed'),
                     comments
@@ -53909,10 +54046,12 @@ class gitlabIssueHelper {
     async createIssue(issue) {
         try {
             const projectId = await this.getProjectId();
+            // Ensure labels include 'synced' label
+            const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(issue.labels, 'gitlab');
             await this.gitlab.Issues.create(projectId, {
                 title: issue.title,
                 description: issue.body,
-                labels: labelsUtils_1.LabelHelper.formatForGitLab(issue.labels),
+                labels: labelsUtils_1.LabelHelper.formatForGitLab(normalizedLabels),
                 state_event: issue.state === 'closed' ? 'close' : 'reopen'
             });
         }
@@ -53923,10 +54062,12 @@ class gitlabIssueHelper {
     async updateIssue(issueNumber, issue) {
         try {
             const projectId = await this.getProjectId();
+            // Ensure labels include 'synced' label
+            const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(issue.labels, 'gitlab');
             await this.gitlab.Issues.edit(projectId, issueNumber, {
                 title: issue.title,
                 description: issue.body,
-                labels: labelsUtils_1.LabelHelper.formatForGitLab(issue.labels),
+                labels: labelsUtils_1.LabelHelper.formatForGitLab(normalizedLabels),
                 state_event: issue.state === 'closed' ? 'close' : 'reopen'
             });
         }
@@ -54470,10 +54611,7 @@ class mergeRequestHelper {
                     description: mr.description || '',
                     sourceBranch: mr.source_branch,
                     targetBranch: mr.target_branch,
-                    labels: [
-                        ...(mr.labels || []),
-                        ...(this.config.github.sync?.pullRequests.labels || [])
-                    ],
+                    labels: labelsUtils_1.LabelHelper.combineLabels(mr.labels, 'gitlab'),
                     state: (mr.state === 'merged'
                         ? 'merged'
                         : mr.state === 'opened'
@@ -54498,7 +54636,7 @@ class mergeRequestHelper {
     async createPullRequest(pr) {
         try {
             const projectId = await this.getProjectId();
-            const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(pr.labels, this.config, 'gitlab');
+            const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(pr.labels, 'gitlab');
             // First create the MR
             const mr = await this.gitlab.MergeRequests.create(projectId, pr.sourceBranch, pr.targetBranch, pr.title, {
                 description: pr.description,
@@ -54560,12 +54698,13 @@ class mergeRequestHelper {
                 }
             }
             else {
-                // Handle regular updates
+                // Handle regular updates with proper label combination
+                const normalizedLabels = labelsUtils_1.LabelHelper.combineLabels(pr.labels, 'gitlab');
                 await this.gitlab.MergeRequests.edit(projectId, number, {
                     title: pr.title,
                     description: pr.description,
                     stateEvent: pr.state === 'closed' ? 'close' : 'reopen',
-                    labels: pr.labels.join(',')
+                    labels: labelsUtils_1.LabelHelper.formatForGitLab(normalizedLabels)
                 });
             }
         }
@@ -55182,13 +55321,25 @@ async function syncPullRequests(source, target) {
                 await target.createPullRequest(prToCreate);
             }
             else {
-                if (needsUpdate(sourcePR, targetPR)) {
-                    core.info(`🔄 Updating: ${sourcePR.title} (${targetPR.state} → ${sourcePR.state})`);
-                    await target.updatePullRequest(targetPR.number, sourcePR);
+                // Handle merged source PRs - just close the target PR if it's still open
+                if (sourcePR.state === 'merged' && targetPR.state === 'open') {
+                    core.info(`🔀 Closing target PR (source was merged): ${sourcePR.title} (open → closed)`);
+                    await target.closePullRequest(targetPR.number);
                 }
-                if (sourcePR.state === 'closed' && targetPR.state === 'open') {
+                // Handle closed source PRs - close target if it's still open
+                else if (sourcePR.state === 'closed' && targetPR.state === 'open') {
                     core.info(`🔒 Closing: ${sourcePR.title} (open → closed)`);
                     await target.closePullRequest(targetPR.number);
+                }
+                // Handle regular updates (title, description, labels, valid state changes)
+                else if (needsUpdate(sourcePR, targetPR)) {
+                    const reason = getUpdateReason(sourcePR, targetPR);
+                    core.info(`🔄 Updating: ${sourcePR.title} - ${reason}`);
+                    await target.updatePullRequest(targetPR.number, sourcePR);
+                }
+                // Skip if no changes needed
+                else {
+                    core.debug(`⏭️ Skipping: ${sourcePR.title} - already in sync`);
                 }
             }
         }
@@ -55201,20 +55352,66 @@ async function syncPullRequests(source, target) {
     }
 }
 function needsUpdate(sourcePR, targetPR) {
-    // Check basic fields that can always be updated
+    // Never update merged PRs - they are immutable
+    if (targetPR.state === 'merged') {
+        return false;
+    }
+    // Check basic fields that can always be updated (title, description, labels)
     const basicFieldsChanged = sourcePR.title !== targetPR.title ||
         sourcePR.description !== targetPR.description ||
         !arraysEqual(sourcePR.labels, targetPR.labels);
-    // Check state changes - be careful about invalid transitions
+    // Check for valid state changes
     const stateChanged = sourcePR.state !== targetPR.state;
     const validStateChange = stateChanged &&
-        // Allow closing an open PR
-        ((sourcePR.state === 'closed' && targetPR.state === 'open') ||
-            // Allow reopening a closed (but not merged) PR
-            (sourcePR.state === 'open' && targetPR.state === 'closed') ||
-            // Don't try to change state of merged PRs
-            targetPR.state !== 'merged');
-    return basicFieldsChanged || validStateChange;
+        sourcePR.state &&
+        targetPR.state &&
+        isValidStateTransition(sourcePR.state, targetPR.state);
+    return basicFieldsChanged || validStateChange || false;
+}
+/**
+ * Determines if a state transition is valid and should trigger an update
+ */
+function isValidStateTransition(sourceState, targetState) {
+    // No change needed if states are the same
+    if (sourceState === targetState) {
+        return false;
+    }
+    // Valid transitions:
+    switch (targetState) {
+        case 'open':
+            // Can close an open PR or reopen a closed (non-merged) PR
+            return sourceState === 'closed';
+        case 'closed':
+            // Can reopen a closed PR (but this should be rare)
+            return sourceState === 'open';
+        case 'merged':
+            // Merged PRs cannot be changed
+            return false;
+        default:
+            return false;
+    }
+}
+/**
+ * Gets a reason for why a PR needs to be updated
+ */
+function getUpdateReason(sourcePR, targetPR) {
+    const reasons = [];
+    if (sourcePR.title !== targetPR.title) {
+        reasons.push('title changed');
+    }
+    if (sourcePR.description !== targetPR.description) {
+        reasons.push('description changed');
+    }
+    if (!arraysEqual(sourcePR.labels, targetPR.labels)) {
+        reasons.push('labels changed');
+    }
+    if (sourcePR.state !== targetPR.state &&
+        sourcePR.state &&
+        targetPR.state &&
+        isValidStateTransition(sourcePR.state, targetPR.state)) {
+        reasons.push(`state: ${targetPR.state} → ${sourcePR.state}`);
+    }
+    return reasons.length > 0 ? reasons.join(', ') : 'unknown changes';
 }
 function arraysEqual(a, b) {
     return JSON.stringify(a.sort()) === JSON.stringify(b.sort());
@@ -55759,32 +55956,9 @@ exports.BranchConfigSchema = zod_1.z.object({
     })
         .optional()
 });
-// Helper function to normalize labels from various YAML formats
-const normalizeLabels = (val) => {
-    if (typeof val === 'string')
-        return val;
-    if (Array.isArray(val))
-        return val;
-    // Handle object-like arrays from YAML parsing (e.g., when YAML parser creates objects)
-    if (typeof val === 'object' && val !== null) {
-        const values = Object.values(val);
-        if (values.every(v => typeof v === 'string')) {
-            return values;
-        }
-    }
-    // Fallback: convert to string if possible
-    if (val !== null && val !== undefined) {
-        return String(val);
-    }
-    return [];
-};
 exports.PRConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
     autoMerge: zod_1.z.boolean(),
-    labels: zod_1.z
-        .any()
-        .transform(normalizeLabels)
-        .pipe(zod_1.z.union([zod_1.z.string(), zod_1.z.array(zod_1.z.string())])),
     comments: zod_1.z
         .object({
         enabled: zod_1.z.boolean().default(false),
@@ -55820,10 +55994,6 @@ exports.PRConfigSchema = zod_1.z.object({
 });
 exports.IssueConfigSchema = zod_1.z.object({
     enabled: zod_1.z.boolean(),
-    labels: zod_1.z
-        .any()
-        .transform(normalizeLabels)
-        .pipe(zod_1.z.union([zod_1.z.string(), zod_1.z.array(zod_1.z.string())])),
     comments: zod_1.z
         .object({
         enabled: zod_1.z.boolean().default(false),
@@ -56160,28 +56330,57 @@ function mergeWithDefaults(userConfig, defaultConfig) {
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getDefaultConfig = getDefaultConfig;
+/**
+ * Returns the default configuration with logical priority-based defaults:
+ *
+ * PRIORITY LEVELS:
+ * - CRITICAL (true): branches + historySync - foundation for everything
+ * - HIGH (true): tags, releases - core sync features most users want
+ * - MEDIUM (false): pullRequests, issues - can be noisy, user preference
+ * - LOW (false): comments - very noisy, advanced feature
+ *
+ * LOGICAL DEPENDENCIES:
+ * - releases enabled → tags auto-enabled (handled in validator)
+ * - tags/releases enabled → historySync auto-enabled (handled in validator)
+ * - pullRequests/issues enabled → branches auto-enabled (handled in validator)
+ */
 function getDefaultConfig() {
     return {
         github: {
             enabled: true,
             sync: {
+                // CRITICAL: Foundation for all sync operations
                 branches: {
                     enabled: true,
                     protected: true,
                     pattern: '*',
                     historySync: {
-                        enabled: true,
+                        enabled: true, // Always enabled - required for proper timeline sync
                         strategy: 'merge-timelines',
                         createMergeCommits: true,
                         mergeMessage: 'Sync: Merge timeline from {source} to {target}'
                     }
                 },
-                pullRequests: {
+                // HIGH: Core sync features - most users want these
+                tags: {
                     enabled: true,
+                    divergentCommitStrategy: 'skip',
+                    pattern: '*'
+                },
+                releases: {
+                    enabled: true,
+                    divergentCommitStrategy: 'skip',
+                    latestReleaseStrategy: 'point-to-latest',
+                    skipPreReleases: false,
+                    pattern: '*',
+                    includeAssets: true
+                },
+                // MEDIUM: Social features - can be noisy, disabled by default
+                pullRequests: {
+                    enabled: false, // Changed: Can be overwhelming, user choice
                     autoMerge: false,
-                    labels: ['synced'],
                     comments: {
-                        enabled: false,
+                        enabled: false, // LOW: Very noisy, advanced feature
                         attribution: {
                             includeAuthor: true,
                             includeTimestamp: true,
@@ -56194,10 +56393,9 @@ function getDefaultConfig() {
                     }
                 },
                 issues: {
-                    enabled: true,
-                    labels: ['synced'],
+                    enabled: false, // Changed: Can be very noisy, user choice
                     comments: {
-                        enabled: false,
+                        enabled: false, // LOW: Very noisy, advanced feature
                         attribution: {
                             includeAuthor: true,
                             includeTimestamp: true,
@@ -56208,42 +56406,44 @@ function getDefaultConfig() {
                         preserveFormatting: true,
                         syncReplies: true
                     }
-                },
-                releases: {
-                    enabled: true,
-                    divergentCommitStrategy: 'skip',
-                    latestReleaseStrategy: 'point-to-latest',
-                    skipPreReleases: false,
-                    pattern: '*',
-                    includeAssets: true
-                },
-                tags: {
-                    enabled: true,
-                    divergentCommitStrategy: 'skip',
-                    pattern: '*'
                 }
             }
         },
         gitlab: {
             enabled: true,
             sync: {
+                // CRITICAL: Foundation for all sync operations
                 branches: {
                     enabled: true,
                     protected: true,
                     pattern: '*',
                     historySync: {
-                        enabled: true,
+                        enabled: true, // Always enabled - required for proper timeline sync
                         strategy: 'merge-timelines',
                         createMergeCommits: true,
                         mergeMessage: 'Sync: Merge timeline from {source} to {target}'
                     }
                 },
-                pullRequests: {
+                // HIGH: Core sync features - most users want these
+                tags: {
                     enabled: true,
+                    divergentCommitStrategy: 'skip',
+                    pattern: '*'
+                },
+                releases: {
+                    enabled: true,
+                    divergentCommitStrategy: 'skip',
+                    latestReleaseStrategy: 'point-to-latest',
+                    skipPreReleases: false,
+                    pattern: '*',
+                    includeAssets: true
+                },
+                // MEDIUM: Social features - can be noisy, disabled by default
+                pullRequests: {
+                    enabled: false, // Changed: Can be overwhelming, user choice
                     autoMerge: false,
-                    labels: ['synced'],
                     comments: {
-                        enabled: false,
+                        enabled: false, // LOW: Very noisy, advanced feature
                         attribution: {
                             includeAuthor: true,
                             includeTimestamp: true,
@@ -56256,10 +56456,9 @@ function getDefaultConfig() {
                     }
                 },
                 issues: {
-                    enabled: true,
-                    labels: ['synced'],
+                    enabled: false, // Changed: Can be very noisy, user choice
                     comments: {
-                        enabled: false,
+                        enabled: false, // LOW: Very noisy, advanced feature
                         attribution: {
                             includeAuthor: true,
                             includeTimestamp: true,
@@ -56270,19 +56469,6 @@ function getDefaultConfig() {
                         preserveFormatting: true,
                         syncReplies: true
                     }
-                },
-                releases: {
-                    enabled: true,
-                    divergentCommitStrategy: 'skip',
-                    latestReleaseStrategy: 'point-to-latest',
-                    skipPreReleases: false,
-                    pattern: '*',
-                    includeAssets: true
-                },
-                tags: {
-                    enabled: true,
-                    divergentCommitStrategy: 'skip',
-                    pattern: '*'
                 }
             }
         }
@@ -56371,21 +56557,20 @@ class LabelHelper {
             : [labels.trim()];
     }
     /**
-     * Combines source labels with config labels and normalizes them
+     * Combines source labels with the 'synced' label and normalizes them
+     * Always includes the 'synced' label for synced content
      */
-    static combineLabels(sourceLabels, config, platform) {
+    static combineLabels(sourceLabels, platform) {
         // Normalize source labels based on platform
         const normalizedSourceLabels = Array.isArray(sourceLabels)
             ? platform === 'github'
                 ? this.normalizeGitHubLabels(sourceLabels)
                 : sourceLabels
             : this.normalizeGitLabLabels(sourceLabels);
-        // Get config labels
-        const configLabels = platform === 'github'
-            ? this.normalizeConfigLabels(config.gitlab.sync?.pullRequests.labels)
-            : this.normalizeConfigLabels(config.github.sync?.pullRequests.labels);
-        // Combine and deduplicate
-        return [...new Set([...normalizedSourceLabels, ...configLabels])];
+        // Always include 'synced' label for synced content
+        const syncedLabels = ['synced'];
+        // Combine and deduplicate: source labels + synced label
+        return [...new Set([...normalizedSourceLabels, ...syncedLabels])];
     }
     /**
      * Formats labels for GitLab API (comma-separated string)

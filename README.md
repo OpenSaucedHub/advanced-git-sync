@@ -16,9 +16,11 @@ repositories. Keep your projects in sync across platforms automatically.
 - 🔄 **Bi-directional sync** between GitHub and GitLab
 - 🌳 **Branches, PRs/MRs, issues, releases, and tags**
 - 💬 **Enhanced comment synchronization** with proper attribution
-- ⚙️ **Highly configurable** with sensible defaults
+- ⚙️ **Highly configurable** with logical priority-based defaults
 - 🔒 **Secure** with token-based authentication
 - 🏷️ **Smart labeling** of synced content
+- 🧠 **Intelligent dependency management** - automatically enables required features
+- ⏱️ **Chronological sync order** - respects dependencies between operations
 
 ## 🚀 Quick Start
 
@@ -87,7 +89,14 @@ github:
   enabled: true
 ```
 
-That's it! The action will sync everything by default. 🎉
+That's it! The action uses intelligent defaults:
+
+- ✅ **Enabled by default**: Branches (with history sync), Tags, Releases
+- ❌ **Disabled by default**: Pull Requests, Issues, Comments (can be noisy)
+- 🧠 **Smart dependencies**: Automatically enables required features (e.g., tags when releases are
+  enabled)
+
+🎉
 
 ## 📖 Documentation
 

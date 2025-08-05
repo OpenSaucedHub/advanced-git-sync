@@ -1,7 +1,5 @@
 // src/utils/labelHelper.ts
 
-import { Config } from '../types'
-
 export class LabelHelper {
   /**
    * Normalizes label configuration from config
@@ -37,11 +35,11 @@ export class LabelHelper {
   }
 
   /**
-   * Combines source labels with config labels and normalizes them
+   * Combines source labels with the 'synced' label and normalizes them
+   * Always includes the 'synced' label for synced content
    */
   static combineLabels(
     sourceLabels: string[] | Array<{ name: string }> | string | undefined,
-    config: Config,
     platform: 'github' | 'gitlab'
   ): string[] {
     // Normalize source labels based on platform
@@ -51,14 +49,11 @@ export class LabelHelper {
         : (sourceLabels as string[])
       : this.normalizeGitLabLabels(sourceLabels)
 
-    // Get config labels
-    const configLabels =
-      platform === 'github'
-        ? this.normalizeConfigLabels(config.gitlab.sync?.pullRequests.labels)
-        : this.normalizeConfigLabels(config.github.sync?.pullRequests.labels)
+    // Always include 'synced' label for synced content
+    const syncedLabels = ['synced']
 
-    // Combine and deduplicate
-    return [...new Set([...normalizedSourceLabels, ...configLabels])]
+    // Combine and deduplicate: source labels + synced label
+    return [...new Set([...normalizedSourceLabels, ...syncedLabels])]
   }
 
   /**

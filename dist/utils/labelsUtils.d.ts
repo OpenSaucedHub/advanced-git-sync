@@ -1,4 +1,3 @@
-import { Config } from '../types';
 export declare class LabelHelper {
     /**
      * Normalizes label configuration from config
@@ -17,11 +16,12 @@ export declare class LabelHelper {
      */
     static normalizeGitLabLabels(labels: string[] | string | undefined): string[];
     /**
-     * Combines source labels with config labels and normalizes them
+     * Combines source labels with the 'synced' label and normalizes them
+     * Always includes the 'synced' label for synced content
      */
     static combineLabels(sourceLabels: string[] | Array<{
         name: string;
-    }> | string | undefined, config: Config, platform: 'github' | 'gitlab'): string[];
+    }> | string | undefined, platform: 'github' | 'gitlab'): string[];
     /**
      * Formats labels for GitLab API (comma-separated string)
      */

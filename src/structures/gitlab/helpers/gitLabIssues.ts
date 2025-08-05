@@ -38,11 +38,7 @@ export class gitlabIssueHelper {
           return {
             title: issue.title,
             body: issue.description || '',
-            labels: LabelHelper.combineLabels(
-              issue.labels,
-              this.config,
-              'gitlab'
-            ),
+            labels: LabelHelper.combineLabels(issue.labels, 'gitlab'),
             number: issue.iid,
             state: (issue.state === 'opened' ? 'open' : 'closed') as
               | 'open'
@@ -97,10 +93,14 @@ export class gitlabIssueHelper {
   async createIssue(issue: Issue): Promise<void> {
     try {
       const projectId = await this.getProjectId()
+
+      // Ensure labels include 'synced' label
+      const normalizedLabels = LabelHelper.combineLabels(issue.labels, 'gitlab')
+
       await this.gitlab.Issues.create(projectId, {
         title: issue.title,
         description: issue.body,
-        labels: LabelHelper.formatForGitLab(issue.labels),
+        labels: LabelHelper.formatForGitLab(normalizedLabels),
         state_event: issue.state === 'closed' ? 'close' : 'reopen'
       })
     } catch (error) {
@@ -113,10 +113,14 @@ export class gitlabIssueHelper {
   async updateIssue(issueNumber: number, issue: Issue): Promise<void> {
     try {
       const projectId = await this.getProjectId()
+
+      // Ensure labels include 'synced' label
+      const normalizedLabels = LabelHelper.combineLabels(issue.labels, 'gitlab')
+
       await this.gitlab.Issues.edit(projectId, issueNumber, {
         title: issue.title,
         description: issue.body,
-        labels: LabelHelper.formatForGitLab(issue.labels),
+        labels: LabelHelper.formatForGitLab(normalizedLabels),
         state_event: issue.state === 'closed' ? 'close' : 'reopen'
       })
     } catch (error) {

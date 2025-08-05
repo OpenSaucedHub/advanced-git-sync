@@ -15,10 +15,26 @@ labels:
   - item2
 ```
 
+## 🧠 Intelligent Defaults & Dependencies
+
+The action uses **logical priority-based defaults** with automatic dependency management:
+
+### Priority Levels:
+
+- **🔴 CRITICAL (enabled by default)**: Branches + historySync - foundation for everything
+- **🟡 HIGH (enabled by default)**: Tags, Releases - core sync features most users want
+- **🟠 MEDIUM (disabled by default)**: Pull Requests, Issues - can be noisy, user preference
+- **🔵 LOW (disabled by default)**: Comments - very noisy, advanced feature
+
+### Smart Dependencies:
+
+- **Releases enabled** → automatically enables **Tags** (releases need tags)
+- **Tags/Releases enabled** → automatically enables **historySync** (proper timeline needed)
+- **Pull Requests/Issues enabled** → automatically enables **Branches** (PRs/issues need branches)
+
 ## Complete Default Configuration
 
-This is the complete default configuration. If you don't want to sync a particular entity, set it to
-`false`.
+This shows the complete default configuration with the logical defaults:
 
 ```yaml
 # When you have gitlab.sync.[entity].enabled: true, entities will be synced FROM GitLab to GitHub
@@ -29,22 +45,38 @@ gitlab:
   owner: # Optional, defaults to GitHub repo owner
   repo: # Optional, defaults to GitHub repo name
   sync:
+    # 🔴 CRITICAL: Foundation for all sync operations (enabled by default)
     branches:
       enabled: true
       protected: true
       pattern: '*'
       historySync:
-        enabled: true
+        enabled: true # Always enabled - required for proper timeline sync
         strategy: 'merge-timelines'
         createMergeCommits: true
         mergeMessage: 'Sync: Merge timeline from {source} to {target}'
 
-    pullRequests:
+    # 🟡 HIGH: Core sync features - most users want these (enabled by default)
+    tags:
+      enabled: true # Auto-enabled if releases are enabled
+      divergentCommitStrategy: 'skip'
+      pattern: '*'
+
+    releases:
       enabled: true
+      divergentCommitStrategy: 'skip'
+      latestReleaseStrategy: 'point-to-latest'
+      skipPreReleases: false
+      pattern: '*'
+      includeAssets: true
+
+    # 🟠 MEDIUM: Social features - can be noisy (disabled by default)
+    pullRequests:
+      enabled: false # Changed: Can be overwhelming, user choice
       autoMerge: false
-      labels: ['synced']
+      # Labels: Automatically syncs all original labels + adds 'synced' label
       comments:
-        enabled: false # Enable to sync PR comments with attribution
+        enabled: false # 🔵 LOW: Very noisy, advanced feature
         attribution:
           includeAuthor: true
           includeTimestamp: true
@@ -55,10 +87,10 @@ gitlab:
         syncReplies: true
 
     issues:
-      enabled: true
-      labels: ['synced']
+      enabled: false # Changed: Can be very noisy, user choice
+      # Labels: Automatically syncs all original labels + adds 'synced' label
       comments:
-        enabled: false # Enable to sync issue comments with attribution
+        enabled: false # 🔵 LOW: Very noisy, advanced feature
         attribution:
           includeAuthor: true
           includeTimestamp: true
@@ -67,19 +99,6 @@ gitlab:
         handleUpdates: true
         preserveFormatting: true
         syncReplies: true
-
-    releases:
-      enabled: true
-      divergentCommitStrategy: 'skip'
-      latestReleaseStrategy: 'point-to-latest'
-      skipPreReleases: false
-      pattern: '*'
-      includeAssets: true
-
-    tags:
-      enabled: true # automatically enabled if releases = true
-      divergentCommitStrategy: 'skip'
-      pattern: '*'
 
 # When you have github.sync.[entity].enabled: true, entities will be synced FROM GitHub to GitLab
 github:
@@ -87,22 +106,38 @@ github:
   owner: # Optional, defaults to GitHub owner
   repo: # Optional, defaults to GitHub repo name
   sync:
+    # 🔴 CRITICAL: Foundation for all sync operations (enabled by default)
     branches:
       enabled: true
       protected: true
       pattern: '*'
       historySync:
-        enabled: true
+        enabled: true # Always enabled - required for proper timeline sync
         strategy: 'merge-timelines'
         createMergeCommits: true
         mergeMessage: 'Sync: Merge timeline from {source} to {target}'
 
-    pullRequests:
+    # 🟡 HIGH: Core sync features - most users want these (enabled by default)
+    tags:
+      enabled: true # Auto-enabled if releases are enabled
+      divergentCommitStrategy: 'skip'
+      pattern: '*'
+
+    releases:
       enabled: true
+      divergentCommitStrategy: 'skip'
+      latestReleaseStrategy: 'point-to-latest'
+      skipPreReleases: false
+      pattern: '*'
+      includeAssets: true
+
+    # 🟠 MEDIUM: Social features - can be noisy (disabled by default)
+    pullRequests:
+      enabled: false # Changed: Can be overwhelming, user choice
       autoMerge: false
-      labels: ['synced']
+      # Labels: Automatically syncs all original labels + adds 'synced' label
       comments:
-        enabled: false # Enable to sync PR comments with attribution
+        enabled: false # 🔵 LOW: Very noisy, advanced feature
         attribution:
           includeAuthor: true
           includeTimestamp: true
@@ -113,10 +148,10 @@ github:
         syncReplies: true
 
     issues:
-      enabled: true
-      labels: ['synced']
+      enabled: false # Changed: Can be very noisy, user choice
+      # Labels: Automatically syncs all original labels + adds 'synced' label
       comments:
-        enabled: false # Enable to sync issue comments with attribution
+        enabled: false # 🔵 LOW: Very noisy, advanced feature
         attribution:
           includeAuthor: true
           includeTimestamp: true
@@ -125,30 +160,22 @@ github:
         handleUpdates: true
         preserveFormatting: true
         syncReplies: true
-
-    releases:
-      enabled: true
-      divergentCommitStrategy: 'skip'
-      latestReleaseStrategy: 'point-to-latest'
-      skipPreReleases: false
-      pattern: '*'
-      includeAssets: true
-
-    tags:
-      enabled: true # automatically enabled if releases = true
-      divergentCommitStrategy: 'skip'
-      pattern: '*'
 ```
 
 ## Configuration Behavior
 
 > [!IMPORTANT]
 >
-> - If no config is provided, everything falls back to defaults.
-> - In case of partial config, missing fields will default to `false`.
-> - If `gitlab.enabled: true` or `github.enabled: true` is set with no other details, that
->   platform's defaults are populated. (The action assumes you meant to sync everything)
-> - In case of an invalid config, the action will try to reason with your config.
+> - **Smart Defaults**: Uses logical priority-based defaults (core features enabled, social features
+>   disabled)
+> - **Automatic Dependencies**: Automatically enables required features (e.g., tags when releases
+>   are enabled)
+> - **Chronological Execution**: Sync operations run in dependency order (branches → tags → releases
+>   → PRs → issues)
+> - **Partial Config Support**: Missing fields use intelligent defaults, not just `false`
+> - **Config Reasoning**: Invalid configs are automatically corrected when possible
+> - **Platform Defaults**: If `gitlab.enabled: true` or `github.enabled: true` with no details,
+>   logical defaults apply
 
 ## Platform Configuration
 

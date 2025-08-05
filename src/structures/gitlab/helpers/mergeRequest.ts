@@ -47,10 +47,7 @@ export class mergeRequestHelper {
               description: mr.description || '',
               sourceBranch: mr.source_branch,
               targetBranch: mr.target_branch,
-              labels: [
-                ...(mr.labels || []),
-                ...(this.config.github.sync?.pullRequests.labels || [])
-              ],
+              labels: LabelHelper.combineLabels(mr.labels, 'gitlab'),
               state: (mr.state === 'merged'
                 ? 'merged'
                 : mr.state === 'opened'
@@ -89,11 +86,7 @@ export class mergeRequestHelper {
   async createPullRequest(pr: PullRequest): Promise<void> {
     try {
       const projectId = await this.getProjectId()
-      const normalizedLabels = LabelHelper.combineLabels(
-        pr.labels,
-        this.config,
-        'gitlab'
-      )
+      const normalizedLabels = LabelHelper.combineLabels(pr.labels, 'gitlab')
 
       // First create the MR
       const mr = await this.gitlab.MergeRequests.create(
@@ -174,12 +167,14 @@ export class mergeRequestHelper {
           }
         }
       } else {
-        // Handle regular updates
+        // Handle regular updates with proper label combination
+        const normalizedLabels = LabelHelper.combineLabels(pr.labels, 'gitlab')
+
         await this.gitlab.MergeRequests.edit(projectId, number, {
           title: pr.title,
           description: pr.description,
           stateEvent: pr.state === 'closed' ? 'close' : 'reopen',
-          labels: pr.labels.join(',')
+          labels: LabelHelper.formatForGitLab(normalizedLabels)
         })
       }
     } catch (error) {

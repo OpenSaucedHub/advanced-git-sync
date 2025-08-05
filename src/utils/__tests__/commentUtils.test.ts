@@ -229,7 +229,6 @@ describe('getCommentSyncOptions', () => {
           pullRequests: {
             enabled: true,
             autoMerge: false,
-            labels: [],
             comments: {
               enabled: false,
               attribution: {
@@ -245,7 +244,6 @@ describe('getCommentSyncOptions', () => {
           },
           issues: {
             enabled: true,
-            labels: [],
             comments: {
               enabled: true,
               attribution: {

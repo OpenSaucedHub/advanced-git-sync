@@ -73,16 +73,27 @@ export async function syncPullRequests(
         const prToCreate = await formatPRComments(source, sourcePR)
         await target.createPullRequest(prToCreate)
       } else {
-        if (needsUpdate(sourcePR, targetPR)) {
+        // Handle merged source PRs - just close the target PR if it's still open
+        if (sourcePR.state === 'merged' && targetPR.state === 'open') {
           core.info(
-            `🔄 Updating: ${sourcePR.title} (${targetPR.state} → ${sourcePR.state})`
+            `🔀 Closing target PR (source was merged): ${sourcePR.title} (open → closed)`
           )
-          await target.updatePullRequest(targetPR.number!, sourcePR)
+          await target.closePullRequest(targetPR.number!)
         }
-
-        if (sourcePR.state === 'closed' && targetPR.state === 'open') {
+        // Handle closed source PRs - close target if it's still open
+        else if (sourcePR.state === 'closed' && targetPR.state === 'open') {
           core.info(`🔒 Closing: ${sourcePR.title} (open → closed)`)
           await target.closePullRequest(targetPR.number!)
+        }
+        // Handle regular updates (title, description, labels, valid state changes)
+        else if (needsUpdate(sourcePR, targetPR)) {
+          const reason = getUpdateReason(sourcePR, targetPR)
+          core.info(`🔄 Updating: ${sourcePR.title} - ${reason}`)
+          await target.updatePullRequest(targetPR.number!, sourcePR)
+        }
+        // Skip if no changes needed
+        else {
+          core.debug(`⏭️ Skipping: ${sourcePR.title} - already in sync`)
         }
       }
     }
@@ -99,24 +110,81 @@ export async function syncPullRequests(
 }
 
 function needsUpdate(sourcePR: PullRequest, targetPR: PullRequest): boolean {
-  // Check basic fields that can always be updated
+  // Never update merged PRs - they are immutable
+  if (targetPR.state === 'merged') {
+    return false
+  }
+
+  // Check basic fields that can always be updated (title, description, labels)
   const basicFieldsChanged =
     sourcePR.title !== targetPR.title ||
     sourcePR.description !== targetPR.description ||
     !arraysEqual(sourcePR.labels, targetPR.labels)
 
-  // Check state changes - be careful about invalid transitions
+  // Check for valid state changes
   const stateChanged = sourcePR.state !== targetPR.state
   const validStateChange =
     stateChanged &&
-    // Allow closing an open PR
-    ((sourcePR.state === 'closed' && targetPR.state === 'open') ||
-      // Allow reopening a closed (but not merged) PR
-      (sourcePR.state === 'open' && targetPR.state === 'closed') ||
-      // Don't try to change state of merged PRs
-      targetPR.state !== 'merged')
+    sourcePR.state &&
+    targetPR.state &&
+    isValidStateTransition(sourcePR.state, targetPR.state)
 
-  return basicFieldsChanged || validStateChange
+  return basicFieldsChanged || validStateChange || false
+}
+
+/**
+ * Determines if a state transition is valid and should trigger an update
+ */
+function isValidStateTransition(
+  sourceState: string,
+  targetState: string
+): boolean {
+  // No change needed if states are the same
+  if (sourceState === targetState) {
+    return false
+  }
+
+  // Valid transitions:
+  switch (targetState) {
+    case 'open':
+      // Can close an open PR or reopen a closed (non-merged) PR
+      return sourceState === 'closed'
+    case 'closed':
+      // Can reopen a closed PR (but this should be rare)
+      return sourceState === 'open'
+    case 'merged':
+      // Merged PRs cannot be changed
+      return false
+    default:
+      return false
+  }
+}
+
+/**
+ * Gets a reason for why a PR needs to be updated
+ */
+function getUpdateReason(sourcePR: PullRequest, targetPR: PullRequest): string {
+  const reasons: string[] = []
+
+  if (sourcePR.title !== targetPR.title) {
+    reasons.push('title changed')
+  }
+  if (sourcePR.description !== targetPR.description) {
+    reasons.push('description changed')
+  }
+  if (!arraysEqual(sourcePR.labels, targetPR.labels)) {
+    reasons.push('labels changed')
+  }
+  if (
+    sourcePR.state !== targetPR.state &&
+    sourcePR.state &&
+    targetPR.state &&
+    isValidStateTransition(sourcePR.state, targetPR.state)
+  ) {
+    reasons.push(`state: ${targetPR.state} → ${sourcePR.state}`)
+  }
+
+  return reasons.length > 0 ? reasons.join(', ') : 'unknown changes'
 }
 
 function arraysEqual(a: string[], b: string[]): boolean {

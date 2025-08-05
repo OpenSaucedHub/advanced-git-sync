@@ -2,11 +2,36 @@
 
 This guide provides real-world configuration examples for various use cases.
 
+## 🧠 Understanding Logical Defaults
+
+The action uses **logical priority-based defaults** with automatic dependency management:
+
+- **✅ Enabled by default**: Branches (with historySync), Tags, Releases - core features most users
+  want
+- **❌ Disabled by default**: Pull Requests, Issues, Comments - can be noisy, user choice
+- **🔗 Smart dependencies**: Automatically enables required features (e.g., tags when releases
+  enabled)
+
+### Minimal Configuration
+
+For most users, this is all you need:
+
+```yaml
+gitlab:
+  enabled: true
+  projectId: 12345 # Your GitLab project ID
+
+github:
+  enabled: true
+```
+
+This automatically syncs: **Branches** (with history) + **Tags** + **Releases** 🎉
+
 ## Basic Examples
 
-### 1. GitHub to GitLab Only
+### 1. GitHub to GitLab Only (Core Features)
 
-Sync everything from GitHub to GitLab, but not the reverse:
+Sync core features from GitHub to GitLab using Logical defaults:
 
 ```yaml
 gitlab:
@@ -14,38 +39,39 @@ gitlab:
 
 github:
   enabled: true # Sync FROM GitHub to GitLab
-  sync:
-    branches:
-      enabled: true
-    pullRequests:
-      enabled: true
-      labels: ['github-sync']
-    issues:
-      enabled: true
-      labels: ['github-sync']
-    releases:
-      enabled: true
+  # Uses Logical defaults: branches + tags + releases enabled
+  # pullRequests and issues disabled by default (less noisy)
 ```
 
-### 2. GitLab to GitHub Only
+### 2. GitHub to GitLab with Social Features
 
-Sync everything from GitLab to GitHub, but not the reverse:
+If you want to include PRs and issues (can be noisy):
+
+```yaml
+gitlab:
+  enabled: false
+
+github:
+  enabled: true
+  sync:
+    # Core features use defaults (branches, tags, releases = true)
+    pullRequests:
+      enabled: true # Enable social features
+      # Labels automatically handled: original labels + 'synced'
+    issues:
+      enabled: true # Enable social features
+      # Labels automatically handled: original labels + 'synced'
+```
+
+### 3. GitLab to GitHub Only (Core Features)
+
+Sync core features from GitLab to GitHub using Logical defaults:
 
 ```yaml
 gitlab:
   enabled: true # Sync FROM GitLab to GitHub
   projectId: 12345
-  sync:
-    branches:
-      enabled: true
-    pullRequests:
-      enabled: true
-      labels: ['gitlab-sync']
-    issues:
-      enabled: true
-      labels: ['gitlab-sync']
-    releases:
-      enabled: true
+  # Uses Logical defaults: branches + tags + releases enabled
 
 github:
   enabled: false # Don't sync FROM GitHub to GitLab
@@ -401,25 +427,16 @@ jobs:
 
 ## Best Practices
 
-### Label Strategy
+### Automatic Label Management
 
-Use descriptive labels to track sync origin:
+Labels are now automatically handled:
 
-```yaml
-gitlab:
-  sync:
-    pullRequests:
-      labels: ['🔄 synced', '📍 from-gitlab', '🤖 automated']
-    issues:
-      labels: ['🔄 synced', '📍 from-gitlab']
+- **All original labels** from the source PR/Issue are preserved
+- **'synced' label** is automatically added to all synced content
+- **No configuration needed** - labels work out of the box
 
-github:
-  sync:
-    pullRequests:
-      labels: ['🔄 synced', '📍 from-github', '🤖 automated']
-    issues:
-      labels: ['🔄 synced', '📍 from-github']
-```
+Example: A GitHub PR with labels `['bug', 'urgent']` will become a GitLab MR with labels
+`['bug', 'urgent', 'synced']`
 
 ### Performance Optimization
 
