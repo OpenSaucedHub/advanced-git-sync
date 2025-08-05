@@ -72,6 +72,12 @@ module.exports = {
         prepareCmd: [
           // Update README.md version references
           "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' README.md",
+          // Update documentation version references
+          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' docs/troubleshooting.md",
+          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' docs/examples.md",
+          // Update action version references in documentation
+          "sed -i 's|\\*\\*Action Version:\\*\\* v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|**Action Version:** v${nextRelease.version}|g' docs/troubleshooting.md",
+          "sed -i 's|Action version: v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|Action version: v${nextRelease.version}|g' docs/contributing.md",
           // Update package.json version
           'npm version ${nextRelease.version} --no-git-tag-version'
         ].join(' && ')
@@ -81,7 +87,14 @@ module.exports = {
     [
       '@semantic-release/git',
       {
-        assets: ['package.json', 'CHANGELOG.md', 'README.md'],
+        assets: [
+          'package.json',
+          'CHANGELOG.md',
+          'README.md',
+          'docs/troubleshooting.md',
+          'docs/examples.md',
+          'docs/contributing.md'
+        ],
         message:
           'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}'
       }

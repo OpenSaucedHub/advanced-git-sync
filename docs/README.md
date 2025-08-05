@@ -6,14 +6,149 @@ This guide covers all configuration options for the GitHub GitLab Sync Action.
 
 Create a `.github/sync-config.yml` file in your repository to customize the sync behavior.
 
-> **📝 YAML Array Support**: The action includes robust YAML parsing that handles various array
-> formats. You can use either `["item1", "item2"]` or the standard YAML array syntax:
+**📝 YAML Array Support**: The action includes robust YAML parsing that handles various array
+formats. You can use either `["item1", "item2"]` or the standard YAML array syntax:
+
+```yaml
+labels:
+  - item1
+  - item2
+```
+
+## Complete Default Configuration
+
+This is the complete default configuration. If you don't want to sync a particular entity, set it to
+`false`.
+
+```yaml
+# When you have gitlab.sync.[entity].enabled: true, entities will be synced FROM GitLab to GitHub
+gitlab:
+  enabled: true
+  host: 'gitlab.com' # Optional, defaults to gitlab.com
+  projectId: # optional, but recommended if present, you do not need owner and repo
+  owner: # Optional, defaults to GitHub repo owner
+  repo: # Optional, defaults to GitHub repo name
+  sync:
+    branches:
+      enabled: true
+      protected: true
+      pattern: '*'
+      historySync:
+        enabled: true
+        strategy: 'merge-timelines'
+        createMergeCommits: true
+        mergeMessage: 'Sync: Merge timeline from {source} to {target}'
+
+    pullRequests:
+      enabled: true
+      autoMerge: false
+      labels: ['synced']
+      comments:
+        enabled: false # Enable to sync PR comments with attribution
+        attribution:
+          includeAuthor: true
+          includeTimestamp: true
+          includeSourceLink: true
+          format: 'quoted' # quoted | inline | minimal
+        handleUpdates: true
+        preserveFormatting: true
+        syncReplies: true
+
+    issues:
+      enabled: true
+      labels: ['synced']
+      comments:
+        enabled: false # Enable to sync issue comments with attribution
+        attribution:
+          includeAuthor: true
+          includeTimestamp: true
+          includeSourceLink: true
+          format: 'quoted' # quoted | inline | minimal
+        handleUpdates: true
+        preserveFormatting: true
+        syncReplies: true
+
+    releases:
+      enabled: true
+      divergentCommitStrategy: 'skip'
+      latestReleaseStrategy: 'point-to-latest'
+      skipPreReleases: false
+      pattern: '*'
+      includeAssets: true
+
+    tags:
+      enabled: true # automatically enabled if releases = true
+      divergentCommitStrategy: 'skip'
+      pattern: '*'
+
+# When you have github.sync.[entity].enabled: true, entities will be synced FROM GitHub to GitLab
+github:
+  enabled: true
+  owner: # Optional, defaults to GitHub owner
+  repo: # Optional, defaults to GitHub repo name
+  sync:
+    branches:
+      enabled: true
+      protected: true
+      pattern: '*'
+      historySync:
+        enabled: true
+        strategy: 'merge-timelines'
+        createMergeCommits: true
+        mergeMessage: 'Sync: Merge timeline from {source} to {target}'
+
+    pullRequests:
+      enabled: true
+      autoMerge: false
+      labels: ['synced']
+      comments:
+        enabled: false # Enable to sync PR comments with attribution
+        attribution:
+          includeAuthor: true
+          includeTimestamp: true
+          includeSourceLink: true
+          format: 'quoted' # quoted | inline | minimal
+        handleUpdates: true
+        preserveFormatting: true
+        syncReplies: true
+
+    issues:
+      enabled: true
+      labels: ['synced']
+      comments:
+        enabled: false # Enable to sync issue comments with attribution
+        attribution:
+          includeAuthor: true
+          includeTimestamp: true
+          includeSourceLink: true
+          format: 'quoted' # quoted | inline | minimal
+        handleUpdates: true
+        preserveFormatting: true
+        syncReplies: true
+
+    releases:
+      enabled: true
+      divergentCommitStrategy: 'skip'
+      latestReleaseStrategy: 'point-to-latest'
+      skipPreReleases: false
+      pattern: '*'
+      includeAssets: true
+
+    tags:
+      enabled: true # automatically enabled if releases = true
+      divergentCommitStrategy: 'skip'
+      pattern: '*'
+```
+
+## Configuration Behavior
+
+> [!IMPORTANT]
 >
-> ```yaml
-> labels:
->   - item1
->   - item2
-> ```
+> - If no config is provided, everything falls back to defaults.
+> - In case of partial config, missing fields will default to `false`.
+> - If `gitlab.enabled: true` or `github.enabled: true` is set with no other details, that
+>   platform's defaults are populated. (The action assumes you meant to sync everything)
+> - In case of an invalid config, the action will try to reason with your config.
 
 ## Platform Configuration
 
@@ -27,9 +162,13 @@ Create a `.github/sync-config.yml` file in your repository to customize the sync
 | `repo`      | GitLab repository name        | No       | GitHub repo name  |
 | `projectId` | GitLab project ID             | No       | Auto-detected     |
 
+<br>
+
 > [!TIP]
 >
 > If `projectId` is provided, `owner` and `repo` are not required.
+
+<br>
 
 ### GitHub Configuration (`github`)
 
@@ -182,12 +321,12 @@ This is the comment content with minimal attribution. — @username
 
 **Key Features:**
 
-- 🛡️ **Intelligent Deduplication** - Prevents duplicate comments
-- 📝 **Markdown Preservation** - Maintains code blocks, links, formatting
-- 🔒 **@Mention Escaping** - Prevents unwanted notifications (`@user` → `\@user`)
-- 🔄 **Update Handling** - Syncs comment edits and modifications
-- 🔗 **Source Links** - Direct links to original comments
-- ⚡ **Error Resilience** - Graceful handling of API failures
+- **Intelligent Deduplication** - Prevents duplicate comments
+- **Markdown Preservation** - Maintains code blocks, links, formatting
+- **@Mention Escaping** - Prevents unwanted notifications (`@user` → `\@user`)
+- **Update Handling** - Syncs comment edits and modifications
+- **Source Links** - Direct links to original comments
+- **Error Resilience** - Graceful handling of API failures
 
 **Important Considerations:**
 
@@ -218,7 +357,6 @@ the target repository. The action provides intelligent strategies to handle thes
 
 - **`skip`** (Default): Skip releases pointing to commits that don't exist in target repository
 - **`create-anyway`**: Create releases even if the commit doesn't exist in target
-- **`point-to-latest`**: Point the release to the latest commit in the target repository
 
 **Latest Release Strategies:**
 
@@ -252,156 +390,30 @@ releases:
 | `divergentCommitStrategy` | How to handle tags with missing commits | No       | skip    |
 | `pattern`                 | Pattern to match tag names              | No       | "\*"    |
 
+**Divergent Commit Strategies for Tags:**
+
+- **`skip`** (Default): Skip tags pointing to commits that don't exist in target repository
+- **`create-anyway`**: Create tags even if the commit doesn't exist in target
+
 **Example Tag Configuration:**
 
 ```yaml
 tags:
   enabled: true
-  divergentCommitStrategy: 'skip'
+  divergentCommitStrategy: 'skip' # skip | create-anyway
   pattern: 'v*'
 ```
 
-> [!TIP]
+<br>
+
+> [!IMPORTANT]
 >
 > - Tags syncing is automatically enabled if releases syncing is enabled to avoid orphaning
 >   releases.
 > - The action intelligently handles repositories with different commit histories.
 > - Latest releases get special treatment to ensure users always have access to the current version.
 
-## Complete Default Configuration
-
-This is the complete default configuration. If you don't want to sync a particular entity, set it to
-`false`.
-
-```yaml
-# When you have gitlab.sync.[entity].enabled: true, entities will be synced FROM GitLab to GitHub
-gitlab:
-  enabled: true
-  host: 'gitlab.com' # Optional, defaults to gitlab.com
-  projectId: # optional, but recommended if present, you do not need owner and repo
-  owner: # Optional, defaults to GitHub repo owner
-  repo: # Optional, defaults to GitHub repo name
-  sync:
-    branches:
-      enabled: true
-      protected: true
-      pattern: '*'
-      historySync:
-        enabled: true
-        strategy: 'merge-timelines'
-        createMergeCommits: true
-        mergeMessage: 'Sync: Merge timeline from {source} to {target}'
-
-    pullRequests:
-      enabled: true
-      autoMerge: false
-      labels: ['synced']
-      comments:
-        enabled: false # Enable to sync PR comments with attribution
-        attribution:
-          includeAuthor: true
-          includeTimestamp: true
-          includeSourceLink: true
-          format: 'quoted' # quoted | inline | minimal
-        handleUpdates: true
-        preserveFormatting: true
-        syncReplies: true
-
-    issues:
-      enabled: true
-      labels: ['synced']
-      comments:
-        enabled: false # Enable to sync issue comments with attribution
-        attribution:
-          includeAuthor: true
-          includeTimestamp: true
-          includeSourceLink: true
-          format: 'quoted' # quoted | inline | minimal
-        handleUpdates: true
-        preserveFormatting: true
-        syncReplies: true
-
-    releases:
-      enabled: true
-      divergentCommitStrategy: 'skip'
-      latestReleaseStrategy: 'point-to-latest'
-      skipPreReleases: false
-      pattern: '*'
-      includeAssets: true
-
-    tags:
-      enabled: true # automatically enabled if releases = true
-      divergentCommitStrategy: 'skip'
-      pattern: '*'
-
-# When you have github.sync.[entity].enabled: true, entities will be synced FROM GitHub to GitLab
-github:
-  enabled: true
-  owner: # Optional, defaults to GitHub owner
-  repo: # Optional, defaults to GitHub repo name
-  sync:
-    branches:
-      enabled: true
-      protected: true
-      pattern: '*'
-      historySync:
-        enabled: true
-        strategy: 'merge-timelines'
-        createMergeCommits: true
-        mergeMessage: 'Sync: Merge timeline from {source} to {target}'
-
-    pullRequests:
-      enabled: true
-      autoMerge: false
-      labels: ['synced']
-      comments:
-        enabled: false # Enable to sync PR comments with attribution
-        attribution:
-          includeAuthor: true
-          includeTimestamp: true
-          includeSourceLink: true
-          format: 'quoted' # quoted | inline | minimal
-        handleUpdates: true
-        preserveFormatting: true
-        syncReplies: true
-
-    issues:
-      enabled: true
-      labels: ['synced']
-      comments:
-        enabled: false # Enable to sync issue comments with attribution
-        attribution:
-          includeAuthor: true
-          includeTimestamp: true
-          includeSourceLink: true
-          format: 'quoted' # quoted | inline | minimal
-        handleUpdates: true
-        preserveFormatting: true
-        syncReplies: true
-
-    releases:
-      enabled: true
-      divergentCommitStrategy: 'skip'
-      latestReleaseStrategy: 'point-to-latest'
-      skipPreReleases: false
-      pattern: '*'
-      includeAssets: true
-
-    tags:
-      enabled: true # automatically enabled if releases = true
-      divergentCommitStrategy: 'skip'
-      pattern: '*'
-```
-
-## Configuration Behavior
-
-> [!IMPORTANT]
->
-> - If no config is provided, everything falls back to defaults.
-> - In case of partial config, missing fields will default to `false`.
-> - If `gitlab.enabled: true` or `github.enabled: true` is set with no other details, that
->   platform's defaults are populated. (The action assumes you meant to sync everything)
-> - In case of an invalid config, the action will try to reason with your config.
+<br>
 
 ## Label Configuration Examples
 
@@ -479,9 +491,9 @@ strategy: 'force-match'
 
 When releases point to commits that don't exist in the target repository:
 
-**📦 Historical Releases**: Skipped by default to maintain integrity
+**Historical Releases**: Skipped by default to maintain integrity
 
-**🏷️ Latest Release**: Gets special treatment - points to the latest commit in target repository
+**Latest Release**: Gets special treatment - points to the latest commit in target repository
 
 This ensures users always have access to the current version, even when commit histories diverge.
 
@@ -512,65 +524,6 @@ GitLab Release v2.0.0 → commit abc123 (doesn't exist on GitHub)
 - Timeline merging adds some overhead but preserves complete history
 - Use `skip-diverged` strategy for fastest performance with divergent repositories
 - Release analysis is cached to avoid repeated commit existence checks
-
-## Migration & Best Practices
-
-### Migrating from Previous Versions
-
-If you're upgrading from a previous version of advanced-git-sync:
-
-1. **Existing configurations continue to work** - all new features have sensible defaults
-2. **Timeline merging is enabled by default** - uses the safe `merge-timelines` strategy
-3. **Release sync is enhanced** - but maintains backward compatibility
-
-### Best Practices
-
-#### For New Repository Synchronization
-
-```yaml
-# Recommended configuration for new sync setups
-branches:
-  historySync:
-    strategy: 'merge-timelines' # Preserve all history
-releases:
-  latestReleaseStrategy: 'point-to-latest' # Keep latest accessible
-  divergentCommitStrategy: 'skip' # Conservative for historical releases
-```
-
-#### For Existing Synchronized Repositories
-
-```yaml
-# Conservative configuration for existing setups
-branches:
-  historySync:
-    strategy: 'skip-diverged' # Avoid disrupting existing sync
-releases:
-  divergentCommitStrategy: 'skip' # Maintain current behavior
-```
-
-#### For Repository Migration/Consolidation
-
-```yaml
-# When consolidating repositories or migrating platforms
-branches:
-  historySync:
-    strategy: 'merge-timelines'
-    mergeMessage: '🔄 Platform migration: Merge {source} → {target}'
-releases:
-  divergentCommitStrategy: 'create-anyway' # Preserve all releases
-  latestReleaseStrategy: 'point-to-latest'
-```
-
-### Troubleshooting Timeline Issues
-
-**Problem**: Merge conflicts during timeline merging **Solution**: The action automatically resolves
-conflicts by accepting changes from the source repository
-
-**Problem**: Too many merge commits cluttering history **Solution**: Use `createMergeCommits: false`
-or switch to `skip-diverged` strategy
-
-**Problem**: Releases pointing to wrong commits **Solution**: Review your `latestReleaseStrategy`
-and `divergentCommitStrategy` settings
 
 ## Next Steps
 

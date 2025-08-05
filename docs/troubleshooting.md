@@ -32,7 +32,7 @@ refusing to allow a Personal Access Token to create or update workflow `.github/
 
 3. **Update your workflow:**
    ```yaml
-   - uses: OpenSaucedHub/advanced-git-sync@v1.2.2
+   - uses: OpenSaucedHub/advanced-git-sync@v1.3.0
      with:
        GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
        GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -160,9 +160,79 @@ Failed to sync tag v1.1.0: Commit 98bc36f580aa5296a32805f54c279c0982759e5a does 
 
 **Solutions:**
 
-1. **This is normal behavior** when repositories have different commit histories
-2. **The action will automatically skip** these tags and continue with other operations
-3. **To prevent this:** Ensure both repositories are properly synchronized before creating tags
+The action provides several strategies to handle tags pointing to nonexistent commits:
+
+1. **`skip` (Default)**: Automatically skips tags pointing to commits that don't exist in the target
+   repository
+
+   ```yaml
+   tags:
+     divergentCommitStrategy: 'skip'
+   ```
+
+2. **`create-anyway`**: Creates tags even if the commit doesn't exist in the target repository
+
+   ```yaml
+   tags:
+     divergentCommitStrategy: 'create-anyway'
+   ```
+
+3. **Configure tag patterns** to sync only specific tags:
+   ```yaml
+   tags:
+     pattern: 'v*' # Only sync version tags
+   ```
+
+**Note:** This behavior is normal when repositories have different commit histories due to timeline
+divergence.
+
+#### Release Synchronization Failures
+
+**Symptoms:**
+
+```
+Failed to sync release v2.0.0: Commit abc123 does not exist in target repository
+Release v1.5.0 points to wrong commit after sync
+```
+
+**Cause:** Releases reference commits that exist in one repository but not the other, often due to
+divergent commit histories.
+
+**Solutions:**
+
+The action provides intelligent strategies for handling releases with missing commits:
+
+1. **`divergentCommitStrategy`** - Controls how to handle releases pointing to nonexistent commits:
+
+   ```yaml
+   releases:
+     divergentCommitStrategy: 'skip' # skip | create-anyway
+   ```
+
+2. **`latestReleaseStrategy`** - Special handling for the latest release:
+   ```yaml
+   releases:
+     latestReleaseStrategy: 'point-to-latest' # skip | point-to-latest | create-anyway
+   ```
+
+**Strategy Explanations:**
+
+- **`skip`**: Skip releases pointing to commits that don't exist (safest)
+- **`create-anyway`**: Create releases even if commit doesn't exist (may cause issues)
+- **`point-to-latest`**: For latest release only, point to the latest commit in target repository
+
+**Example Configuration:**
+
+```yaml
+releases:
+  enabled: true
+  divergentCommitStrategy: 'skip'
+  latestReleaseStrategy: 'point-to-latest'
+  pattern: 'v*'
+```
+
+This ensures historical releases are skipped if commits don't exist, but the latest release always
+points to the current state.
 
 #### GitLab Merge Request Errors
 
@@ -241,6 +311,79 @@ Failed to merge MR #18: 405 Method Not Allowed
      labels: ["synced"]  # String or array
      labels: []          # No labels
    ```
+
+### Timeline Issues
+
+#### Timeline Merging Conflicts
+
+**Symptoms:**
+
+- Merge conflicts during timeline merging
+- Sync fails with merge conflict errors
+
+**Solutions:**
+
+1. **Automatic conflict resolution**: The action automatically resolves conflicts by accepting
+   changes from the source repository
+
+2. **Adjust merge strategy**:
+
+   ```yaml
+   branches:
+     historySync:
+       strategy: 'skip-diverged' # Conservative approach
+   ```
+
+3. **Disable merge commits**:
+   ```yaml
+   branches:
+     historySync:
+       createMergeCommits: false
+   ```
+
+#### Too Many Merge Commits
+
+**Problem**: Timeline merging creates too many merge commits, cluttering history
+
+**Solutions:**
+
+1. **Disable merge commits**:
+
+   ```yaml
+   branches:
+     historySync:
+       createMergeCommits: false
+   ```
+
+2. **Switch to conservative strategy**:
+
+   ```yaml
+   branches:
+     historySync:
+       strategy: 'skip-diverged'
+   ```
+
+3. **Use force-match for clean history** (⚠️ **Destructive**):
+   ```yaml
+   branches:
+     historySync:
+       strategy: 'force-match'
+   ```
+
+#### Timeline Divergence Understanding
+
+**What causes timeline divergence:**
+
+- Different development workflows on each platform
+- Platform-specific commits (e.g., workflow files, CI configurations)
+- Timing differences in when commits are made
+- Different merge strategies creating different commit SHAs
+
+**How the action handles it:**
+
+- **`merge-timelines`**: Creates merge commits to unify histories (preserves all work)
+- **`skip-diverged`**: Only syncs commits that exist on both sides (conservative)
+- **`force-match`**: Forces one repository to match the other exactly (destructive)
 
 ### Performance Issues
 
@@ -367,7 +510,7 @@ curl -H "Authorization: token YOUR_GITHUB_TOKEN" \
 Include this information:
 
 ````markdown
-**Action Version:** v1.1.6
+**Action Version:** v1.3.0
 
 **Configuration:**
 

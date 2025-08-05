@@ -176,6 +176,13 @@ gitlab:
       labels: ['sync']
     releases:
       enabled: true
+      divergentCommitStrategy: 'skip'
+      latestReleaseStrategy: 'point-to-latest'
+      pattern: 'v*'
+    tags:
+      enabled: true
+      divergentCommitStrategy: 'skip'
+      pattern: 'v*'
 
 github:
   enabled: true
@@ -193,6 +200,13 @@ github:
       labels: ['sync']
     releases:
       enabled: true
+      divergentCommitStrategy: 'skip'
+      latestReleaseStrategy: 'point-to-latest'
+      pattern: 'v*'
+    tags:
+      enabled: true
+      divergentCommitStrategy: 'skip'
+      pattern: 'v*'
 ```
 
 ### 7. Development vs Production
@@ -265,9 +279,81 @@ github:
       enabled: true
 ```
 
+### 8. Divergent History Handling
+
+Configuration for repositories with different commit histories:
+
+```yaml
+gitlab:
+  enabled: true
+  sync:
+    branches:
+      enabled: true
+      historySync:
+        enabled: true
+        strategy: 'merge-timelines' # Preserve all work
+        createMergeCommits: true
+        mergeMessage: 'Sync: Merge GitLab timeline → GitHub'
+    releases:
+      enabled: true
+      divergentCommitStrategy: 'skip' # Skip releases with missing commits
+      latestReleaseStrategy: 'point-to-latest' # Latest release points to current commit
+      pattern: 'v*'
+    tags:
+      enabled: true
+      divergentCommitStrategy: 'skip' # Skip tags with missing commits
+      pattern: 'v*'
+
+github:
+  enabled: true
+  sync:
+    branches:
+      enabled: true
+      historySync:
+        enabled: true
+        strategy: 'merge-timelines'
+        createMergeCommits: true
+        mergeMessage: 'Sync: Merge GitHub timeline → GitLab'
+    releases:
+      enabled: true
+      divergentCommitStrategy: 'skip'
+      latestReleaseStrategy: 'point-to-latest'
+      pattern: 'v*'
+    tags:
+      enabled: true
+      divergentCommitStrategy: 'skip'
+      pattern: 'v*'
+```
+
+### 9. Conservative Sync (Skip Diverged)
+
+For repositories where you want to avoid merge commits:
+
+```yaml
+gitlab:
+  enabled: true
+  sync:
+    branches:
+      enabled: true
+      historySync:
+        enabled: true
+        strategy: 'skip-diverged' # Only sync existing commits
+        createMergeCommits: false
+    releases:
+      enabled: true
+      divergentCommitStrategy: 'skip'
+      latestReleaseStrategy: 'skip' # Skip even latest if commit missing
+    tags:
+      enabled: true
+      divergentCommitStrategy: 'skip'
+
+github:
+  enabled: false # One-way sync only
+```
+
 ## Workflow Examples
 
-### 8. Multiple Sync Schedules
+### 10. Multiple Sync Schedules
 
 Different sync frequencies for different content types:
 
@@ -286,7 +372,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: OpenSaucedHub/advanced-git-sync@v1.1.6
+      - uses: OpenSaucedHub/advanced-git-sync@v1.3.0
         with:
           CONFIG_PATH: .github/sync-config-branches.yml
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
@@ -307,7 +393,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: OpenSaucedHub/advanced-git-sync@v1.1.6
+      - uses: OpenSaucedHub/advanced-git-sync@v1.3.0
         with:
           CONFIG_PATH: .github/sync-config-releases.yml
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}

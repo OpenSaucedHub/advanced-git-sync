@@ -51,14 +51,14 @@ gitlab:
         syncReplies: true # Sync comment threads and replies
     releases:
       enabled: true # Sync releases and their assets
-      divergentCommitStrategy: "skip" # skip | create-anyway | point-to-latest
+      divergentCommitStrategy: "skip" # skip | create-anyway
       latestReleaseStrategy: "point-to-latest" # skip | point-to-latest | create-anyway
       skipPreReleases: false # Skip pre-release versions
       pattern: "*" # Pattern to match release names
       includeAssets: true # Include release assets
     tags:
       enabled: true # Sync Git tags
-      divergentCommitStrategy: "skip" # skip | create-anyway | point-to-latest
+      divergentCommitStrategy: "skip" # skip | create-anyway
       pattern: "*" # Pattern to match tag names
 
 # GitHub Configuration
@@ -105,14 +105,14 @@ github:
         syncReplies: true # Sync comment threads and replies
     releases:
       enabled: true # Sync releases and their assets
-      divergentCommitStrategy: "skip" # skip | create-anyway | point-to-latest
+      divergentCommitStrategy: "skip" # skip | create-anyway
       latestReleaseStrategy: "point-to-latest" # skip | point-to-latest | create-anyway
       skipPreReleases: false # Skip pre-release versions
       pattern: "*" # Pattern to match release names
       includeAssets: true # Include release assets
     tags:
       enabled: true # Sync Git tags
-      divergentCommitStrategy: "skip" # skip | create-anyway | point-to-latest
+      divergentCommitStrategy: "skip" # skip | create-anyway
       pattern: "*" # Pattern to match tag names
 
 # Alternative label configurations:
@@ -138,9 +138,19 @@ github:
 # - force-match: Forces one repository to match the other exactly (destructive)
 
 # Release Sync Strategies:
+# divergentCommitStrategy (for all releases):
 # - skip: Skip releases pointing to commits that don't exist in target (default)
 # - create-anyway: Create releases even if commit doesn't exist in target
-# - point-to-latest: For latest release only, point to latest commit in target
+#
+# latestReleaseStrategy (for latest release only):
+# - point-to-latest: Point latest release to latest commit in target (default)
+# - skip: Skip latest release if commit doesn't exist
+# - create-anyway: Create latest release even if commit doesn't exist
+#
+# Tag Sync Strategies:
+# divergentCommitStrategy (for all tags):
+# - skip: Skip tags pointing to commits that don't exist in target (default)
+# - create-anyway: Create tags even if commit doesn't exist in target
 
 # Performance considerations:
 # - Use specific branch patterns instead of "*" if you have many branches
