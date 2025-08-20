@@ -2,16 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.4.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.3.0...v1.4.0) (2025-08-05)
-
-
 
 ## [1.4.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.3.0...v1.4.0) (2025-08-05)
 
 ### Features
 
-* simplify configuration by removing user-configurable labels ([cf79c57](https://github.com/OpenSaucedHub/advanced-git-sync/commit/cf79c57f1c98d5bfe3866d921e9c735ec6c6aaeb))
+- simplify configuration by removing user-configurable labels
+  ([cf79c57](https://github.com/OpenSaucedHub/advanced-git-sync/commit/cf79c57f1c98d5bfe3866d921e9c735ec6c6aaeb))
 
 # [v1.3.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.2.3...v1.3.0) (2025-08-04)
 

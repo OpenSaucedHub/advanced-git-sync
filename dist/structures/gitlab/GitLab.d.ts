@@ -29,6 +29,10 @@ export declare class GitLabClient implements IClient {
     updateBranch(name: string, commitSha: string): Promise<void>;
     commitExists(commitSha: string): Promise<boolean>;
     getRecentCommits(branchName: string, limit: number): Promise<any[]>;
+    getCommitDetails(commitSha: string): Promise<{
+        sha: string;
+        date: string;
+    } | null>;
     syncPullRequests(): Promise<import("../../types").PullRequest[]>;
     createPullRequest(pr: any): Promise<void>;
     updatePullRequest(number: number, pr: any): Promise<void>;

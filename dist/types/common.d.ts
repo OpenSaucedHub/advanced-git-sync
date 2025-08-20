@@ -71,13 +71,17 @@ export interface Branch {
     name: string;
     sha: string;
     protected: boolean;
+    lastCommitDate?: string;
 }
 export interface BranchComparison {
     name: string;
     sourceCommit: string;
     targetCommit?: string;
-    action: 'create' | 'update' | 'skip';
+    sourceCommitDate?: string;
+    targetCommitDate?: string;
+    action: 'create' | 'update' | 'skip' | 'delete';
     protected: boolean;
+    reason?: string;
 }
 export interface BranchFilterOptions {
     includeProtected?: boolean;

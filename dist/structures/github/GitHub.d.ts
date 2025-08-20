@@ -22,6 +22,10 @@ export declare class GitHubClient implements IClient {
     updateBranch(name: string, commitSha: string): Promise<void>;
     commitExists(commitSha: string): Promise<boolean>;
     getRecentCommits(branchName: string, limit: number): Promise<any[]>;
+    getCommitDetails(commitSha: string): Promise<{
+        sha: string;
+        date: string;
+    } | null>;
     syncPullRequests(): Promise<PullRequest[]>;
     createPullRequest(pr: PullRequest): Promise<void>;
     updatePullRequest(number: number, pr: PullRequest): Promise<void>;

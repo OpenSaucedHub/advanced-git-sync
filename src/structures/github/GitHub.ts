@@ -99,6 +99,24 @@ export class GitHubClient implements IClient {
     }
   }
 
+  async getCommitDetails(
+    commitSha: string
+  ): Promise<{ sha: string; date: string } | null> {
+    try {
+      const { data: commit } = await this.octokit.rest.git.getCommit({
+        ...this.repo,
+        commit_sha: commitSha
+      })
+      return {
+        sha: commitSha,
+        date: commit.author.date
+      }
+    } catch (error) {
+      core.debug(`Failed to get commit details for ${commitSha}: ${error}`)
+      return null
+    }
+  }
+
   async syncPullRequests(): Promise<PullRequest[]> {
     return this.pullRequest.syncPullRequests()
   }

@@ -52,12 +52,29 @@ export class gitlabBranchHelper {
       protected: boolean
     }
 
-    // Map branches to our internal format
-    let processedBranches: Branch[] = branches.map((branch: GitLabBranch) => ({
-      name: branch.name,
-      sha: branch.commit.id,
-      protected: branch.protected
-    }))
+    // Map branches to the internal format with commit timestamps
+    let processedBranches: Branch[] = await Promise.all(
+      branches.map(async (branch: GitLabBranch) => {
+        // Get commit details for timestamp
+        let lastCommitDate: string | undefined
+        try {
+          const commit = await this.gitlab.Commits.show(
+            projectId,
+            branch.commit.id
+          )
+          lastCommitDate = commit.created_at
+        } catch (error) {
+          core.debug(`Failed to get commit date for ${branch.name}: ${error}`)
+        }
+
+        return {
+          name: branch.name,
+          sha: branch.commit.id,
+          protected: branch.protected,
+          lastCommitDate
+        }
+      })
+    )
 
     if (filterOptions) {
       if (filterOptions.includeProtected === false) {
@@ -105,7 +122,9 @@ export class gitlabBranchHelper {
         fs.mkdirSync(tmpDir, { recursive: true })
       }
 
-      await exec.exec('git', ['init'], { cwd: tmpDir })
+      await exec.exec('git', ['init', '--initial-branch=sync-main'], {
+        cwd: tmpDir
+      })
       await exec.exec('git', ['config', 'user.name', 'advanced-git-sync'], {
         cwd: tmpDir
       })

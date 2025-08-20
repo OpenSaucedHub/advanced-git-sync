@@ -155,6 +155,22 @@ export class GitLabClient implements IClient {
     }
   }
 
+  async getCommitDetails(
+    commitSha: string
+  ): Promise<{ sha: string; date: string } | null> {
+    try {
+      const projectId = await this.getProjectId()
+      const commit = await this.gitlab.Commits.show(projectId, commitSha)
+      return {
+        sha: commitSha,
+        date: commit.created_at
+      }
+    } catch (error) {
+      core.debug(`Failed to get commit details for ${commitSha}: ${error}`)
+      return null
+    }
+  }
+
   // Delegate to pull request helper
   async syncPullRequests() {
     return this.mergeRequest.syncPullRequests()

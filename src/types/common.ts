@@ -85,14 +85,18 @@ export interface Branch {
   name: string
   sha: string
   protected: boolean
+  lastCommitDate?: string // ISO timestamp of the last commit
 }
 
 export interface BranchComparison {
   name: string
   sourceCommit: string
   targetCommit?: string
-  action: 'create' | 'update' | 'skip'
+  sourceCommitDate?: string
+  targetCommitDate?: string
+  action: 'create' | 'update' | 'skip' | 'delete'
   protected: boolean
+  reason?: string // Reason for the action (for debugging/logging)
 }
 
 // Branch filter options for both GitHub and GitLab

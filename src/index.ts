@@ -2,7 +2,7 @@
 
 import * as core from '@actions/core'
 import { getConfig } from './config'
-import { syncBranches } from './sync/branchSync'
+import { syncBranches, syncBranchesBidirectional } from './sync/branchSync'
 import { syncPullRequests } from './sync/prSync'
 import { syncIssues } from './sync/issueSync'
 import { syncReleases } from './sync/releaseSync'
@@ -45,17 +45,31 @@ async function run(): Promise<void> {
         enabled: boolean
         operation: () => Promise<void>
       }[] = [
-        // PHASE 1: Branches (CRITICAL - must run first, sequentially)
+        // PHASE 1: Branches (CRITICAL - must run first, with improved bidirectional sync)
+        {
+          name: '\x1b[34m🌿 Branches (Bidirectional Sync)\x1b[0m',
+          enabled:
+            (config.github.sync?.branches.enabled || false) &&
+            (config.gitlab.sync?.branches.enabled || false),
+          operation: async () => {
+            await syncBranchesBidirectional(githubClient, gitlabClient)
+          }
+        },
+        // Fallback to unidirectional sync if only one direction is enabled
         {
           name: '\x1b[34m🌿 Branches (GitHub → GitLab)\x1b[0m',
-          enabled: config.github.sync?.branches.enabled || false,
+          enabled:
+            (config.github.sync?.branches.enabled || false) &&
+            !(config.gitlab.sync?.branches.enabled || false),
           operation: async () => {
             await syncBranches(githubClient, gitlabClient)
           }
         },
         {
           name: '\x1b[34m🌿 Branches (GitLab → GitHub)\x1b[0m',
-          enabled: config.gitlab.sync?.branches.enabled || false,
+          enabled:
+            !(config.github.sync?.branches.enabled || false) &&
+            (config.gitlab.sync?.branches.enabled || false),
           operation: async () => {
             await syncBranches(gitlabClient, githubClient)
           }

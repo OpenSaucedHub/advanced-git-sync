@@ -29,12 +29,29 @@ export class githubBranchHelper {
       protected: boolean
     }
 
-    // Map branches to our internal format
-    let processedBranches: Branch[] = branches.map((branch: GitHubBranch) => ({
-      name: branch.name,
-      sha: branch.commit.sha,
-      protected: branch.protected
-    }))
+    // Map branches to an internal format with commit timestamps
+    let processedBranches: Branch[] = await Promise.all(
+      branches.map(async (branch: GitHubBranch) => {
+        // Get commit details for timestamp
+        let lastCommitDate: string | undefined
+        try {
+          const { data: commit } = await this.octokit.rest.git.getCommit({
+            ...this.repo,
+            commit_sha: branch.commit.sha
+          })
+          lastCommitDate = commit.author.date
+        } catch (error) {
+          core.debug(`Failed to get commit date for ${branch.name}: ${error}`)
+        }
+
+        return {
+          name: branch.name,
+          sha: branch.commit.sha,
+          protected: branch.protected,
+          lastCommitDate
+        }
+      })
+    )
 
     if (filterOptions) {
       if (filterOptions.includeProtected === false) {
@@ -71,7 +88,9 @@ export class githubBranchHelper {
         fs.mkdirSync(tmpDir, { recursive: true })
       }
 
-      await exec.exec('git', ['init'], { cwd: tmpDir })
+      await exec.exec('git', ['init', '--initial-branch=sync-main'], {
+        cwd: tmpDir
+      })
       await exec.exec('git', ['config', 'user.name', 'advanced-git-sync'], {
         cwd: tmpDir
       })
