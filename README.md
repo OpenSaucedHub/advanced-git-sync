@@ -56,7 +56,7 @@ jobs:
         uses: actions/checkout@v4.2.2
 
       - name: Sync with GitLab
-        uses: OpenSaucedHub/advanced-git-sync@v1.4.0
+        uses: OpenSaucedHub/advanced-git-sync@v1.4.1
         with:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}

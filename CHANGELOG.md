@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.4.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.0...v1.4.1) (2025-08-20)
+
+
+
+## [1.4.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.0...v1.4.1) (2025-08-20)
+
+### Bug Fixes
+
+* add bidirectional branch sync with intelligent merge logic ([14eb2ae](https://github.com/OpenSaucedHub/advanced-git-sync/commit/14eb2aecd8e4799af12305f472097cf06a33dae7))
+
 # [v1.4.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.3.0...v1.4.0) (2025-08-05)
 
 ## [1.4.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.3.0...v1.4.0) (2025-08-05)

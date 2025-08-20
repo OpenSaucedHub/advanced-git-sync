@@ -247,7 +247,7 @@ git push origin feature/your-feature-name
 
 **Environment:**
 
-- Action version: v1.4.0
+- Action version: v1.4.1
 - GitHub/GitLab versions
 - Any relevant details
 
