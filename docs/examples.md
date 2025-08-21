@@ -143,7 +143,75 @@ github:
       enabled: true
 ```
 
-### 5. Enterprise GitLab Instance
+### 5. Bot Branch Management
+
+Control how bot-created branches (dependabot, renovate, etc.) are handled:
+
+```yaml
+# Default: Clean up orphaned bot branches
+gitlab:
+  enabled: true
+  sync:
+    branches:
+      enabled: true
+      botBranches:
+        strategy: 'delete-orphaned' # Clean up orphaned bot branches
+        patterns: [] # Use default bot patterns
+
+github:
+  enabled: true
+  sync:
+    branches:
+      enabled: true
+      botBranches:
+        strategy: 'delete-orphaned'
+        patterns: [] # Use defaults: dependabot/*, renovate/*, copilot/*, feature/*, etc.
+```
+
+```yaml
+# Sync all branches including bots (no special handling)
+gitlab:
+  enabled: true
+  sync:
+    branches:
+      enabled: true
+      botBranches:
+        strategy: 'sync' # Treat bot branches like regular branches
+
+github:
+  enabled: true
+  sync:
+    branches:
+      enabled: true
+      botBranches:
+        strategy: 'sync'
+```
+
+```yaml
+# Custom bot patterns only
+gitlab:
+  enabled: true
+  sync:
+    branches:
+      enabled: true
+      botBranches:
+        strategy: 'delete-orphaned'
+        patterns: # Only these patterns are considered bots
+          - 'dependabot/*'
+          - 'my-company-bot/*'
+          - 'automated-*'
+
+github:
+  enabled: true
+  sync:
+    branches:
+      enabled: true
+      botBranches:
+        strategy: 'delete-orphaned'
+        patterns: ['dependabot/*', 'renovate/*'] # Custom patterns
+```
+
+### 6. Enterprise GitLab Instance
 
 Configure for a self-hosted GitLab instance:
 

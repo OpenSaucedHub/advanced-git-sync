@@ -1,4 +1,12 @@
 import { z } from 'zod';
+export declare const BotBranchConfigSchema: z.ZodObject<{
+    strategy: z.ZodDefault<z.ZodEnum<{
+        "delete-orphaned": "delete-orphaned";
+        sync: "sync";
+        skip: "skip";
+    }>>;
+    patterns: z.ZodDefault<z.ZodArray<z.ZodString>>;
+}, z.core.$strip>;
 export declare const BranchConfigSchema: z.ZodObject<{
     enabled: z.ZodBoolean;
     protected: z.ZodBoolean;
@@ -12,6 +20,14 @@ export declare const BranchConfigSchema: z.ZodObject<{
         }>>;
         createMergeCommits: z.ZodDefault<z.ZodBoolean>;
         mergeMessage: z.ZodDefault<z.ZodString>;
+    }, z.core.$strip>>;
+    botBranches: z.ZodOptional<z.ZodObject<{
+        strategy: z.ZodDefault<z.ZodEnum<{
+            "delete-orphaned": "delete-orphaned";
+            sync: "sync";
+            skip: "skip";
+        }>>;
+        patterns: z.ZodDefault<z.ZodArray<z.ZodString>>;
     }, z.core.$strip>>;
 }, z.core.$strip>;
 export declare const PRConfigSchema: z.ZodObject<{
@@ -92,6 +108,14 @@ export declare const SyncConfigSchema: z.ZodObject<{
             }>>;
             createMergeCommits: z.ZodDefault<z.ZodBoolean>;
             mergeMessage: z.ZodDefault<z.ZodString>;
+        }, z.core.$strip>>;
+        botBranches: z.ZodOptional<z.ZodObject<{
+            strategy: z.ZodDefault<z.ZodEnum<{
+                "delete-orphaned": "delete-orphaned";
+                sync: "sync";
+                skip: "skip";
+            }>>;
+            patterns: z.ZodDefault<z.ZodArray<z.ZodString>>;
         }, z.core.$strip>>;
     }, z.core.$strip>;
     pullRequests: z.ZodObject<{
@@ -181,6 +205,14 @@ export declare const GitlabConfigSchema: z.ZodObject<{
                 createMergeCommits: z.ZodDefault<z.ZodBoolean>;
                 mergeMessage: z.ZodDefault<z.ZodString>;
             }, z.core.$strip>>;
+            botBranches: z.ZodOptional<z.ZodObject<{
+                strategy: z.ZodDefault<z.ZodEnum<{
+                    "delete-orphaned": "delete-orphaned";
+                    sync: "sync";
+                    skip: "skip";
+                }>>;
+                patterns: z.ZodDefault<z.ZodArray<z.ZodString>>;
+            }, z.core.$strip>>;
         }, z.core.$strip>;
         pullRequests: z.ZodObject<{
             enabled: z.ZodBoolean;
@@ -267,6 +299,14 @@ export declare const GithubConfigSchema: z.ZodObject<{
                 }>>;
                 createMergeCommits: z.ZodDefault<z.ZodBoolean>;
                 mergeMessage: z.ZodDefault<z.ZodString>;
+            }, z.core.$strip>>;
+            botBranches: z.ZodOptional<z.ZodObject<{
+                strategy: z.ZodDefault<z.ZodEnum<{
+                    "delete-orphaned": "delete-orphaned";
+                    sync: "sync";
+                    skip: "skip";
+                }>>;
+                patterns: z.ZodDefault<z.ZodArray<z.ZodString>>;
             }, z.core.$strip>>;
         }, z.core.$strip>;
         pullRequests: z.ZodObject<{
@@ -358,6 +398,14 @@ export declare const ConfigSchema: z.ZodObject<{
                     createMergeCommits: z.ZodDefault<z.ZodBoolean>;
                     mergeMessage: z.ZodDefault<z.ZodString>;
                 }, z.core.$strip>>;
+                botBranches: z.ZodOptional<z.ZodObject<{
+                    strategy: z.ZodDefault<z.ZodEnum<{
+                        "delete-orphaned": "delete-orphaned";
+                        sync: "sync";
+                        skip: "skip";
+                    }>>;
+                    patterns: z.ZodDefault<z.ZodArray<z.ZodString>>;
+                }, z.core.$strip>>;
             }, z.core.$strip>;
             pullRequests: z.ZodObject<{
                 enabled: z.ZodBoolean;
@@ -444,6 +492,14 @@ export declare const ConfigSchema: z.ZodObject<{
                     }>>;
                     createMergeCommits: z.ZodDefault<z.ZodBoolean>;
                     mergeMessage: z.ZodDefault<z.ZodString>;
+                }, z.core.$strip>>;
+                botBranches: z.ZodOptional<z.ZodObject<{
+                    strategy: z.ZodDefault<z.ZodEnum<{
+                        "delete-orphaned": "delete-orphaned";
+                        sync: "sync";
+                        skip: "skip";
+                    }>>;
+                    patterns: z.ZodDefault<z.ZodArray<z.ZodString>>;
                 }, z.core.$strip>>;
             }, z.core.$strip>;
             pullRequests: z.ZodObject<{

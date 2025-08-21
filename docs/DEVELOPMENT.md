@@ -83,6 +83,8 @@ gitlab:
       enabled: false # Disable during testing
     branches:
       pattern: 'main' # Only sync main branch
+      botBranches:
+        strategy: 'sync' # Don't delete branches during testing
 
 github:
   sync:
@@ -92,6 +94,8 @@ github:
       enabled: false # Disable during testing
     branches:
       pattern: 'main' # Only sync main branch
+      botBranches:
+        strategy: 'sync' # Don't delete branches during testing
 ```
 
 ### **Test Individual Features**
@@ -102,7 +106,10 @@ Enable only the feature you want to test:
 # Test only branch sync
 gitlab:
   sync:
-    branches: { enabled: true }
+    branches:
+      enabled: true
+      botBranches:
+        strategy: 'sync' # Safe for testing
     pullRequests: { enabled: false }
     issues: { enabled: false }
     releases: { enabled: false }

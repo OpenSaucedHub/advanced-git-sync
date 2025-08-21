@@ -1,7 +1,7 @@
-import { Branch, BranchComparison } from '../types';
+import { Branch, BranchComparison, Config } from '../types';
 import { GitHubClient } from '../structures/github/GitHub';
 import { GitLabClient } from '../structures/gitlab/GitLab';
-export declare function compareBranches(sourceBranches: Branch[], targetBranches: Branch[]): BranchComparison[];
+export declare function compareBranches(sourceBranches: Branch[], targetBranches: Branch[], config: Config): BranchComparison[];
 /**
  * Improved bidirectional sync that avoids race conditions by fetching fresh data
  * and using intelligent merge logic

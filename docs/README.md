@@ -55,6 +55,9 @@ gitlab:
         strategy: 'merge-timelines'
         createMergeCommits: true
         mergeMessage: 'Sync: Merge timeline from {source} to {target}'
+      botBranches:
+        strategy: 'delete-orphaned' # 'delete-orphaned' | 'sync' | 'skip'
+        patterns: [] # Empty = use defaults, populated = override defaults entirely
 
     # 🟡 HIGH: Core sync features - most users want these (enabled by default)
     tags:
@@ -116,6 +119,9 @@ github:
         strategy: 'merge-timelines'
         createMergeCommits: true
         mergeMessage: 'Sync: Merge timeline from {source} to {target}'
+      botBranches:
+        strategy: 'delete-orphaned' # 'delete-orphaned' | 'sync' | 'skip'
+        patterns: [] # Empty = use defaults, populated = override defaults entirely
 
     # 🟡 HIGH: Core sync features - most users want these (enabled by default)
     tags:
@@ -261,6 +267,67 @@ branches:
     strategy: 'merge-timelines'
     createMergeCommits: true
     mergeMessage: '🔄 Timeline sync: Merge {source} → {target}'
+```
+
+### Bot Branch Handling
+
+Advanced Git Sync provides intelligent handling of bot-created branches (dependabot, renovate,
+copilot, etc.) to prevent orphaned branches and maintain clean repositories.
+
+**Configuration Options:**
+
+| Option     | Description                                     | Required | Default             |
+| ---------- | ----------------------------------------------- | -------- | ------------------- |
+| `strategy` | How to handle bot branches                      | No       | `delete-orphaned`   |
+| `patterns` | Custom bot branch patterns (overrides defaults) | No       | `[]` (use defaults) |
+
+**Bot Branch Strategies:**
+
+- **`delete-orphaned`** (Default): Delete bot branches that exist only in target repository (cleanup
+  orphaned branches)
+- **`sync`**: Treat bot branches like regular branches - sync bidirectionally
+- **`skip`**: Skip bot branches entirely (don't sync or delete)
+
+**Default Bot Patterns:** When `patterns: []` (empty), these patterns are automatically detected as
+bot branches:
+
+- `dependabot/*`, `renovate/*`, `copilot/*` - Dependency/AI bots
+- `feature/*`, `fix/*`, `hotfix/*`, `bugfix/*`, `chore/*`, `docs/*`, `refactor/*`, `test/*`, `ci/*`,
+  `build/*`, `perf/*`, `style/*` - Standard Git flow
+- `revert-*`, `temp-*`, `wip-*`, `draft-*` - Temporary branches
+- `^\d+-*`, `^[a-zA-Z]+-\d+` - Issue/ticket branches (123-fix-bug, JIRA-456)
+
+**Custom Patterns:**
+
+```yaml
+botBranches:
+  strategy: 'delete-orphaned'
+  patterns:
+    - 'dependabot/*'
+    - 'my-company-bot/*'
+    - 'automated-*'
+    # Only these patterns are considered bots (defaults ignored)
+```
+
+**Example Configurations:**
+
+```yaml
+# Default behavior - clean up orphaned bot branches
+branches:
+  botBranches:
+    strategy: 'delete-orphaned' # Clean up orphaned bot branches
+    patterns: [] # Use default bot patterns
+
+# Sync all branches including bots
+branches:
+  botBranches:
+    strategy: 'sync' # Treat bot branches like regular branches
+
+# Custom bot patterns only
+branches:
+  botBranches:
+    strategy: 'delete-orphaned'
+    patterns: ['dependabot/*', 'my-bot/*'] # Only these are bots
 ```
 
 ### Pull Requests

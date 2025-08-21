@@ -9,4 +9,5 @@ export declare class gitlabBranchHelper {
     fetch(filterOptions?: BranchFilterOptions): Promise<Branch[]>;
     update(name: string, commitSha: string): Promise<void>;
     create(name: string, commitSha: string): Promise<void>;
+    delete(name: string): Promise<void>;
 }

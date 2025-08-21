@@ -1,53 +1,71 @@
 // src/sync/branches.ts
 import * as core from '@actions/core'
-import { Branch, BranchComparison } from '../types'
+import { Branch, BranchComparison, Config } from '../types'
 import { GitHubClient } from '../structures/github/GitHub'
 import { GitLabClient } from '../structures/gitlab/GitLab'
+import { botDefaults, protectedBranches } from '../utils/defaults'
 
 /**
- * Determines if a branch should be skipped for creation (likely a deleted PR/MR branch)
+ * Converts glob patterns to regex patterns
  */
-function shouldSkipBranchCreation(branchName: string): boolean {
-  // Skip branches that look like they were created for PRs/MRs and likely deleted
-  const prBranchPatterns = [
-    /^dependabot\//, // Dependabot branches
-    /^renovate\//, // Renovate branches
-    /^feature\//, // Feature branches
-    /^fix\//, // Fix branches
-    /^hotfix\//, // Hotfix branches
-    /^bugfix\//, // Bugfix branches
-    /^chore\//, // Chore branches
-    /^docs\//, // Documentation branches
-    /^refactor\//, // Refactor branches
-    /^test\//, // Test branches
-    /^ci\//, // CI branches
-    /^build\//, // Build branches
-    /^perf\//, // Performance branches
-    /^style\//, // Style branches
-    /^revert-/, // Revert branches
-    /^temp-/, // Temporary branches
-    /^wip-/, // Work in progress branches
-    /^draft-/, // Draft branches
-    /^\d+-/, // Issue number branches (123-fix-bug)
-    /^[a-zA-Z]+-\d+/ // Ticket branches (JIRA-123, etc.)
-  ]
+function globToRegex(pattern: string): RegExp {
+  const regexPattern = pattern
+    .replace(/\*/g, '.*')
+    .replace(/\?/g, '.')
+    .replace(/\[([^\]]+)\]/g, '[$1]')
+  return new RegExp(`^${regexPattern}$`)
+}
 
-  // Don't skip main/master/develop branches or other important branches
-  const importantBranches = [
-    'main',
-    'master',
-    'develop',
-    'development',
-    'staging',
-    'production',
-    'release'
-  ]
-  if (importantBranches.includes(branchName)) {
+/**
+ * Gets the bot branch strategy and patterns from configuration
+ */
+function getBotBranchConfig(config: Config): {
+  strategy: 'delete-orphaned' | 'sync' | 'skip'
+  patterns: string[]
+} {
+  const botConfig =
+    config.github.sync?.branches?.botBranches ||
+    config.gitlab.sync?.branches?.botBranches
+
+  return {
+    strategy: botConfig?.strategy || 'delete-orphaned',
+    patterns:
+      botConfig?.patterns && botConfig.patterns.length > 0
+        ? botConfig.patterns
+        : botDefaults
+  }
+}
+
+/**
+ * Determines if a branch matches bot patterns based on configuration
+ */
+function isBotBranch(branchName: string, config: Config): boolean {
+  // Never consider protected branches as bot branches
+  if (protectedBranches.includes(branchName)) {
     return false
   }
 
-  // Check if branch matches any PR/MR pattern
-  return prBranchPatterns.some(pattern => pattern.test(branchName))
+  const { patterns } = getBotBranchConfig(config)
+
+  // Convert patterns to regex and test
+  return patterns.some(pattern => {
+    const regex = globToRegex(pattern)
+    return regex.test(branchName)
+  })
+}
+
+/**
+ * Determines if a branch should be skipped for creation based on bot branch strategy
+ */
+function shouldSkipBranchCreation(branchName: string, config: Config): boolean {
+  if (!isBotBranch(branchName, config)) {
+    return false // Not a bot branch, don't skip
+  }
+
+  const { strategy } = getBotBranchConfig(config)
+
+  // For bot branches, skip creation based on strategy
+  return strategy === 'skip' || strategy === 'delete-orphaned'
 }
 
 /**
@@ -93,7 +111,8 @@ function shouldUpdateBranch(
 
 export function compareBranches(
   sourceBranches: Branch[],
-  targetBranches: Branch[]
+  targetBranches: Branch[],
+  config: Config
 ): BranchComparison[] {
   const comparisons: BranchComparison[] = []
 
@@ -103,7 +122,7 @@ export function compareBranches(
     if (!targetBranch) {
       // Branch doesn't exist in target - check if it should be created
       // Skip creating branches that look like they were deleted (e.g., PR branches)
-      if (shouldSkipBranchCreation(sourceBranch.name)) {
+      if (shouldSkipBranchCreation(sourceBranch.name, config)) {
         comparisons.push({
           name: sourceBranch.name,
           sourceCommit: sourceBranch.sha,
@@ -233,9 +252,12 @@ function createUnifiedBranchView(
 /**
  * Determines the best sync action for a branch in bidirectional sync
  */
-function determineBidirectionalAction(branch: UnifiedBranch): {
+function determineBidirectionalAction(
+  branch: UnifiedBranch,
+  config: Config
+): {
   branch: string
-  action: 'sync-to-github' | 'sync-to-gitlab' | 'skip'
+  action: 'sync-to-github' | 'sync-to-gitlab' | 'delete-from-gitlab' | 'skip'
   reason: string
   sourceCommit: string
   targetCommit?: string
@@ -292,7 +314,7 @@ function determineBidirectionalAction(branch: UnifiedBranch): {
   if (branch.existsInGithub && !branch.existsInGitlab) {
     const githubBranch = branch.githubBranch!
 
-    if (shouldSkipBranchCreation(branch.name)) {
+    if (shouldSkipBranchCreation(branch.name, config)) {
       return {
         branch: branch.name,
         action: 'skip',
@@ -313,15 +335,30 @@ function determineBidirectionalAction(branch: UnifiedBranch): {
   if (!branch.existsInGithub && branch.existsInGitlab) {
     const gitlabBranch = branch.gitlabBranch!
 
-    if (shouldSkipBranchCreation(branch.name)) {
-      return {
-        branch: branch.name,
-        action: 'skip',
-        reason: 'Branch appears to be a deleted PR/MR branch',
-        sourceCommit: gitlabBranch.sha
+    // For bot branches that exist only in GitLab, handle based on strategy
+    if (isBotBranch(branch.name, config)) {
+      const { strategy } = getBotBranchConfig(config)
+
+      if (strategy === 'delete-orphaned') {
+        return {
+          branch: branch.name,
+          action: 'delete-from-gitlab',
+          reason: 'Bot branch exists only in GitLab, deleting orphaned branch',
+          sourceCommit: gitlabBranch.sha
+        }
+      } else if (strategy === 'skip') {
+        return {
+          branch: branch.name,
+          action: 'skip',
+          reason:
+            'Bot branch exists only in GitLab, skipping per configuration',
+          sourceCommit: gitlabBranch.sha
+        }
       }
+      // If strategy is 'sync', fall through to sync logic below
     }
 
+    // For regular branches, sync them back to GitHub
     return {
       branch: branch.name,
       action: 'sync-to-github',
@@ -345,7 +382,7 @@ function determineBidirectionalAction(branch: UnifiedBranch): {
 function logBidirectionalSyncPlan(
   syncActions: Array<{
     branch: string
-    action: 'sync-to-github' | 'sync-to-gitlab' | 'skip'
+    action: 'sync-to-github' | 'sync-to-gitlab' | 'delete-from-gitlab' | 'skip'
     reason: string
     sourceCommit: string
     targetCommit?: string
@@ -353,21 +390,33 @@ function logBidirectionalSyncPlan(
 ): void {
   const toGithub = syncActions.filter(a => a.action === 'sync-to-github').length
   const toGitlab = syncActions.filter(a => a.action === 'sync-to-gitlab').length
+  const deleteFromGitlab = syncActions.filter(
+    a => a.action === 'delete-from-gitlab'
+  ).length
   const skipped = syncActions.filter(a => a.action === 'skip').length
 
   core.info(`📊 Bidirectional Sync Plan:`)
   if (toGithub > 0) core.info(`  → GitHub: ${toGithub} branches`)
   if (toGitlab > 0) core.info(`  → GitLab: ${toGitlab} branches`)
+  if (deleteFromGitlab > 0)
+    core.info(`  🗑️ Delete from GitLab: ${deleteFromGitlab} branches`)
   if (skipped > 0) core.info(`  ⏭️ Skipped: ${skipped} branches`)
 
   // Log detailed actions
   core.startGroup('🔍 Detailed Sync Actions')
   for (const action of syncActions) {
     if (action.action !== 'skip') {
-      const direction =
-        action.action === 'sync-to-github'
-          ? 'GitLab → GitHub'
-          : 'GitHub → GitLab'
+      let direction: string
+      if (action.action === 'sync-to-github') {
+        direction = 'GitLab → GitHub'
+      } else if (action.action === 'sync-to-gitlab') {
+        direction = 'GitHub → GitLab'
+      } else if (action.action === 'delete-from-gitlab') {
+        direction = '🗑️ Delete from GitLab'
+      } else {
+        direction = 'Unknown'
+      }
+
       core.info(`${action.branch}: ${direction}`)
       core.info(`  Commit: ${action.sourceCommit.substring(0, 8)}`)
       core.info(`  Reason: ${action.reason}`)
@@ -382,7 +431,7 @@ function logBidirectionalSyncPlan(
 async function executeBidirectionalSync(
   syncActions: Array<{
     branch: string
-    action: 'sync-to-github' | 'sync-to-gitlab' | 'skip'
+    action: 'sync-to-github' | 'sync-to-gitlab' | 'delete-from-gitlab' | 'skip'
     reason: string
     sourceCommit: string
     targetCommit?: string
@@ -418,6 +467,10 @@ async function executeBidirectionalSync(
             core.info(`🔄 Syncing ${action.branch} to GitLab`)
             await gitlabClient.updateBranch(action.branch, action.sourceCommit)
             core.info(`✅ Synced ${action.branch} to GitLab`)
+          } else if (action.action === 'delete-from-gitlab') {
+            core.info(`🗑️ Deleting ${action.branch} from GitLab`)
+            await gitlabClient.deleteBranch(action.branch)
+            core.info(`✅ Deleted ${action.branch} from GitLab`)
           }
           return { branch: action.branch, status: 'success' }
         } catch (error) {
@@ -464,6 +517,7 @@ export async function syncBranchesBidirectional(
   githubClient: GitHubClient,
   gitlabClient: GitLabClient
 ): Promise<void> {
+  const config = githubClient.config // Use GitHub client's config
   core.info('🔄 Starting intelligent bidirectional branch sync...')
 
   // Fetch branches from both repositories simultaneously
@@ -491,14 +545,14 @@ export async function syncBranchesBidirectional(
   // Process each branch with intelligent sync logic
   const syncActions: Array<{
     branch: string
-    action: 'sync-to-github' | 'sync-to-gitlab' | 'skip'
+    action: 'sync-to-github' | 'sync-to-gitlab' | 'delete-from-gitlab' | 'skip'
     reason: string
     sourceCommit: string
     targetCommit?: string
   }> = []
 
   for (const branch of unifiedBranches) {
-    const action = determineBidirectionalAction(branch)
+    const action = determineBidirectionalAction(branch, config)
     syncActions.push(action)
   }
 
@@ -515,6 +569,7 @@ export async function syncBranches(
   source: GitHubClient | GitLabClient,
   target: GitHubClient | GitLabClient
 ): Promise<void> {
+  const config = source.config // Use source client's config
   // Fetch branches from both repositories
   const sourceBranches = await source.fetchBranches({
     includeProtected: source.config.github.sync?.branches.protected,
@@ -524,7 +579,11 @@ export async function syncBranches(
   const targetBranches = await target.fetchBranches()
 
   // Compare branches and determine required actions
-  const branchComparisons = compareBranches(sourceBranches, targetBranches)
+  const branchComparisons = compareBranches(
+    sourceBranches,
+    targetBranches,
+    config
+  )
 
   // Log sync plan with enhanced details
   core.info('\n🔍 Branch Sync Analysis:')

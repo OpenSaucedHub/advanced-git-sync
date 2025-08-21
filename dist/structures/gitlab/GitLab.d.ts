@@ -27,6 +27,7 @@ export declare class GitLabClient implements IClient {
     fetchBranches(filterOptions?: BranchFilterOptions): Promise<import("../../types").Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;
     updateBranch(name: string, commitSha: string): Promise<void>;
+    deleteBranch(name: string): Promise<void>;
     commitExists(commitSha: string): Promise<boolean>;
     getRecentCommits(branchName: string, limit: number): Promise<any[]>;
     getCommitDetails(commitSha: string): Promise<{

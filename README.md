@@ -16,6 +16,8 @@ repositories. Keep your projects in sync across platforms automatically.
 - 🔄 **Bi-directional sync** between GitHub and GitLab
 - 🌳 **Branches, PRs/MRs, issues, releases, and tags**
 - 💬 **Enhanced comment synchronization** with proper attribution
+- 🤖 **Smart bot branch handling** - configurable cleanup of dependabot, renovate, and other bot
+  branches
 - ⚙️ **Highly configurable** with logical priority-based defaults
 - 🔒 **Secure** with token-based authentication
 - 🏷️ **Smart labeling** of synced content
@@ -53,7 +55,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
 
       - name: Sync with GitLab
         uses: OpenSaucedHub/advanced-git-sync@v1.4.1

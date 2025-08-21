@@ -27,6 +27,11 @@ gitlab:
         strategy: "merge-timelines" # merge-timelines | skip-diverged | force-match
         createMergeCommits: true
         mergeMessage: "Sync: Merge timeline from {source} to {target}"
+      # 🤖 Bot branch handling - control how bot-created branches are managed
+      botBranches:
+        strategy: "delete-orphaned" # delete-orphaned | sync | skip
+        patterns: [] # Empty = use defaults, populated = override defaults entirely
+        # Default patterns: dependabot/*, renovate/*, copilot/*, feature/*, fix/*, etc.
 
     # 🟡 HIGH: Core features (enabled by default) - uncomment to customize
     tags:
@@ -87,6 +92,11 @@ github:
         strategy: "merge-timelines" # merge-timelines | skip-diverged | force-match
         createMergeCommits: true
         mergeMessage: "Sync: Merge timeline from {source} to {target}"
+      # 🤖 Bot branch handling - control how bot-created branches are managed
+      botBranches:
+        strategy: "delete-orphaned" # delete-orphaned | sync | skip
+        patterns: [] # Empty = use defaults, populated = override defaults entirely
+        # Default patterns: dependabot/*, renovate/*, copilot/*, feature/*, fix/*, etc.
 
     # 🟡 HIGH: Core features (enabled by default) - uncomment to customize
     tags:

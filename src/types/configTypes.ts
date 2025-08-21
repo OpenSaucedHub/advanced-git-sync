@@ -1,6 +1,13 @@
 // src/types/config.ts
 import { z } from 'zod'
 
+export const BotBranchConfigSchema = z.object({
+  strategy: z
+    .enum(['delete-orphaned', 'sync', 'skip'])
+    .default('delete-orphaned'),
+  patterns: z.array(z.string()).default([])
+})
+
 export const BranchConfigSchema = z.object({
   enabled: z.boolean(),
   protected: z.boolean(),
@@ -16,7 +23,8 @@ export const BranchConfigSchema = z.object({
         .string()
         .default('Sync: Merge timeline from {source} to {target}')
     })
-    .optional()
+    .optional(),
+  botBranches: BotBranchConfigSchema.optional()
 })
 
 export const PRConfigSchema = z.object({

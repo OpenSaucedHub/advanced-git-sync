@@ -279,6 +279,59 @@ Failed to merge MR #18: 405 Method Not Allowed
    - Ensure token can create branches on target repository
    - Verify no branch protection rules prevent creation
 
+#### Bot Branches Not Handled Correctly
+
+**Symptoms:**
+
+- Dependabot/renovate branches keep getting recreated after deletion
+- Bot branches exist in target but not source (orphaned branches)
+- Bot branches sync when they shouldn't (or vice versa)
+
+**Solutions:**
+
+1. **Check bot branch strategy:**
+
+   ```yaml
+   branches:
+     botBranches:
+       strategy: 'delete-orphaned' # Clean up orphaned bot branches
+       patterns: [] # Use default patterns
+   ```
+
+2. **Verify bot patterns match your branches:**
+
+   ```yaml
+   # Default patterns include: dependabot/*, renovate/*, copilot/*, feature/*, etc.
+   # To see what's detected as bot branches, check the action logs
+   ```
+
+3. **Use custom patterns for specific bots:**
+
+   ```yaml
+   branches:
+     botBranches:
+       strategy: 'delete-orphaned'
+       patterns: # Only these are considered bot branches
+         - 'dependabot/*'
+         - 'renovate/*'
+         - 'my-company-bot/*'
+   ```
+
+4. **Disable bot branch handling:**
+
+   ```yaml
+   branches:
+     botBranches:
+       strategy: 'sync' # Treat bot branches like regular branches
+   ```
+
+**Common Bot Branch Issues:**
+
+- **Orphaned branches**: Use `strategy: 'delete-orphaned'` (default)
+- **Too aggressive deletion**: Use custom `patterns` to be more specific
+- **Want to sync all branches**: Use `strategy: 'sync'`
+- **Want to ignore bot branches**: Use `strategy: 'skip'`
+
 #### Pull Requests/Issues Not Syncing
 
 **Symptoms:**

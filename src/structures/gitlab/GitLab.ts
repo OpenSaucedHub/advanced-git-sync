@@ -132,6 +132,10 @@ export class GitLabClient implements IClient {
     return this.branches.update(name, commitSha)
   }
 
+  async deleteBranch(name: string) {
+    return this.branches.delete(name)
+  }
+
   async commitExists(commitSha: string): Promise<boolean> {
     try {
       const projectId = await this.getProjectId()

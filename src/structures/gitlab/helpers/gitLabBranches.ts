@@ -186,4 +186,18 @@ export class gitlabBranchHelper {
   async create(name: string, commitSha: string): Promise<void> {
     await this.update(name, commitSha)
   }
+
+  async delete(name: string): Promise<void> {
+    try {
+      const projectId = await this.getProjectId()
+      await this.gitlab.Branches.remove(projectId, name)
+      core.info(`✓ Deleted branch ${name} from GitLab`)
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
+      throw new Error(
+        `Failed to delete branch ${name} from GitLab: ${errorMessage}`
+      )
+    }
+  }
 }
