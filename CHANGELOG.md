@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.4.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.1...v1.4.2) (2025-08-21)
+
+
+
+## [1.4.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.1...v1.4.2) (2025-08-21)
+
+### Bug Fixes
+
+* add bot branch management and configuration options ([acefd60](https://github.com/OpenSaucedHub/advanced-git-sync/commit/acefd60543e5ae9fd7802148704881aeb05f00a8))
+
 # [v1.4.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.0...v1.4.1) (2025-08-20)
 
 ## [1.4.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.0...v1.4.1) (2025-08-20)
