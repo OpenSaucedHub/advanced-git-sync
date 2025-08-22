@@ -27,6 +27,76 @@ github:
 
 This automatically syncs: **Branches** (with history) + **Tags** + **Releases** 🎉
 
+## 🆕 Automatic Repository Creation
+
+**New Feature!** The action can now automatically create repositories when they don't exist, making
+it easy to set up new sync relationships.
+
+### Example: Sync to a New Repository
+
+```yaml
+gitlab:
+  enabled: true
+  createIfNotExists: true # 🆕 NEW: Auto-create GitLab project
+  owner: your-username
+  repo: new-project-name
+
+github:
+  enabled: true
+  createIfNotExists: true # 🆕 NEW: Auto-create GitHub repository
+  # Will use current repository by default, or specify:
+  # owner: your-username
+  # repo: new-repo-name
+```
+
+**What happens when enabled:**
+
+1. **Repository Not Found**: If the target repository/project doesn't exist during sync
+2. **Automatic Creation**: The action creates it using your provided tokens
+3. **Secure Defaults**: Created repositories are private by default
+4. **Ready to Use**: Initialized with README for immediate usability
+5. **Sync Continues**: Normal sync process continues after creation
+
+**Security Note**: This feature is **disabled by default** (`createIfNotExists: false`) for
+security. Only enable when you want to allow repository creation.
+
+### Example: One-Way Setup to New GitLab Project
+
+```yaml
+# Sync FROM existing GitHub repo TO new GitLab project
+gitlab:
+  enabled: true
+  createIfNotExists: true # Create new GitLab project
+  host: gitlab.example.com # Use custom GitLab instance
+  owner: my-org
+  repo: new-mirror
+
+github:
+  enabled: false # Don't sync back from GitLab
+```
+
+### Example: Bidirectional with Auto-Creation
+
+```yaml
+gitlab:
+  enabled: true
+  createIfNotExists: true
+  sync:
+    branches:
+      enabled: true
+    tags:
+      enabled: true
+
+github:
+  enabled: true
+  createIfNotExists: true
+  sync:
+    branches:
+      enabled: true
+    tags:
+      enabled: true
+```
+
 ## Basic Examples
 
 ### 1. GitHub to GitLab Only (Core Features)

@@ -15,6 +15,7 @@ repositories. Keep your projects in sync across platforms automatically.
 
 - 🔄 **Bi-directional sync** between GitHub and GitLab
 - 🌳 **Branches, PRs/MRs, issues, releases, and tags**
+- 🆕 **Automatic repository creation** - create missing repositories with provided tokens
 - 💬 **Enhanced comment synchronization** with proper attribution
 - 🤖 **Smart bot branch handling** - configurable cleanup of dependabot, renovate, and other bot
   branches
@@ -86,9 +87,11 @@ Create `.github/sync-config.yml` for custom settings:
 gitlab:
   enabled: true
   projectId: 12345 # Your GitLab project ID
+  # createIfNotExists: true  # 🆕 Optional: Auto-create missing repositories
 
 github:
   enabled: true
+  # createIfNotExists: true  # 🆕 Optional: Auto-create missing repositories
 ```
 
 That's it! The action uses intelligent defaults:

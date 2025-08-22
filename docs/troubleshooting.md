@@ -82,7 +82,19 @@ refusing to allow a Personal Access Token to create or update workflow `.github/
      projectId: 12345 # Find this in GitLab project settings
    ```
 
-3. **Verify repository access:**
+3. **🆕 Enable automatic repository creation:**
+
+   ```yaml
+   gitlab:
+     createIfNotExists: true # Auto-create missing repositories
+   github:
+     createIfNotExists: true # Auto-create missing repositories
+   ```
+
+   **Note**: This creates repositories as private by default and is disabled by default for
+   security.
+
+4. **Verify repository access:**
    - Ensure the token has access to the repository
    - Check if repository is private and token has appropriate permissions
 

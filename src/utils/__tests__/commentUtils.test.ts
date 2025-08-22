@@ -11,7 +11,7 @@ const mockGitHubClient = {
     repo: 'testrepo',
     url: 'https://github.com/testowner/testrepo'
   })
-} as GitHubClient;
+} as GitHubClient
 
 const mockGitLabClient = {
   getRepoInfo: () => ({
@@ -19,7 +19,7 @@ const mockGitLabClient = {
     repo: 'testrepo',
     url: 'https://gitlab.com/testowner/testrepo'
   })
-} as GitLabClient;
+} as GitLabClient
 
 const mockComment: Comment = {
   id: 123,
