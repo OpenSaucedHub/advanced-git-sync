@@ -2,16 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.4.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.2...v1.4.3) (2025-08-22)
-
-
 
 ## [1.4.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.2...v1.4.3) (2025-08-22)
 
 ### Bug Fixes
 
-* add repository and project creation helpers for GitHub and GitLab ([d2edc54](https://github.com/OpenSaucedHub/advanced-git-sync/commit/d2edc5427b1101c0f6b5aabeefec8b2661e150ca))
+- add repository and project creation helpers for GitHub and GitLab
+  ([d2edc54](https://github.com/OpenSaucedHub/advanced-git-sync/commit/d2edc5427b1101c0f6b5aabeefec8b2661e150ca))
 
 # [v1.4.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.1...v1.4.2) (2025-08-21)
 

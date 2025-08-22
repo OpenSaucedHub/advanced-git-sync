@@ -45,7 +45,7 @@ export class gitlabProjectHelper {
       // Try to find the correct namespace
       const namespaceId = await this.findNamespace()
 
-      const projectConfig = {
+      const projectConfig: any = {
         name: this.repo.repo,
         path: this.repo.repo,
         visibility: 'private', // Private by default for security
@@ -56,8 +56,12 @@ export class gitlabProjectHelper {
         merge_requests_enabled: true,
         wiki_enabled: false,
         snippets_enabled: false,
-        container_registry_enabled: false,
-        namespace_id: namespaceId
+        container_registry_enabled: false
+      }
+
+      // Only add namespace_id if we found one
+      if (namespaceId) {
+        projectConfig.namespace_id = namespaceId
       }
 
       const createdProject = await this.gitlab.Projects.create(projectConfig)
@@ -94,9 +98,9 @@ export class gitlabProjectHelper {
 
   /**
    * Finds the correct namespace ID for the project
-   * @returns Promise<number> - the namespace ID
+   * @returns Promise<number | undefined> - the namespace ID or undefined if not found
    */
-  private async findNamespace(): Promise<number> {
+  private async findNamespace(): Promise<number | undefined> {
     try {
       // First try to find as a group/organization
       try {
@@ -130,24 +134,21 @@ export class gitlabProjectHelper {
           return currentUser.id
         }
       } catch (error) {
-        // Final fallback - let GitLab handle it without namespace_id
-        core.warning(
-          `Could not determine namespace, creating project without explicit namespace`
-        )
-        throw new Error(
-          'Could not determine target namespace for project creation'
-        )
+        core.debug(`Could not get current user: ${error}`)
       }
 
-      throw new Error(
-        `Could not find or determine namespace for ${this.repo.owner}`
+      // Final fallback - return undefined to let GitLab use default namespace
+      core.warning(
+        `Could not determine namespace for ${this.repo.owner}, using default namespace`
       )
+      return undefined
     } catch (error) {
-      throw new Error(
-        `Failed to find namespace for ${this.repo.owner}: ${
+      core.warning(
+        `Error during namespace resolution for ${this.repo.owner}: ${
           error instanceof Error ? error.message : 'Unknown error'
-        }`
+        }, using default namespace`
       )
+      return undefined
     }
   }
 }

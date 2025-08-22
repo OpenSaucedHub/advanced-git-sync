@@ -15,7 +15,7 @@ export declare class gitlabProjectHelper {
     private createProject;
     /**
      * Finds the correct namespace ID for the project
-     * @returns Promise<number> - the namespace ID
+     * @returns Promise<number | undefined> - the namespace ID or undefined if not found
      */
     private findNamespace;
 }

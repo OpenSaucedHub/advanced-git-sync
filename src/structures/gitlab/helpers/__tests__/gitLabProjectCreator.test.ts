@@ -95,6 +95,20 @@ describe('gitlabProjectHelper', () => {
       )
     })
 
+    it('should create without namespace_id if no namespace found', async () => {
+      mockGitlab.Projects.show.mockRejectedValue({ response: { status: 404 } })
+      mockGitlab.Groups.show.mockRejectedValue({ response: { status: 404 } })
+      mockGitlab.Users.search.mockResolvedValue([])
+      mockGitlab.Users.current.mockRejectedValue(new Error('No current user'))
+      mockGitlab.Projects.create.mockResolvedValue({ id: 789 })
+
+      const result = await creator.createIfNotExists()
+
+      expect(result).toBe(789)
+      const createCall = mockGitlab.Projects.create.mock.calls[0][0]
+      expect(createCall).not.toHaveProperty('namespace_id')
+    })
+
     it('should throw error for non-404 errors', async () => {
       mockGitlab.Projects.show.mockRejectedValue({ response: { status: 403 } })
 
