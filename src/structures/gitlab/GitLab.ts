@@ -7,7 +7,8 @@ import {
   mergeRequestHelper,
   gitlabReleaseHelper,
   gitlabTagHelper,
-  gitlabPermsHelper
+  gitlabPermsHelper,
+  gitlabProjectHelper
 } from './helpers'
 import { ErrorCodes } from '@/src/utils/errorCodes'
 
@@ -22,6 +23,7 @@ export class GitLabClient implements IClient {
   public tags: gitlabTagHelper
   private projectId: number | null = null
   private perms: gitlabPermsHelper
+  private projectCreator: gitlabProjectHelper
 
   constructor(config: Config, repo: Repository) {
     this.config = config
@@ -60,6 +62,7 @@ export class GitLabClient implements IClient {
     this.tags = new gitlabTagHelper(this.gitlab, this.config, () =>
       this.getProjectId()
     )
+    this.projectCreator = new gitlabProjectHelper(this.gitlab, this.repo)
     this.projectId = config.gitlab.projectId || null
 
     core.info(`\x1b[32m✓ GitLab client initialized successfully\x1b[0m`)
@@ -84,15 +87,8 @@ export class GitLabClient implements IClient {
         return this.projectId
       }
 
-      const path = `${this.repo.owner}/${this.repo.repo}`
-      core.info(`Fetching project ID for: ${path}`)
-      const project = await this.gitlab.Projects.show(path)
-
-      if (!project?.id) {
-        throw new Error('Project ID not found in response')
-      }
-
-      this.projectId = project.id
+      // Try to create project if it doesn't exist, then get the project ID
+      this.projectId = await this.projectCreator.createIfNotExists()
       core.info(`Project ID retrieved: ${this.projectId}`)
       return this.projectId
     } catch (error) {

@@ -1,6 +1,6 @@
 <div align="center">
 
-[![wakatime](https://wakatime.com/badge/github/OpenSaucedHub/advanced-git-sync.svg)](https://wakatime.com/badge/github/OpenSaucedHub/advanced-git-sync)
+[![wakatime](https://wakatime.com/badge/user/8535571c-1079-48d4-ac47-11a817f61249/project/c57869a3-8a13-4cc7-b4f3-8fab999f5595.svg)](https://wakatime.com/badge/user/8535571c-1079-48d4-ac47-11a817f61249/project/c57869a3-8a13-4cc7-b4f3-8fab999f5595)
 [![Releases](https://github.com/OpenSaucedHub/advanced-git-sync/actions/workflows/release.yml/badge.svg)](https://github.com/OpenSaucedHub/advanced-git-sync/actions/workflows/release.yml)
 [![CLA Assistant](https://github.com/OpenSaucedHub/advanced-git-sync/actions/workflows/cla.yml/badge.svg)](https://github.com/OpenSaucedHub/advanced-git-sync/actions/workflows/cla.yml)
 
@@ -23,6 +23,7 @@ repositories. Keep your projects in sync across platforms automatically.
 - 🏷️ **Smart labeling** of synced content
 - 🧠 **Intelligent dependency management** - automatically enables required features
 - ⏱️ **Chronological sync order** - respects dependencies between operations
+- 🏗️ **Automatic repository creation** - creates missing remote repositories as private by default
 
 ## 🚀 Quick Start
 

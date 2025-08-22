@@ -11,6 +11,7 @@ export declare class GitLabClient implements IClient {
     tags: gitlabTagHelper;
     private projectId;
     private perms;
+    private projectCreator;
     constructor(config: Config, repo: Repository);
     private formatHostUrl;
     private getProjectId;

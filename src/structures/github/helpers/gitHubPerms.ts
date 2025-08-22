@@ -2,13 +2,18 @@ import { PermissionValidator } from '@/src/handlers/validator'
 import { Config, PermissionCheck, Repository } from '@/src/types'
 import { ErrorCodes } from '@/src/utils/errorCodes'
 import * as core from '@actions/core'
+import { githubRepoHelper } from './gitHubRepo'
 
 export class githubPermsHelper {
+  private repoCreator: githubRepoHelper
+
   constructor(
     private octokit: any,
     private repo: Repository,
     private config: Config
-  ) {}
+  ) {
+    this.repoCreator = new githubRepoHelper(this.octokit, this.repo)
+  }
 
   async validateAccess(): Promise<void> {
     try {
@@ -30,7 +35,8 @@ export class githubPermsHelper {
         }
       ]
 
-      // Verify repository access first
+      // Try to create repository if it doesn't exist, then verify access
+      await this.repoCreator.createIfNotExists()
       await this.octokit.rest.repos.get({ ...this.repo })
 
       await PermissionValidator.validatePlatformPermissions(
