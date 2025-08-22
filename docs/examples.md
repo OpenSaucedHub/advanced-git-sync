@@ -466,7 +466,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: OpenSaucedHub/advanced-git-sync@v1.4.3
+      - uses: OpenSaucedHub/advanced-git-sync@v1.4.4
         with:
           CONFIG_PATH: .github/sync-config-branches.yml
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
@@ -487,7 +487,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: OpenSaucedHub/advanced-git-sync@v1.4.3
+      - uses: OpenSaucedHub/advanced-git-sync@v1.4.4
         with:
           CONFIG_PATH: .github/sync-config-releases.yml
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
