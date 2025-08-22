@@ -190,6 +190,7 @@ export declare const GitlabConfigSchema: z.ZodObject<{
     token: z.ZodOptional<z.ZodString>;
     owner: z.ZodOptional<z.ZodString>;
     repo: z.ZodOptional<z.ZodString>;
+    createIfNotExists: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     sync: z.ZodOptional<z.ZodObject<{
         branches: z.ZodObject<{
             enabled: z.ZodBoolean;
@@ -285,6 +286,7 @@ export declare const GithubConfigSchema: z.ZodObject<{
     token: z.ZodOptional<z.ZodString>;
     owner: z.ZodOptional<z.ZodString>;
     repo: z.ZodOptional<z.ZodString>;
+    createIfNotExists: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     sync: z.ZodOptional<z.ZodObject<{
         branches: z.ZodObject<{
             enabled: z.ZodBoolean;
@@ -383,6 +385,7 @@ export declare const ConfigSchema: z.ZodObject<{
         token: z.ZodOptional<z.ZodString>;
         owner: z.ZodOptional<z.ZodString>;
         repo: z.ZodOptional<z.ZodString>;
+        createIfNotExists: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
         sync: z.ZodOptional<z.ZodObject<{
             branches: z.ZodObject<{
                 enabled: z.ZodBoolean;
@@ -478,6 +481,7 @@ export declare const ConfigSchema: z.ZodObject<{
         token: z.ZodOptional<z.ZodString>;
         owner: z.ZodOptional<z.ZodString>;
         repo: z.ZodOptional<z.ZodString>;
+        createIfNotExists: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
         sync: z.ZodOptional<z.ZodObject<{
             branches: z.ZodObject<{
                 enabled: z.ZodBoolean;

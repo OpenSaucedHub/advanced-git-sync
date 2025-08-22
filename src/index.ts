@@ -24,10 +24,42 @@ async function run(): Promise<void> {
 
     // validate permissions
     if (config.github.enabled) {
-      await githubClient.validateAccess()
+      try {
+        await githubClient.validateAccess()
+      } catch (error: any) {
+        if (
+          error.message?.includes('REPO_NOT_FOUND') &&
+          config.github.createIfNotExists
+        ) {
+          core.info('🔧 GitHub repository not found, creating it...')
+          const created = await githubClient.createRepositoryIfNotExists()
+          if (created) {
+            // Re-validate access after creation
+            await githubClient.validateAccess()
+          }
+        } else {
+          throw error
+        }
+      }
     }
     if (config.gitlab.enabled) {
-      await gitlabClient.validateAccess()
+      try {
+        await gitlabClient.validateAccess()
+      } catch (error: any) {
+        if (
+          error.message?.includes('REPO_NOT_FOUND') &&
+          config.gitlab.createIfNotExists
+        ) {
+          core.info('🔧 GitLab project not found, creating it...')
+          const created = await gitlabClient.createRepositoryIfNotExists()
+          if (created) {
+            // Re-validate access after creation
+            await gitlabClient.validateAccess()
+          }
+        } else {
+          throw error
+        }
+      }
     }
 
     if (config.github.enabled && config.gitlab.enabled) {

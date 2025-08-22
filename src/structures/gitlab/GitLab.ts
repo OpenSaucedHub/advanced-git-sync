@@ -238,4 +238,89 @@ export class GitLabClient implements IClient {
   async updateTag(tag: any) {
     return this.tags.updateTag(tag)
   }
+
+  /**
+   * Create a new project if it doesn't exist
+   * @returns true if project was created, false if it already existed
+   */
+  async createRepositoryIfNotExists(): Promise<boolean> {
+    try {
+      // First check if project already exists
+      if (this.config.gitlab?.projectId) {
+        // If projectId is provided, check if it exists
+        await this.gitlab.Projects.show(this.config.gitlab.projectId)
+        core.info(
+          `GitLab project with ID ${this.config.gitlab.projectId} already exists`
+        )
+        return false
+      } else {
+        // Check by path
+        const path = `${this.repo.owner}/${this.repo.repo}`
+        await this.gitlab.Projects.show(path)
+        core.info(`GitLab project ${path} already exists`)
+        return false
+      }
+    } catch (error: any) {
+      if (error.response?.status === 404 || error.message?.includes('404')) {
+        // Project doesn't exist, create it
+        const projectName = this.repo.repo
+        const namespacePath = this.repo.owner
+
+        core.info(`Creating GitLab project ${namespacePath}/${projectName}`)
+
+        try {
+          // First, try to get the namespace (user or group) ID
+          let namespaceId: number | undefined
+
+          try {
+            const namespaces = await this.gitlab.Namespaces.all({
+              search: namespacePath
+            })
+            const namespace = namespaces.find(
+              (ns: any) =>
+                ns.path === namespacePath || ns.full_path === namespacePath
+            )
+            if (namespace) {
+              namespaceId = namespace.id
+            }
+          } catch (namespaceError) {
+            core.warning(
+              `Could not find namespace ${namespacePath}, creating in personal namespace`
+            )
+          }
+
+          const createParams: any = {
+            name: projectName,
+            path: projectName,
+            visibility: 'private', // Default to private for security
+            initialize_with_readme: true,
+            description: `Project automatically created by advanced-git-sync`
+          }
+
+          if (namespaceId) {
+            createParams.namespace_id = namespaceId
+          }
+
+          const project = await this.gitlab.Projects.create(createParams)
+
+          if (project?.id) {
+            this.projectId = project.id
+            core.info(
+              `✓ Successfully created GitLab project ${namespacePath}/${projectName} with ID: ${project.id}`
+            )
+            return true
+          } else {
+            throw new Error('Project creation returned invalid response')
+          }
+        } catch (createError: any) {
+          throw new Error(
+            `Failed to create GitLab project ${namespacePath}/${projectName}: ${createError.message}`
+          )
+        }
+      } else {
+        // Some other error occurred (not 404)
+        throw error
+      }
+    }
+  }
 }

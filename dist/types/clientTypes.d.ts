@@ -17,4 +17,5 @@ export interface IClient {
         sha: string;
         date: string;
     } | null>;
+    createRepositoryIfNotExists(): Promise<boolean>;
 }

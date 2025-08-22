@@ -30,8 +30,23 @@ export class githubPermsHelper {
         }
       ]
 
-      // Verify repository access first
-      await this.octokit.rest.repos.get({ ...this.repo })
+      // Verify repository access first - with potential repository creation
+      try {
+        await this.octokit.rest.repos.get({ ...this.repo })
+      } catch (error: any) {
+        if (error.status === 404 && this.config.github.createIfNotExists) {
+          core.info(
+            `Repository ${this.repo.owner}/${this.repo.repo} not found, attempting to create it...`
+          )
+          // Note: We can't call createRepositoryIfNotExists here directly as it would create circular dependency
+          // We'll handle this in the client validation flow instead
+          throw new Error(
+            `REPO_NOT_FOUND: Repository ${this.repo.owner}/${this.repo.repo} does not exist`
+          )
+        } else {
+          throw error
+        }
+      }
 
       await PermissionValidator.validatePlatformPermissions(
         'github',

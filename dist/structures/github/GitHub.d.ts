@@ -41,4 +41,9 @@ export declare class GitHubClient implements IClient {
     syncTags(): Promise<Tag[]>;
     createTag(tag: Tag): Promise<void>;
     updateTag(tag: Tag): Promise<void>;
+    /**
+     * Create a new repository if it doesn't exist
+     * @returns true if repository was created, false if it already existed
+     */
+    createRepositoryIfNotExists(): Promise<boolean>;
 }

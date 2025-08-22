@@ -187,4 +187,69 @@ export class GitHubClient implements IClient {
   async updateTag(tag: Tag): Promise<void> {
     return this.tags.updateTag(tag)
   }
+
+  /**
+   * Create a new repository if it doesn't exist
+   * @returns true if repository was created, false if it already existed
+   */
+  async createRepositoryIfNotExists(): Promise<boolean> {
+    try {
+      // First check if repository already exists
+      await this.octokit.rest.repos.get({ ...this.repo })
+      core.info(
+        `Repository ${this.repo.owner}/${this.repo.repo} already exists`
+      )
+      return false
+    } catch (error: any) {
+      if (error.status === 404) {
+        // Repository doesn't exist, create it
+        core.info(`Creating repository ${this.repo.owner}/${this.repo.repo}`)
+
+        try {
+          await this.octokit.rest.repos.createForAuthenticatedUser({
+            name: this.repo.repo,
+            private: true, // Default to private for security
+            auto_init: true, // Initialize with README
+            description: `Repository automatically created by advanced-git-sync from ${this.repo.owner}/${this.repo.repo}`
+          })
+
+          core.info(
+            `✓ Successfully created repository ${this.repo.owner}/${this.repo.repo}`
+          )
+          return true
+        } catch (createError: any) {
+          // If creation fails, check if it's because we need to create in an organization
+          if (
+            createError.status === 422 &&
+            this.repo.owner !==
+              (await this.octokit.rest.users.getAuthenticated()).data.login
+          ) {
+            // Try creating in organization
+            try {
+              await this.octokit.rest.repos.createInOrg({
+                org: this.repo.owner,
+                name: this.repo.repo,
+                private: true,
+                auto_init: true,
+                description: `Repository automatically created by advanced-git-sync`
+              })
+
+              core.info(
+                `✓ Successfully created repository ${this.repo.owner}/${this.repo.repo} in organization`
+              )
+              return true
+            } catch (orgError: any) {
+              throw new Error(
+                `Failed to create repository in organization ${this.repo.owner}: ${orgError.message}`
+              )
+            }
+          }
+          throw createError
+        }
+      } else {
+        // Some other error occurred (not 404)
+        throw error
+      }
+    }
+  }
 }

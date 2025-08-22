@@ -18,4 +18,5 @@ export interface IClient {
   getCommitDetails(
     commitSha: string
   ): Promise<{ sha: string; date: string } | null>
+  createRepositoryIfNotExists(): Promise<boolean>
 }

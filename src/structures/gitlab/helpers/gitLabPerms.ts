@@ -18,7 +18,29 @@ export class gitlabPermsHelper {
     try {
       core.info('GitLab Access Validation')
 
-      const projectId = await this.getProjectId()
+      // First check if project exists - with potential project creation
+      let projectId: number
+      try {
+        projectId = await this.getProjectId()
+      } catch (error: any) {
+        if (
+          (error.message?.includes('404') ||
+            error.message?.includes('not found')) &&
+          this.config.gitlab.createIfNotExists
+        ) {
+          core.info(
+            `GitLab project ${this.repo.owner}/${this.repo.repo} not found, attempting to create it...`
+          )
+          // Note: We can't call createRepositoryIfNotExists here directly as it would create circular dependency
+          // We'll handle this in the client validation flow instead
+          throw new Error(
+            `REPO_NOT_FOUND: GitLab project ${this.repo.owner}/${this.repo.repo} does not exist`
+          )
+        } else {
+          throw error
+        }
+      }
+
       core.info(
         `\x1b[32m✓ Validating access using Project ID: ${projectId}\x1b[0m`
       )

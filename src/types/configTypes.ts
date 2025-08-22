@@ -136,6 +136,7 @@ export const GitlabConfigSchema = z.object({
   token: z.string().optional(),
   owner: z.string().optional(),
   repo: z.string().optional(),
+  createIfNotExists: z.boolean().optional().default(false),
   sync: SyncConfigSchema.optional()
 })
 
@@ -144,6 +145,7 @@ export const GithubConfigSchema = z.object({
   token: z.string().optional(),
   owner: z.string().optional(),
   repo: z.string().optional(),
+  createIfNotExists: z.boolean().optional().default(false),
   sync: SyncConfigSchema.optional()
 })
 

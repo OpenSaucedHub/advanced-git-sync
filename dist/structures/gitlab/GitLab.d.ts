@@ -49,4 +49,9 @@ export declare class GitLabClient implements IClient {
     syncTags(): Promise<import("../../types").Tag[]>;
     createTag(tag: any): Promise<void>;
     updateTag(tag: any): Promise<void>;
+    /**
+     * Create a new project if it doesn't exist
+     * @returns true if project was created, false if it already existed
+     */
+    createRepositoryIfNotExists(): Promise<boolean>;
 }

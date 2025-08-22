@@ -59,6 +59,7 @@ export function getDefaultConfig(): Config {
   return {
     github: {
       enabled: true,
+      createIfNotExists: false,
       sync: {
         // CRITICAL: Foundation for all sync operations
         branches: {
@@ -126,6 +127,7 @@ export function getDefaultConfig(): Config {
     },
     gitlab: {
       enabled: true,
+      createIfNotExists: false,
       sync: {
         // CRITICAL: Foundation for all sync operations
         branches: {

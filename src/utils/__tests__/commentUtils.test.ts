@@ -11,7 +11,7 @@ const mockGitHubClient = {
     repo: 'testrepo',
     url: 'https://github.com/testowner/testrepo'
   })
-} as GitHubClient
+} as GitHubClient;
 
 const mockGitLabClient = {
   getRepoInfo: () => ({
@@ -19,7 +19,7 @@ const mockGitLabClient = {
     repo: 'testrepo',
     url: 'https://gitlab.com/testowner/testrepo'
   })
-} as GitLabClient
+} as GitLabClient;
 
 const mockComment: Comment = {
   id: 123,
@@ -199,8 +199,8 @@ describe('CommentFormatter', () => {
 describe('getCommentSyncOptions', () => {
   it('should return default options when config is empty', () => {
     const config: Config = {
-      github: { enabled: true },
-      gitlab: { enabled: true }
+      github: { enabled: true, createIfNotExists: false },
+      gitlab: { enabled: true, createIfNotExists: false }
     }
 
     const options = getCommentSyncOptions(config, 'issues')
@@ -214,6 +214,7 @@ describe('getCommentSyncOptions', () => {
     const config: Config = {
       github: {
         enabled: true,
+        createIfNotExists: false,
         sync: {
           branches: {
             enabled: true,
@@ -272,7 +273,7 @@ describe('getCommentSyncOptions', () => {
           }
         }
       },
-      gitlab: { enabled: true }
+      gitlab: { enabled: true, createIfNotExists: false }
     }
 
     const options = getCommentSyncOptions(config, 'issues')
