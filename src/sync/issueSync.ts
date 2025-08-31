@@ -56,11 +56,11 @@ export function compareIssues(
   return comparisons
 }
 
-export function prepareSourceLink(
+export async function prepareSourceLink(
   sourceClient: GitHubClient | GitLabClient,
   sourceIssue: Issue
-): string {
-  const repoInfo = sourceClient.getRepoInfo()
+): Promise<string> {
+  const repoInfo = await sourceClient.getRepoInfo()
   const platform = sourceClient instanceof GitHubClient ? 'GitHub' : 'GitLab'
 
   return `
@@ -109,7 +109,10 @@ export async function syncIssues(
           case 'create': {
             core.info(`🆕 Creating: "${comparison.sourceIssue.title}"`)
             // Add a link to the original source issue in the body
-            const sourceLink = prepareSourceLink(source, comparison.sourceIssue)
+            const sourceLink = await prepareSourceLink(
+              source,
+              comparison.sourceIssue
+            )
             const issueToCreate = {
               ...comparison.sourceIssue,
               body: `${comparison.sourceIssue.body || ''}\n\n${sourceLink}`
@@ -136,7 +139,10 @@ export async function syncIssues(
           case 'update':
             core.info(`🔄 Updating: "${comparison.sourceIssue.title}"`)
             // Add source link to updated issues as well
-            const sourceLink = prepareSourceLink(source, comparison.sourceIssue)
+            const sourceLink = await prepareSourceLink(
+              source,
+              comparison.sourceIssue
+            )
             const issueToUpdate = {
               ...comparison.sourceIssue,
               body: `${comparison.sourceIssue.body || ''}\n\n${sourceLink}`

@@ -37,7 +37,7 @@ export declare class CommentFormatter {
     /**
      * Generate source URL for a comment
      */
-    static generateCommentSourceUrl(sourceClient: GitHubClient | GitLabClient, issueNumber: number, commentId: number): string;
+    static generateCommentSourceUrl(sourceClient: GitHubClient | GitLabClient, issueNumber: number, commentId: number): Promise<string>;
     /**
      * Check if a comment is already synced (to avoid duplicates)
      */

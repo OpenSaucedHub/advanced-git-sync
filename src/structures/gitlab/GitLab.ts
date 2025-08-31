@@ -104,10 +104,29 @@ export class GitLabClient implements IClient {
    * Get repository information
    * @returns Repository details including URL
    */
-  getRepoInfo() {
+  async getRepoInfo() {
+    const description = await this.getProjectDescription()
     return {
       ...this.repo,
+      description,
       url: `${this.config.gitlab.host || 'https://gitlab.com'}/${this.repo.owner}/${this.repo.repo}`
+    }
+  }
+
+  async getProjectDescription(): Promise<string | null> {
+    try {
+      const project = await this.gitlab.Projects.show(this.projectId!)
+      return project.description || null
+    } catch {
+      return null
+    }
+  }
+
+  async updateProjectDescription(description: string): Promise<void> {
+    try {
+      await this.gitlab.Projects.edit(this.projectId!, { description })
+    } catch {
+      // Silent failure - description sync is not critical
     }
   }
 

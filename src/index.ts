@@ -8,6 +8,7 @@ import { syncIssues } from './sync/issueSync'
 import { syncReleases } from './sync/releaseSync'
 import { ClientManager } from './structures/clientManager'
 import { syncTags } from './sync/tagSync'
+import { MetadataSync } from './sync/metadataSync'
 
 async function run(): Promise<void> {
   try {
@@ -45,6 +46,15 @@ async function run(): Promise<void> {
         enabled: boolean
         operation: () => Promise<void>
       }[] = [
+        // PHASE 1: Repository Metadata Sync (silent and lightweight)
+        {
+          name: 'Repository Metadata Sync',
+          enabled: true, // Always enabled, runs silently
+          operation: async () => {
+            const metadataSync = new MetadataSync(githubClient, gitlabClient)
+            await metadataSync.syncDescription()
+          }
+        },
         // PHASE 1: Branches (CRITICAL - must run first, with improved bidirectional sync)
         {
           name: '\x1b[34m🌿 Branches (Bidirectional Sync)\x1b[0m',
@@ -185,16 +195,24 @@ async function run(): Promise<void> {
         )
         for (const syncOp of enabledCoreOps) {
           try {
-            core.info(`\x1b[90m➜ Starting: ${syncOp.name}\x1b[0m`)
+            // Skip logging for silent metadata sync
+            if (syncOp.name !== 'Repository Metadata Sync') {
+              core.info(`\x1b[90m➜ Starting: ${syncOp.name}\x1b[0m`)
+            }
             await syncOp.operation()
-            core.info(`\x1b[32m✓ Completed: ${syncOp.name}\x1b[0m`)
+            if (syncOp.name !== 'Repository Metadata Sync') {
+              core.info(`\x1b[32m✓ Completed: ${syncOp.name}\x1b[0m`)
+            }
             results.push({ name: syncOp.name, status: 'success' })
           } catch (error) {
             const errorMessage =
               error instanceof Error ? error.message : String(error)
-            core.error(
-              `\x1b[31m❌ Failed: ${syncOp.name} - ${errorMessage}\x1b[0m`
-            )
+            // Skip error logging for silent metadata sync
+            if (syncOp.name !== 'Repository Metadata Sync') {
+              core.error(
+                `\x1b[31m❌ Failed: ${syncOp.name} - ${errorMessage}\x1b[0m`
+              )
+            }
             results.push({
               name: syncOp.name,
               status: 'failed',

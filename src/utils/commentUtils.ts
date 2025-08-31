@@ -174,12 +174,12 @@ export class CommentFormatter {
   /**
    * Generate source URL for a comment
    */
-  static generateCommentSourceUrl(
+  static async generateCommentSourceUrl(
     sourceClient: GitHubClient | GitLabClient,
     issueNumber: number,
     commentId: number
-  ): string {
-    const repoInfo = sourceClient.getRepoInfo()
+  ): Promise<string> {
+    const repoInfo = await sourceClient.getRepoInfo()
 
     if (sourceClient instanceof GitHubClient) {
       return `${repoInfo.url}/issues/${issueNumber}#issuecomment-${commentId}`

@@ -2,16 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.4.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.3...v1.4.4) (2025-08-22)
-
-
 
 ## [1.4.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.3...v1.4.4) (2025-08-22)
 
 ### Bug Fixes
 
-* update namespace handling in project creation ([e667464](https://github.com/OpenSaucedHub/advanced-git-sync/commit/e667464b71a5151e99e96e3971c5512d9ee58995))
+- update namespace handling in project creation
+  ([e667464](https://github.com/OpenSaucedHub/advanced-git-sync/commit/e667464b71a5151e99e96e3971c5512d9ee58995))
 
 # [v1.4.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.2...v1.4.3) (2025-08-22)
 

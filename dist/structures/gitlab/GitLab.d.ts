@@ -19,11 +19,14 @@ export declare class GitLabClient implements IClient {
      * Get repository information
      * @returns Repository details including URL
      */
-    getRepoInfo(): {
+    getRepoInfo(): Promise<{
+        description: string | null;
         url: string;
         owner: string;
         repo: string;
-    };
+    }>;
+    getProjectDescription(): Promise<string | null>;
+    updateProjectDescription(description: string): Promise<void>;
     validateAccess(): Promise<void>;
     fetchBranches(filterOptions?: BranchFilterOptions): Promise<import("../../types").Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;

@@ -2,6 +2,7 @@
 export interface Repository {
   owner: string
   repo: string
+  description?: string
 }
 
 export interface Comment {

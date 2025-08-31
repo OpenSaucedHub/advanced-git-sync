@@ -115,3 +115,4 @@ bun.lockb
 
 .idea/
 advanced-git-sync.iml
+bun.lock

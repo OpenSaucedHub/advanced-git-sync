@@ -6,7 +6,7 @@ import { GitLabClient } from '../../structures/gitlab/GitLab'
 
 // Mock clients
 const mockGitHubClient = {
-  getRepoInfo: () => ({
+  getRepoInfo: async () => ({
     owner: 'testowner',
     repo: 'testrepo',
     url: 'https://github.com/testowner/testrepo'
@@ -14,7 +14,7 @@ const mockGitHubClient = {
 } as GitHubClient
 
 const mockGitLabClient = {
-  getRepoInfo: () => ({
+  getRepoInfo: async () => ({
     owner: 'testowner',
     repo: 'testrepo',
     url: 'https://gitlab.com/testowner/testrepo'

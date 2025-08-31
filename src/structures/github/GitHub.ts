@@ -51,12 +51,39 @@ export class GitHubClient implements IClient {
     )
   }
 
-  getRepoInfo() {
+  async getRepoInfo() {
+    const description = await this.getRepositoryDescription()
     return {
       ...this.repo,
+      description,
       url: `https://github.com/${this.repo.owner}/${this.repo.repo}`
     }
   }
+
+  async getRepositoryDescription(): Promise<string | null> {
+    try {
+      const { data } = await this.octokit.rest.repos.get({
+        owner: this.repo.owner,
+        repo: this.repo.repo
+      })
+      return data.description || null
+    } catch {
+      return null
+    }
+  }
+
+  async updateRepositoryDescription(description: string): Promise<void> {
+    try {
+      await this.octokit.rest.repos.update({
+        owner: this.repo.owner,
+        repo: this.repo.repo,
+        description
+      })
+    } catch {
+      // Silent failure - description sync is not critical
+    }
+  }
+
   async validateAccess(): Promise<void> {
     return this.perms.validateAccess()
   }

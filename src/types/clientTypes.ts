@@ -18,4 +18,8 @@ export interface IClient {
   getCommitDetails(
     commitSha: string
   ): Promise<{ sha: string; date: string } | null>
+  getRepositoryDescription?(): Promise<string | null>
+  updateRepositoryDescription?(description: string): Promise<void>
+  getProjectDescription?(): Promise<string | null>
+  updateProjectDescription?(description: string): Promise<void>
 }

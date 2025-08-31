@@ -11,11 +11,14 @@ export declare class GitHubClient implements IClient {
     tags: tagsHelper;
     perms: githubPermsHelper;
     constructor(config: Config, repo: Repository);
-    getRepoInfo(): {
+    getRepoInfo(): Promise<{
+        description: string | null;
         url: string;
         owner: string;
         repo: string;
-    };
+    }>;
+    getRepositoryDescription(): Promise<string | null>;
+    updateRepositoryDescription(description: string): Promise<void>;
     validateAccess(): Promise<void>;
     fetchBranches(filterOptions?: BranchFilterOptions): Promise<import("@/src/types").Branch[]>;
     createBranch(name: string, commitSha: string): Promise<void>;

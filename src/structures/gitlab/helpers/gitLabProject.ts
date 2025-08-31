@@ -56,7 +56,18 @@ export class gitlabProjectHelper {
         merge_requests_enabled: true,
         wiki_enabled: false,
         snippets_enabled: false,
-        container_registry_enabled: false
+        container_registry_enabled: false,
+        // Enable force pushes for synchronization
+        only_allow_merge_if_pipeline_succeeds: false,
+        only_allow_merge_if_all_discussions_are_resolved: false,
+        push_rules: {
+          deny_delete_tag: false,
+          member_check: false,
+          prevent_secrets: false,
+          author_email_regex: '',
+          file_name_regex: '',
+          max_file_size: 0
+        }
       }
 
       // Only add namespace_id if we found one
@@ -71,7 +82,7 @@ export class gitlabProjectHelper {
       }
 
       core.info(
-        `✓ Project ${this.repo.owner}/${this.repo.repo} created successfully`
+        `✓ Project ${this.repo.owner}/${this.repo.repo} created successfully with force push enabled`
       )
       return createdProject.id
     } catch (error: any) {

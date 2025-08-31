@@ -59,6 +59,16 @@ describe('gitlabProjectHelper', () => {
         wiki_enabled: false,
         snippets_enabled: false,
         container_registry_enabled: false,
+        only_allow_merge_if_pipeline_succeeds: false,
+        only_allow_merge_if_all_discussions_are_resolved: false,
+        push_rules: {
+          deny_delete_tag: false,
+          member_check: false,
+          prevent_secrets: false,
+          author_email_regex: '',
+          file_name_regex: '',
+          max_file_size: 0
+        },
         namespace_id: 456
       })
     })
