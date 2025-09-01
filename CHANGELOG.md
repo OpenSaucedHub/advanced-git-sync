@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.4.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.4...v1.4.5) (2025-09-01)
+
+
+
+## [1.4.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.4...v1.4.5) (2025-09-01)
+
+### Bug Fixes
+
+* add bidirectional repository description synchronization between GitHub and GitLab ([c72e9f5](https://github.com/OpenSaucedHub/advanced-git-sync/commit/c72e9f588fd83b7424ec6ecf4f5632fb8303f7d3))
+
 # [v1.4.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.3...v1.4.4) (2025-08-22)
 
 ## [1.4.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.3...v1.4.4) (2025-08-22)
