@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.4.6](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.5...v1.4.6) (2025-09-23)
+
+
+
+## [1.4.6](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.5...v1.4.6) (2025-09-23)
+
+### Bug Fixes
+
+* update workflow runners to use ubuntu-latest ([f019c92](https://github.com/OpenSaucedHub/advanced-git-sync/commit/f019c92e16a30d5431c1fc4ed536061db0c0c33d))
+
 # [v1.4.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.4...v1.4.5) (2025-09-01)
 
 ## [1.4.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.4...v1.4.5) (2025-09-01)
