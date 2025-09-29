@@ -97,6 +97,9 @@ sync-config.local.yml
 # vuepress build output
 .vuepress/dist
 
+# Build output (bundled action artifacts)
+dist/
+
 # Serverless directories
 .serverless/
 

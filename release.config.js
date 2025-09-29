@@ -53,10 +53,6 @@ module.exports = {
     [
       '@semantic-release/github',
       {
-        assets: [
-          { path: 'dist/*.tgz', label: 'NPM Package' },
-          { path: 'dist/index.js', label: 'Action Bundle' }
-        ],
         successComment:
           "🎉 This ${issue.pull_request ? 'PR is included' : 'issue has been resolved'} in version ${nextRelease.version} and published to GitHub Marketplace",
         failTitle: '❌ The release failed',

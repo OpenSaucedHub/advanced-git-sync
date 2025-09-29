@@ -26,18 +26,13 @@ runs:
     - name: Backup Original Project Dependencies
       shell: bash
       run: |
-        # Backup existing package.json and bun.lockb if they exist
+        # Backup existing package.json and bun.lock if they exist
         if [ -f package.json ]; then
           cp package.json package.json.original-backup
         fi
-        if [ -f bun.lockb ]; then
-          cp bun.lockb bun.lockb.original-backup
+        if [ -f bun.lock ]; then
+          cp bun.lock bun.lock.original-backup
         fi
-
-    - name: Setup Bun
-      uses: oven-sh/setup-bun@v2
-      with:
-        bun-version: latest
 
     - name: Create Minimal Dependencies Package
       shell: bash
@@ -55,11 +50,8 @@ runs:
           }
         }' > package.json
 
-    - name: Install Action Dependencies
-      shell: bash
-      run: |
-        # Install only action-specific dependencies
-        bun install
+    - name: Setup Bun and install dependencies
+      uses: iamvikshan/.github/.github/actions/setup-bun@main
 
     - name: Run Advanced Git Sync
       shell: bash
@@ -67,7 +59,7 @@ runs:
         INPUT_GITHUB_TOKEN: ${{ inputs.GH_TOKEN || inputs.GITHUB_TOKEN }}
         INPUT_GITLAB_TOKEN: ${{ inputs.GITLAB_TOKEN }}
         INPUT_CONFIG_PATH: ${{ inputs.CONFIG_PATH }}
-      run: bun run ${{ github.action_path }}/dist/index.js
+      run: bun run ${{ github.action_path }}/src/index.ts
 
     - name: Post-Job Cleanup
       if: always()

@@ -5,12 +5,7 @@ on:
     branches: [main]
     paths:
       - "package.json"
-      - "bun.lockb"
-  pull_request:
-    branches: [main]
-    paths:
-      - "package.json"
-      - "bun.lockb"
+      - "bun.lock"
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -18,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -26,11 +20,8 @@ jobs:
         with:
           token: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install
+      - name: Setup Bun and install dependencies
+        uses: iamvikshan/.github/.github/actions/setup-bun@main
 
       - name: Sync action.yml dependencies
         id: sync
@@ -41,46 +32,21 @@ jobs:
           # Run the sync script
           node scripts/sync-action-deps.js
 
-      - name: Create Pull Request
-        if: steps.sync.outputs.changes == 'true' && github.event_name != 'pull_request'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GH_TOKEN }}
-          commit-message: "chore: sync action.yml dependencies with package.json"
-          title: "🔄 Sync action.yml dependencies"
-          body: |
-            ## 🔄 Dependency Synchronization
+      - name: Commit and push changes
+        if: steps.sync.outputs.changes == 'true'
+        run: |
+          git config --local user.email "${{ github.repository_owner_id }}+${{ github.repository_owner }}@users.noreply.github.com"
+          git config --local user.name "${{ github.repository_owner }}"
+          git add action.yml
+          git commit -m "chore: sync action.yml dependencies with package.json
 
-            This PR automatically syncs the dependency versions in `action.yml` with the versions in `package.json`.
+          ${{ steps.sync.outputs.changes-summary }}"
+          git push
 
-            ### Changes Made:
-            ${{ steps.sync.outputs.changes-summary }}
-
-            ### What This Ensures:
-            - ✅ Consistent dependency versions across the action
-            - ✅ Runtime dependencies match development dependencies
-            - ✅ No version mismatches between `package.json` and `action.yml`
-
-            ### Verification Checklist:
-            - [ ] All dependency versions match between `package.json` and `action.yml`
-            - [ ] Action builds successfully with `bun run build`
-            - [ ] No breaking changes in updated dependencies
-
-            ---
-            *This PR was automatically created by the sync-action-dependencies workflow.*
-          branch: chore/sync-action-dependencies
-          labels: |
-            dependencies
-            automated
-          draft: false
-
-      - name: Validate sync (PR context)
-        if: github.event_name == 'pull_request'
+      - name: Validation summary
         run: |
           if [ "${{ steps.sync.outputs.changes }}" = "true" ]; then
-            echo "❌ action.yml dependencies are out of sync with package.json"
-            echo "Please run the sync workflow or update action.yml manually"
-            exit 1
+            echo "✅ action.yml dependencies synced and committed"
           else
-            echo "✅ action.yml dependencies are in sync with package.json"
+            echo "✅ action.yml dependencies already in sync"
           fi
