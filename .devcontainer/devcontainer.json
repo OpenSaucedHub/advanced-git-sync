@@ -20,7 +20,7 @@
   },
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "bun install",
+  "postCreateCommand": "bun update",
 
   // Set `remoteUser` to `root` to connect as root.
   "remoteUser": "root"

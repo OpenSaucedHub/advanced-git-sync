@@ -35,8 +35,8 @@ jobs:
       - name: Commit and push changes
         if: steps.sync.outputs.changes == 'true'
         run: |
-          git config --local user.email "${{ github.repository_owner_id }}+${{ github.repository_owner }}@users.noreply.github.com"
-          git config --local user.name "${{ github.repository_owner }}"
+          git config --global user.email "${{ github.repository_owner_id }}+${{ github.repository_owner }}@users.noreply.github.com"
+          git config --global user.name "${{ github.actor }}"
           git add action.yml
           git commit -m "chore: sync action.yml dependencies with package.json
 
