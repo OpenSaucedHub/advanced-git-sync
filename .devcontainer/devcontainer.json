@@ -12,7 +12,6 @@
         "oven.bun-vscode",
         "christian-kohler.npm-intellisense",
         "astro-build.astro-vscode",
-        "Orta.vscode-jest",
         "WakaTime.vscode-wakatime",
         "usernamehw.errorlens"
       ]

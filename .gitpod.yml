@@ -42,7 +42,6 @@ vscode:
     - eamodio.gitlens # GitLens for Git integration
     - oven.bun-vscode # Bun language support
     - christian-kohler.npm-intellisense # NPM IntelliSense
-    - orta.vscode-jest # Jest testing support
     - wakatime.vscode-wakatime # Time tracking (optional)
     - usernamehw.errorlens # Error highlighting
     - ms-vscode.vscode-typescript-next # Latest TypeScript support

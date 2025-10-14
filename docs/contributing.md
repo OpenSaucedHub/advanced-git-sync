@@ -77,43 +77,6 @@ advanced-git-sync/
 
 ### Running Tests
 
-```bash
-# Run all tests
-bun test
-
-# Run tests in watch mode
-bun test --watch
-
-# Run specific test file
-bun test src/config.test.ts
-```
-
-### Writing Tests
-
-- Place test files in `__tests__/` directory
-- Use descriptive test names
-- Test both success and error cases
-- Mock external API calls
-
-Example test:
-
-```typescript
-import { describe, it, expect } from 'bun:test'
-import { parseConfig } from '../src/config'
-
-describe('parseConfig', () => {
-  it('should parse valid configuration', () => {
-    const config = {
-      gitlab: { enabled: true },
-      github: { enabled: true }
-    }
-
-    const result = parseConfig(config)
-    expect(result.gitlab.enabled).toBe(true)
-  })
-})
-```
-
 ## 📝 Code Style
 
 ### TypeScript Guidelines
