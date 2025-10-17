@@ -27,10 +27,10 @@ jobs:
         id: sync
         run: |
           # Make the sync script executable
-          chmod +x scripts/sync-action-deps.js
+          chmod +x scripts/sync-action-deps.ts
 
           # Run the sync script
-          node scripts/sync-action-deps.js
+          node scripts/sync-action-deps.ts
 
       - name: Commit and push changes
         if: steps.sync.outputs.changes == 'true'

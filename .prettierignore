@@ -2,9 +2,8 @@ node_modules/
 dist/
 *ignore*
 *.sh
-*.lockb
+*lock*
 *.nix
-*.lock
 .env*
 *.env
 .tmp-git*

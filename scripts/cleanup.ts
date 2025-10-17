@@ -1,11 +1,11 @@
-// cleanup-all.js
+// cleanup-all.ts
 import { githubApi } from './utils'
 import { createInterface } from 'readline'
 
 const owner = 'OpenSaucedHub'
 const repo = 'advanced-git-sync'
 
-async function confirm() {
+async function confirm(): Promise<boolean> {
   const rl = createInterface({
     input: process.stdin,
     output: process.stdout
@@ -27,7 +27,7 @@ To proceed, type "${owner}/${repo}":
   })
 }
 
-async function deleteAll() {
+async function deleteAll(): Promise<void> {
   try {
     const confirmed = await confirm()
     if (!confirmed) {
@@ -59,7 +59,7 @@ async function deleteAll() {
 
     console.log('Cleanup completed!')
   } catch (error) {
-    console.error('Error:', error.message)
+    console.error('Error:', (error as Error).message)
   }
 }
 

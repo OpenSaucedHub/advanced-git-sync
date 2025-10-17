@@ -1,4 +1,4 @@
-// utils.js
+// utils.ts
 import axios from 'axios'
 
 if (!process.env.GH_TOKEN) {

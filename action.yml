@@ -64,7 +64,7 @@ runs:
     - name: Post-Job Cleanup
       if: always()
       shell: bash
-      run: bun ${{ github.action_path }}/scripts/postjob.js
+      run: bun ${{ github.action_path }}/scripts/postjob.ts
 
 branding:
   icon: "git-branch"

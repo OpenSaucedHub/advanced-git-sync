@@ -1,4 +1,4 @@
-// cleanup-specific.js
+// cleanup-specific.ts
 import { githubApi } from './utils'
 import { createInterface } from 'readline'
 
@@ -6,7 +6,7 @@ const owner = 'OpenSaucedHub'
 const repo = 'advanced-git-sync'
 const tag = 'v1.1.4'
 
-async function confirm(message) {
+async function confirm(message: string): Promise<boolean> {
   const rl = createInterface({
     input: process.stdin,
     output: process.stdout
@@ -20,13 +20,13 @@ async function confirm(message) {
   })
 }
 
-async function deleteSpecific() {
+async function deleteSpecific(): Promise<void> {
   try {
     // GitHub Release Check & Delete
     const { data: releases } = await githubApi.get(
       `/repos/${owner}/${repo}/releases`
     )
-    const release = releases.find(r => r.tag_name === tag)
+    const release = releases.find((r: any) => r.tag_name === tag)
 
     if (release) {
       const confirmed = await confirm(`Delete GitHub release ${tag}?`)
@@ -36,7 +36,7 @@ async function deleteSpecific() {
             `/repos/${owner}/${repo}/releases/${release.id}`
           )
           console.log(`[GitHub] Deleted release: ${tag}`)
-        } catch (error) {
+        } catch (error: any) {
           if (error.response?.status === 404) {
             console.log(`[GitHub] Release ${tag} already deleted`)
           } else {
@@ -54,7 +54,7 @@ async function deleteSpecific() {
       try {
         await githubApi.delete(`/repos/${owner}/${repo}/git/refs/tags/${tag}`)
         console.log(`[GitHub] Deleted tag: ${tag}`)
-      } catch (error) {
+      } catch (error: any) {
         if (error.response?.status === 422 || error.response?.status === 404) {
           console.log(`[GitHub] Tag ${tag} already deleted or doesn't exist`)
         } else {
@@ -63,7 +63,10 @@ async function deleteSpecific() {
       }
     }
   } catch (error) {
-    console.error('[Error] Failed to fetch repository data:', error.message)
+    console.error(
+      '[Error] Failed to fetch repository data:',
+      (error as Error).message
+    )
   }
 }
 

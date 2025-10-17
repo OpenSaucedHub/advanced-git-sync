@@ -14,8 +14,8 @@
     "f": "prettier --write \"**/*.*\"",
     "prepare": "husky",
     "s": "bun src/index.ts",
-    "sync-deps": "bun scripts/sync-action-deps.js",
-    "dev:setup": "bun scripts/local-test.js",
+    "sync-deps": "bun scripts/sync-action-deps.ts",
+    "dev:setup": "bun scripts/local-test.ts",
     "dev:sync": "bun run dev:setup && bun s",
     "dev:config": "echo 'Edit sync-config.local.yml or .github/sync-config.yml for configuration'"
   },
@@ -60,6 +60,7 @@
     "@typescript-eslint/eslint-plugin": "^8.46.1",
     "@typescript-eslint/parser": "^8.46.1",
     "@vercel/ncc": "^0.38.4",
+    "axios": "^1.12.2",
     "conventional-changelog-conventionalcommits": "^9.1.0",
     "conventional-changelog-gitmoji": "^0.2.5",
     "eslint": "^9.37.0",

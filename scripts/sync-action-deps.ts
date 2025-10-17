@@ -5,8 +5,8 @@
  * This script ensures that the dependency versions in action.yml match those in package.json
  */
 
-const fs = require('fs')
-const path = require('path')
+import fs from 'fs'
+import path from 'path'
 
 const PACKAGE_JSON_PATH = path.join(__dirname, '..', 'package.json')
 const ACTION_YML_PATH = path.join(__dirname, '..', 'action.yml')
@@ -22,7 +22,13 @@ const SYNC_DEPENDENCIES = [
   'zod'
 ]
 
-function main() {
+interface ChangeRecord {
+  dep: string
+  from: string
+  to: string
+}
+
+function main(): void {
   console.log('🔄 Syncing action.yml dependencies with package.json...\n')
 
   // Read package.json
@@ -47,7 +53,7 @@ function main() {
 
   // Track changes
   let hasChanges = false
-  const changes = []
+  const changes: ChangeRecord[] = []
 
   // Sync each dependency
   for (const dep of SYNC_DEPENDENCIES) {
@@ -126,7 +132,7 @@ process.on('uncaughtException', error => {
 })
 
 process.on('unhandledRejection', error => {
-  console.error('❌ Error:', error.message)
+  console.error('❌ Error:', (error as Error).message)
   process.exit(1)
 })
 

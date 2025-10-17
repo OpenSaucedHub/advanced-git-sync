@@ -5,10 +5,10 @@
  * This script sets up the environment for local testing
  */
 
-const fs = require('fs')
-const path = require('path')
+import fs from 'fs'
+import path from 'path'
 
-function setupLocalEnvironment() {
+function setupLocalEnvironment(): boolean {
   console.log('🔧 Setting up local development environment...\n')
 
   // Check if .env file exists
@@ -90,7 +90,7 @@ function setupLocalEnvironment() {
   return true
 }
 
-function main() {
+function main(): void {
   console.log('🔄 Advanced Git Sync - Local Development Setup\n')
 
   const isReady = setupLocalEnvironment()
@@ -119,4 +119,4 @@ if (require.main === module) {
   main()
 }
 
-module.exports = { setupLocalEnvironment }
+export { setupLocalEnvironment }
