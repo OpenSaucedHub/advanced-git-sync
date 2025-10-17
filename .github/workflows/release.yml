@@ -11,7 +11,7 @@ on:
 
 jobs:
   release:
-    name: Build, test, and release
+    name: Build, and release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Bun and install dependencies
-        uses: iamvikshan/.github/.github/actions/setup-bun@main
+        uses: iamvikshan/.github/.github/actions/setup-node-bun@main
 
       - name: Build
         run: bun run build
