@@ -30,9 +30,6 @@ jobs:
       - name: Setup Bun and install dependencies
         uses: iamvikshan/.github/.github/actions/setup-node-bun@main
 
-      - name: Build
-        run: bun run build
-
       - name: Semantic Release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
