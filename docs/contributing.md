@@ -210,7 +210,7 @@ git push origin feature/your-feature-name
 
 **Environment:**
 
-- Action version: v1.4.8
+- Action version: v1.4.9
 - GitHub/GitLab versions
 - Any relevant details
 
