@@ -167,6 +167,13 @@ git config --global commit.gpgsign true
 echo "✓ Git configured for SSH signing"
 echo ""
 
+# Step 3.6: Configure Git Credential Helper
+echo "Step 3.6: Configuring Git Credential Helper..."
+# Configure GitHub CLI as the credential helper (replacing any existing helpers)
+git config --global --replace-all credential.helper '!gh auth git-credential'
+echo "✓ Git configured to use GitHub CLI for credentials"
+echo ""
+
 # Step 4: Update ~/.bashrc
 echo "Step 4: Updating ~/.bashrc..."
 
