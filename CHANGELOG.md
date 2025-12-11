@@ -2,16 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.4.9](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.8...v1.4.9) (2025-11-22)
-
-
 
 ## [1.4.9](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.8...v1.4.9) (2025-11-22)
 
 ### Bug Fixes
 
-* enhance development environment with GitHub CLI and SSH support; update workflows and remove husky scripts ([232605f](https://github.com/OpenSaucedHub/advanced-git-sync/commit/232605f844d1d74c51bee494698774730ea92192))
+- enhance development environment with GitHub CLI and SSH support; update workflows and remove husky
+  scripts
+  ([232605f](https://github.com/OpenSaucedHub/advanced-git-sync/commit/232605f844d1d74c51bee494698774730ea92192))
 
 # [v1.4.8](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.7...v1.4.8) (2025-10-17)
 

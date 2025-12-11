@@ -11,7 +11,9 @@
   "scripts": {
     "lint": "eslint src/**/*.ts",
     "f": "prettier --write \"**/*.*\"",
-    "start": "bun src/index.ts"
+    "start": "bun src/index.ts",
+    "check": "tsc --noEmit",
+    "build": "ncc build src/index.ts -o dist"
   },
   "keywords": [
     "github",
@@ -37,7 +39,7 @@
     "@octokit/rest": "^22.0.1",
     "deepmerge": "^4.3.1",
     "js-yaml": "^4.1.1",
-    "zod": "^4.1.12"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -50,19 +52,19 @@
     "@semantic-release/release-notes-generator": "^14.1.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.47.0",
-    "@typescript-eslint/parser": "^8.47.0",
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
+    "@typescript-eslint/parser": "^8.49.0",
     "@vercel/ncc": "^0.38.4",
     "axios": "^1.13.2",
     "conventional-changelog-conventionalcommits": "^9.1.0",
     "conventional-changelog-gitmoji": "^0.2.5",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
-    "prettier": "^3.6.2",
+    "prettier": "^3.7.4",
     "semantic-release": "^25.0.2",
     "semantic-release-gitmoji": "^1.6.8",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.47.0"
+    "typescript-eslint": "^8.49.0"
   },
   "eslintConfig": {
     "extends": [
