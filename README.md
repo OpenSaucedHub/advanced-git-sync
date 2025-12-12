@@ -56,10 +56,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6.0.1
 
       - name: Sync with GitLab
-        uses: OpenSaucedHub/advanced-git-sync@v1.4.7
+        uses: OpenSaucedHub/advanced-git-sync@v1.4.9
         with:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}

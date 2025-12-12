@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6.0.1
         with:
           token: ${{ secrets.GH_TOKEN }}
 
@@ -27,10 +27,10 @@ jobs:
         id: sync
         run: |
           # Make the sync script executable
-          chmod +x scripts/sync-action-deps.js
+          chmod +x scripts/sync-action-deps.ts
 
           # Run the sync script
-          node scripts/sync-action-deps.js
+          node scripts/sync-action-deps.ts
 
       - name: Commit and push changes
         if: steps.sync.outputs.changes == 'true'

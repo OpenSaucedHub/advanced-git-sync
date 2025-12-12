@@ -1,6 +1,6 @@
 {
   "name": "Ubuntu + Bun",
-  "image": "ghcr.io/iamvikshan/devcontainers/ubuntu-bun:latest",
+  "image": "vikshan/ubuntu-bun:latest",
   // Configure tool-specific properties.
   "customizations": {
     "vscode": {
@@ -11,11 +11,19 @@
         "eamodio.gitlens",
         "oven.bun-vscode",
         "christian-kohler.npm-intellisense",
-        "astro-build.astro-vscode",
-        "Orta.vscode-jest",
         "WakaTime.vscode-wakatime",
         "usernamehw.errorlens"
       ]
+    }
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "installDirectlyFromGitHubRelease": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
     }
   },
 

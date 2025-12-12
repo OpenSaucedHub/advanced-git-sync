@@ -55,7 +55,7 @@ bun s
 ├── .env.example            # Template for environment variables
 ├── sync-config.local.yml   # Local configuration (optional)
 ├── .github/sync-config.yml # Production configuration
-└── scripts/local-test.js   # Development setup script
+└── scripts/local-test.ts   # Development setup script
 ```
 
 ## 🔧 **Available Scripts**

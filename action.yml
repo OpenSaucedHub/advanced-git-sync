@@ -23,35 +23,10 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Backup Original Project Dependencies
-      shell: bash
-      run: |
-        # Backup existing package.json and bun.lock if they exist
-        if [ -f package.json ]; then
-          cp package.json package.json.original-backup
-        fi
-        if [ -f bun.lock ]; then
-          cp bun.lock bun.lock.original-backup
-        fi
-
-    - name: Create Minimal Dependencies Package
-      shell: bash
-      run: |
-        # Create a minimal package.json with only required dependencies
-        echo '{
-          "dependencies": {
-            "@actions/core": "^1.11.1",
-            "@actions/github": "^6.0.1",
-            "@gitbeaker/rest": "^43.5.0",
-            "@octokit/rest": "^22.0.0",
-            "deepmerge": "^4.3.1",
-            "js-yaml": "^4.1.0",
-            "zod": "^4.1.11"
-          }
-        }' > package.json
-
     - name: Setup Bun and install dependencies
-      uses: iamvikshan/.github/.github/actions/setup-bun@main
+      uses: iamvikshan/.github/.github/actions/bun-actions@main
+      with:
+        working-directory: ${{ github.action_path }}
 
     - name: Run Advanced Git Sync
       shell: bash
@@ -60,11 +35,6 @@ runs:
         INPUT_GITLAB_TOKEN: ${{ inputs.GITLAB_TOKEN }}
         INPUT_CONFIG_PATH: ${{ inputs.CONFIG_PATH }}
       run: bun run ${{ github.action_path }}/src/index.ts
-
-    - name: Post-Job Cleanup
-      if: always()
-      shell: bash
-      run: bun ${{ github.action_path }}/scripts/postjob.js
 
 branding:
   icon: "git-branch"

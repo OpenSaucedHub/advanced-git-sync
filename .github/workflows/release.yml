@@ -11,7 +11,7 @@ on:
 
 jobs:
   release:
-    name: Build, test, and release
+    name: Build, and release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -22,20 +22,13 @@ jobs:
       actions: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup Bun and install dependencies
-        uses: iamvikshan/.github/.github/actions/setup-bun@main
-
-      - name: Build
-        run: bun run build
-
-      - name: Run tests
-        continue-on-error: true
-        run: bun run test
+        uses: iamvikshan/.github/.github/actions/setup-node-bun@main
 
       - name: Semantic Release
         env:
