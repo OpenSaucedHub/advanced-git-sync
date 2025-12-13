@@ -4,10 +4,10 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { Repository, Config, Branch, BranchFilterOptions } from '@src/types'
 import { globToRegex } from '@src/utils/repoUtils'
-
+import { GitHub } from '@actions/github/lib/utils'
 export class githubBranchHelper {
   constructor(
-    private octokit: any,
+    private octokit: InstanceType<typeof GitHub>,
     private repo: Repository,
     private config: Config
   ) {}
@@ -17,9 +17,12 @@ export class githubBranchHelper {
     core.info('\x1b[36m🌿 Fetching GitHub Branches...\x1b[0m')
 
     // Fetch all branches
-    const { data: branches } = await this.octokit.rest.repos.listBranches({
-      ...this.repo
-    })
+    const branches = await this.octokit.paginate(
+      this.octokit.rest.repos.listBranches,
+      {
+        ...this.repo
+      }
+    )
 
     interface GitHubBranch {
       name: string

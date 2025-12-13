@@ -6,12 +6,13 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as path from 'path'
 import * as fs from 'fs'
+import { Gitlab } from '@gitbeaker/core'
 
 export class gitlabBranchHelper {
   private repoPath: string | null = null
 
   constructor(
-    private gitlab: any,
+    private gitlab: Gitlab,
     private config: Config,
     private getProjectId: () => Promise<number>
   ) {}
@@ -35,16 +36,12 @@ export class gitlabBranchHelper {
     core.info('\x1b[36m🌿 Fetching GitLab Branches...\x1b[0m')
 
     const projectId = await this.getProjectId()
-    const branches = await this.gitlab.Branches.all(projectId)
-    // Extract repo path from first branch API URL
-    if (branches.length > 0 && !this.repoPath) {
-      const apiUrl = branches[0]._links?.self || ''
-      const match = apiUrl.match(/projects\/(.+?)\/repository/)
-      if (match) {
-        this.repoPath = decodeURIComponent(match[1])
-        core.debug(`Extracted repo path: ${this.repoPath}`)
-      }
+    const repo = await this.gitlab.Projects.show(projectId)
+    if (repo.path_with_namespace) {
+      this.repoPath = decodeURIComponent(repo.path_with_namespace)
+      core.debug(`Extracted repo path: ${this.repoPath}`)
     }
+    const branches = await this.gitlab.Branches.all(projectId)
 
     interface GitLabBranch {
       name: string

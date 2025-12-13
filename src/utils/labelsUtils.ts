@@ -53,7 +53,14 @@ export class LabelHelper {
     const syncedLabels = ['synced']
 
     // Combine and deduplicate: source labels + synced label
-    return [...new Set([...normalizedSourceLabels, ...syncedLabels])]
+    var combinedLabels = [
+      ...new Set([...normalizedSourceLabels, ...syncedLabels])
+    ]
+    // remove empty / null / undefined labels
+    combinedLabels = combinedLabels.filter(
+      label => label !== '' && label !== null && label !== undefined
+    )
+    return combinedLabels
   }
 
   /**

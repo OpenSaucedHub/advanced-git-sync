@@ -15,7 +15,7 @@ export class pullRequestHelper {
   ) {}
 
   async syncPullRequests(): Promise<PullRequest[]> {
-    if (!this.config.gitlab.sync?.pullRequests.enabled) {
+    if (!this.config.github.sync?.pullRequests.enabled) {
       return []
     }
 
