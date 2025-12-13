@@ -1,7 +1,7 @@
 {
   "name": "@opensaucedhub/git-sync",
   "description": "Synchronize GitHub repository with GitLab including branches, PRs, and issues",
-  "version": "1.4.10",
+  "version": "1.5.0",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/",
