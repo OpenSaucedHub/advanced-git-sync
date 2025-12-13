@@ -601,6 +601,6 @@ gitlab:
 ## Next Steps
 
 - [Configuration Guide](CONFIGURATION.md) - Complete configuration reference
-- [Token Setup](token-setup.md) - Authentication setup
+- [Token Setup](TOKEN.md) - Authentication setup
 - [Examples](EXAMPLES.md) - Real-world configuration examples
 ```

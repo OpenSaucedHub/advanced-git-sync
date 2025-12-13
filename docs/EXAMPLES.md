@@ -646,5 +646,5 @@ See `.github/sync-config-examples/` for complete working examples:
 ## Next Steps
 
 - [Configuration Reference](CONFIGURATION.md) - Complete option reference
-- [Token Setup](token-setup.md) - Authentication configuration
-- [Troubleshooting](troubleshooting.md) - Common issues and solutions
+- [Token Setup](TOKEN.md) - Authentication configuration
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions

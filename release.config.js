@@ -69,10 +69,13 @@ module.exports = {
           // Update README.md version references
           "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' README.md",
           // Update documentation version references
-          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' docs/troubleshooting.md",
-          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' docs/examples.md",
+          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' docs/TROUBLESHOOTING.md",
+          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' docs/EXAMPLES.md",
+          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' docs/CONFIGURATION.md",
+          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' docs/README.md",
+          "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' docs/SDK.md",
           // Update action version references in documentation
-          "sed -i 's|\\*\\*Action Version:\\*\\* v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|**Action Version:** v${nextRelease.version}|g' docs/troubleshooting.md",
+          "sed -i 's|\\*\\*Action Version:\\*\\* v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|**Action Version:** v${nextRelease.version}|g' docs/TROUBLESHOOTING.md",
           "sed -i 's|Action version: v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|Action version: v${nextRelease.version}|g' docs/contributing.md",
           // Update package.json version
           'npm version ${nextRelease.version} --no-git-tag-version'
@@ -87,9 +90,11 @@ module.exports = {
           'package.json',
           'CHANGELOG.md',
           'README.md',
-          'docs/troubleshooting.md',
-          'docs/examples.md',
-          'docs/contributing.md'
+          'docs/TROUBLESHOOTING.md',
+          'docs/EXAMPLES.md',
+          'docs/CONFIGURATION.md',
+          'docs/README.md',
+          'docs/SDK.md'
         ],
         message:
           'chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}'

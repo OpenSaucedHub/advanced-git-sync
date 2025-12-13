@@ -107,8 +107,8 @@ For detailed configuration and advanced usage:
 
 - **[Configuration Guide](docs/CONFIGURATION.md)** - Complete configuration reference
 - **[Examples](docs/EXAMPLES.md)** - Real-world configuration examples
-- **[Token Setup](docs/token-setup.md)** - Detailed token permissions and setup instructions
-- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
+- **[Token Setup](docs/TOKEN.md)** - Detailed token permissions and setup instructions
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ## 🤝 Need Help?
 

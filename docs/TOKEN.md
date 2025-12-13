@@ -157,7 +157,7 @@ The action will validate your tokens on startup and provide clear error messages
 
 If you're still having issues:
 
-1. Check the [Troubleshooting Guide](troubleshooting.md)
+1. Check the [Troubleshooting Guide](TROUBLESHOOTING.md)
 2. Review the action logs for specific error messages
 3. [Open an issue](https://github.com/OpenSaucedHub/advanced-git-sync/issues) with:
    - Error message (with tokens redacted)
@@ -168,4 +168,4 @@ If you're still having issues:
 
 - [Configuration Guide](CONFIGURATION.md) - Configure sync behavior
 - [Examples](EXAMPLES.md) - Real-world configuration examples
-- [Troubleshooting](troubleshooting.md) - Common issues and solutions
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions

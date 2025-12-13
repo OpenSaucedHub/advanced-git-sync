@@ -7,7 +7,7 @@ Complete documentation for GitHub-GitLab sync operations.
 ### Getting Started
 
 - **[Main README](../README.md)** - Quick start and overview
-- **[Token Setup](token-setup.md)** - Configure authentication tokens
+- **[Token Setup](TOKEN.md)** - Configure authentication tokens
 
 ### Configuration
 
@@ -27,7 +27,7 @@ Complete documentation for GitHub-GitLab sync operations.
 
 ### Advanced Topics
 
-- **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Development](DEVELOPMENT.md)** - Contributing and development guide
 - **[Contributing](contributing.md)** - How to contribute to the project
 
@@ -72,8 +72,8 @@ docs/
 ├── README.md                    # This file - documentation index
 ├── CONFIGURATION.md             # Complete configuration reference
 ├── EXAMPLES.md                  # Real-world examples
-├── token-setup.md              # Token configuration guide
-├── troubleshooting.md          # Common issues and solutions
+├── TOKEN.md              # Token configuration guide
+├── TROUBLESHOOTING.md          # Common issues and solutions
 ├── DEVELOPMENT.md              # Development guide
 ├── contributing.md             # Contributing guidelines
 └── sync-config-example.yml     # Complete config template
@@ -90,7 +90,7 @@ docs/
 
 ## Getting Help
 
-- **Issues**: Check [troubleshooting.md](troubleshooting.md) first
+- **Issues**: Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md) first
 - **Questions**: Open a
   [GitHub Discussion](https://github.com/OpenSaucedHub/advanced-git-sync/discussions)
 - **Bugs**: Report on [GitHub Issues](https://github.com/OpenSaucedHub/advanced-git-sync/issues)

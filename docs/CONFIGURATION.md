@@ -465,5 +465,5 @@ gitlab:
 ## Next Steps
 
 - [Examples](EXAMPLES.md) - Real-world configuration examples
-- [Token Setup](token-setup.md) - Detailed token configuration
-- [Troubleshooting](troubleshooting.md) - Common issues and solutions
+- [Token Setup](TOKEN.md) - Detailed token configuration
+- [Troubleshooting](TROUBLESHOOTING.md) - Common issues and solutions
