@@ -76,7 +76,6 @@ module.exports = {
           "sed -i 's|OpenSaucedHub/advanced-git-sync@v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|OpenSaucedHub/advanced-git-sync@v${nextRelease.version}|g' docs/SDK.md",
           // Update action version references in documentation
           "sed -i 's|\\*\\*Action Version:\\*\\* v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|**Action Version:** v${nextRelease.version}|g' docs/TROUBLESHOOTING.md",
-          "sed -i 's|Action version: v[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+|Action version: v${nextRelease.version}|g' docs/contributing.md",
           // Update package.json version
           'npm version ${nextRelease.version} --no-git-tag-version'
         ].join(' && ')

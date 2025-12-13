@@ -75,7 +75,6 @@ docs/
 ├── TOKEN.md              # Token configuration guide
 ├── TROUBLESHOOTING.md          # Common issues and solutions
 ├── DEVELOPMENT.md              # Development guide
-├── contributing.md             # Contributing guidelines
 └── sync-config-example.yml     # Complete config template
 
 .github/sync-config-examples/
