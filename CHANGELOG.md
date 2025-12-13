@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+# [v1.4.10](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.9...v1.4.10) (2025-12-13)
+
+## [1.4.10](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.9...v1.4.10) (2025-12-13)
+
+### Bug Fixes
+
+- multiple correction for syncing projects with a lot of branches (on github & gitlab)
+  ([#28](https://github.com/OpenSaucedHub/advanced-git-sync/issues/28))
+  ([80ce645](https://github.com/OpenSaucedHub/advanced-git-sync/commit/80ce645f854575a338173e5e2e824d7ccf60cc69))
+
 # [v1.4.9](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.8...v1.4.9) (2025-11-22)
 
 ## [1.4.9](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.8...v1.4.9) (2025-11-22)

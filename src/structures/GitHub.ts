@@ -11,41 +11,52 @@ import {
   Tag,
   IClient,
   BranchFilterOptions
-} from '@/src/types'
+} from '../../types'
 import {
-  githubBranchHelper,
-  pullRequestHelper,
-  githubIssueHelper,
-  githubReleaseHelper,
-  tagsHelper,
-  githubPermsHelper
-} from './helpers'
+  BranchHelper,
+  PullRequestHelper,
+  IssueHelper,
+  ReleaseHelper,
+  TagHelper,
+  PermsHelper
+} from '@/src/helpers'
 
 export class GitHubClient implements IClient {
   public config: Config
   public repo: Repository
   private octokit
-  public branches: githubBranchHelper
-  public pullRequest: pullRequestHelper
-  public issue: githubIssueHelper
-  public release: githubReleaseHelper
-  public tags: tagsHelper
-  public perms: githubPermsHelper
+  public branches: BranchHelper
+  public pullRequest: PullRequestHelper
+  public issue: IssueHelper
+  public release: ReleaseHelper
+  public tags: TagHelper
+  public perms: PermsHelper
 
   constructor(config: Config, repo: Repository) {
     this.config = config
     this.repo = repo
     this.octokit = github.getOctokit(config.github.token!)
-    this.branches = new githubBranchHelper(this.octokit, this.repo, this.config)
-    this.pullRequest = new pullRequestHelper(
+    this.branches = new BranchHelper(
       this.octokit,
+      'github',
       this.repo,
       this.config
     )
-    this.issue = new githubIssueHelper(this.octokit, this.repo, this.config)
-    this.release = new githubReleaseHelper(this.octokit, this.repo, this.config)
-    this.tags = new tagsHelper(this.octokit, this.repo, this.config)
-    this.perms = new githubPermsHelper(this.octokit, this.repo, this.config)
+    this.pullRequest = new PullRequestHelper(
+      this.octokit,
+      'github',
+      this.repo,
+      this.config
+    )
+    this.issue = new IssueHelper(this.octokit, 'github', this.repo, this.config)
+    this.release = new ReleaseHelper(
+      this.octokit,
+      'github',
+      this.repo,
+      this.config
+    )
+    this.tags = new TagHelper(this.octokit, 'github', this.repo, this.config)
+    this.perms = new PermsHelper(this.octokit, 'github', this.repo, this.config)
     core.info(
       `\x1b[32m✓ GitHub Client Initialized: ${repo.owner}/${repo.repo}\x1b[0m`
     )

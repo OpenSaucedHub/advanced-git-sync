@@ -1,8 +1,8 @@
 import * as core from '@actions/core'
-import { GitHubClient } from '../structures/github/GitHub'
-import { GitLabClient } from '../structures/gitlab/GitLab'
+import { GitHubClient } from '../structures/GitHub'
+import { GitLabClient } from '../structures/GitLab'
 
-import { PullRequest } from '../types'
+import { PullRequest } from '../../types'
 import { getCommentSyncOptions, CommentFormatter } from '../utils/commentUtils'
 
 function logSyncPlan(sourcePRs: PullRequest[], targetPRs: PullRequest[]): void {

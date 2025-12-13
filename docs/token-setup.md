@@ -166,6 +166,6 @@ If you're still having issues:
 
 ## Next Steps
 
-- [Configuration Guide](configuration.md) - Configure sync behavior
-- [Advanced Examples](examples.md) - Complex configuration scenarios
+- [Configuration Guide](CONFIGURATION.md) - Configure sync behavior
+- [Examples](EXAMPLES.md) - Real-world configuration examples
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions

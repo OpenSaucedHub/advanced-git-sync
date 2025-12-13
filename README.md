@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v6.0.1
 
       - name: Sync with GitLab
-        uses: OpenSaucedHub/advanced-git-sync@v1.4.9
+        uses: OpenSaucedHub/advanced-git-sync@v1.4.10
         with:
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -105,9 +105,9 @@ That's it! The action uses intelligent defaults:
 
 For detailed configuration and advanced usage:
 
-- **[Configuration Guide](docs/README.md)** - Complete configuration options and examples
+- **[Configuration Guide](docs/CONFIGURATION.md)** - Complete configuration reference
+- **[Examples](docs/EXAMPLES.md)** - Real-world configuration examples
 - **[Token Setup](docs/token-setup.md)** - Detailed token permissions and setup instructions
-- **[Advanced Examples](docs/examples.md)** - Complex configuration scenarios
 - **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 
 ## 🤝 Need Help?
@@ -120,7 +120,9 @@ For detailed configuration and advanced usage:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](docs/contributing.md) for details.
+We welcome contributions! Please see our
+[Contributing Guide](https://github.com/OpenSaucedHub/.github/blob/main/.github/CONTRIBUTING.md) for
+details.
 
 ## 📄 License
 
@@ -131,7 +133,7 @@ MIT License - see the
 
 <div align="center">
 
-**Built with ❤️ using [TypeScript](https://www.typescriptlang.org/) and [Bun](https://bun.sh/)**
+**Built with 🖤 using [TypeScript](https://www.typescriptlang.org/) and [Bun](https://bun.sh/)**
 
 _Inspired by the need for seamless cross-platform development workflows_
 

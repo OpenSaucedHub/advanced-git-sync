@@ -1,5 +1,5 @@
 // src/utils/defaults.ts
-import { Config } from '../types'
+import { Config } from '../../types'
 
 /**
  * Default bot branch patterns used when config.botBranches.patterns is empty

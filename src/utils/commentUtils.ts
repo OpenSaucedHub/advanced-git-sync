@@ -1,7 +1,7 @@
 // src/utils/commentUtils.ts
-import { Comment, Config } from '../types'
-import { GitHubClient } from '../structures/github/GitHub'
-import { GitLabClient } from '../structures/gitlab/GitLab'
+import { Comment, Config } from '../../types'
+import { GitHubClient } from '../structures/GitHub'
+import { GitLabClient } from '../structures/GitLab'
 
 export interface CommentSyncOptions {
   enabled: boolean

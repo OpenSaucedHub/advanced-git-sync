@@ -1,8 +1,8 @@
 // src/sync/branches.ts
 import * as core from '@actions/core'
-import { Branch, BranchComparison, Config } from '../types'
-import { GitHubClient } from '../structures/github/GitHub'
-import { GitLabClient } from '../structures/gitlab/GitLab'
+import { Branch, BranchComparison, Config } from '../../types'
+import { GitHubClient } from '../structures/GitHub'
+import { GitLabClient } from '../structures/GitLab'
 import { botDefaults, protectedBranches } from '../utils/defaults'
 
 /**

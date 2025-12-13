@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
-import { GitHubClient } from '../structures/github/GitHub'
-import { GitLabClient } from '../structures/gitlab/GitLab'
+import { GitHubClient } from '../structures/GitHub'
+import { GitLabClient } from '../structures/GitLab'
 
 export async function syncTags(
   source: GitHubClient | GitLabClient,

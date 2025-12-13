@@ -1,5 +1,5 @@
 // src/handlers/validator/permValidator.ts
-import { PermissionCheck } from '@/src/types'
+import { PermissionCheck } from '../../../types'
 import * as core from '@actions/core'
 
 export class PermissionValidator {

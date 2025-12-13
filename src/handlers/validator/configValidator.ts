@@ -1,5 +1,5 @@
 // src/handlers/validator/configValidator.ts
-import { Config } from '@/src/types'
+import { Config } from '../../../types'
 import * as core from '@actions/core'
 import { TokenManager } from './tokenManager'
 import { logWarning, ValidationError } from './errors'
@@ -89,11 +89,17 @@ export async function validateConfig(config: Config): Promise<Config> {
     if (config.gitlab.enabled) {
       const { token } = TokenManager.getGitLabToken()
 
-      if (config.github.enabled && !token) {
+      // Check if GitLab token is needed for sending data
+      const needsGitLabToken =
+        config.github.enabled &&
+        config.gitlab.sync &&
+        Object.values(config.gitlab.sync).some((entity: any) => entity?.enabled)
+
+      if (needsGitLabToken && !token) {
         errors.push(
           new ValidationError(
             'EAUTH3',
-            'GitLab token is required when syncing between GitLab and GitHub',
+            'GitLab token is required when syncing FROM GitLab to GitHub',
             { platform: 'GitLab', syncTarget: 'GitHub' }
           )
         )

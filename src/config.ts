@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { Config } from './types'
+import { Config } from '../types'
 import { loadConfig } from '@/src/handlers/loader'
 import { validateConfig } from '@/src/handlers/validator'
 

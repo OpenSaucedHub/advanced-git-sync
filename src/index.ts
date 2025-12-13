@@ -31,10 +31,25 @@ async function run(): Promise<void> {
       await gitlabClient.validateAccess()
     }
 
-    if (config.github.enabled && config.gitlab.enabled) {
-      core.info(
-        '\x1b[36m🔄 Starting bi-directional sync between GitHub and GitLab\x1b[0m'
-      )
+    // Determine if any sync operations are configured
+    const hasGitHubSync = config.github.enabled && config.github.sync
+    const hasGitLabSync = config.gitlab.enabled && config.gitlab.sync
+    const hasBothPlatforms = config.github.enabled && config.gitlab.enabled
+
+    if (hasGitHubSync || hasGitLabSync) {
+      if (hasGitHubSync && hasGitLabSync) {
+        core.info(
+          '\x1b[36m🔄 Starting sync operations between GitHub and GitLab\x1b[0m'
+        )
+      } else if (hasGitHubSync) {
+        core.info(
+          '\x1b[36m🔄 Starting sync FROM GitHub (GitLab enabled for receiving)\x1b[0m'
+        )
+      } else {
+        core.info(
+          '\x1b[36m🔄 Starting sync FROM GitLab (GitHub enabled for receiving)\x1b[0m'
+        )
+      }
 
       // Sync operations organized by chronological dependencies
       // CRITICAL: Branches must be synced first (foundation)
@@ -49,7 +64,7 @@ async function run(): Promise<void> {
         // PHASE 1: Repository Metadata Sync (silent and lightweight)
         {
           name: 'Repository Metadata Sync',
-          enabled: true, // Always enabled, runs silently
+          enabled: hasBothPlatforms, // Only when both platforms are enabled
           operation: async () => {
             const metadataSync = new MetadataSync(githubClient, gitlabClient)
             await metadataSync.syncDescription()
@@ -59,6 +74,7 @@ async function run(): Promise<void> {
         {
           name: '\x1b[34m🌿 Branches (Bidirectional Sync)\x1b[0m',
           enabled:
+            hasBothPlatforms &&
             (config.github.sync?.branches.enabled || false) &&
             (config.gitlab.sync?.branches.enabled || false),
           operation: async () => {
@@ -69,6 +85,7 @@ async function run(): Promise<void> {
         {
           name: '\x1b[34m🌿 Branches (GitHub → GitLab)\x1b[0m',
           enabled:
+            hasBothPlatforms &&
             (config.github.sync?.branches.enabled || false) &&
             !(config.gitlab.sync?.branches.enabled || false),
           operation: async () => {
@@ -78,6 +95,7 @@ async function run(): Promise<void> {
         {
           name: '\x1b[34m🌿 Branches (GitLab → GitHub)\x1b[0m',
           enabled:
+            hasBothPlatforms &&
             !(config.github.sync?.branches.enabled || false) &&
             (config.gitlab.sync?.branches.enabled || false),
           operation: async () => {
@@ -94,14 +112,16 @@ async function run(): Promise<void> {
         // PHASE 2: Tags (HIGH - depend on branch history)
         {
           name: '\x1b[36m🏷 Tags (GitHub → GitLab)\x1b[0m',
-          enabled: config.github.sync?.tags.enabled || false,
+          enabled:
+            hasBothPlatforms && (config.github.sync?.tags.enabled || false),
           operation: async () => {
             await syncTags(githubClient, gitlabClient)
           }
         },
         {
           name: '\x1b[36m🏷 Tags (GitLab → GitHub)\x1b[0m',
-          enabled: config.gitlab.sync?.tags.enabled || false,
+          enabled:
+            hasBothPlatforms && (config.gitlab.sync?.tags.enabled || false),
           operation: async () => {
             await syncTags(gitlabClient, githubClient)
           }
@@ -116,14 +136,16 @@ async function run(): Promise<void> {
         // PHASE 3: Releases (HIGH - depend on tags)
         {
           name: '\x1b[33m🏷️ Releases (GitHub → GitLab)\x1b[0m',
-          enabled: config.github.sync?.releases.enabled || false,
+          enabled:
+            hasBothPlatforms && (config.github.sync?.releases.enabled || false),
           operation: async () => {
             await syncReleases(githubClient, gitlabClient)
           }
         },
         {
           name: '\x1b[33m🏷️ Releases (GitLab → GitHub)\x1b[0m',
-          enabled: config.gitlab.sync?.releases.enabled || false,
+          enabled:
+            hasBothPlatforms && (config.gitlab.sync?.releases.enabled || false),
           operation: async () => {
             await syncReleases(gitlabClient, githubClient)
           }
@@ -337,7 +359,7 @@ async function run(): Promise<void> {
       core.info('\x1b[32m🎉 Sync completed successfully!\x1b[0m')
     } else {
       core.warning(
-        '\x1b[33m⚠️ Sync not performed: Either GitHub or GitLab sync is disabled in configuration\x1b[0m'
+        '\x1b[33m⚠️ Sync not performed: No sync operations are configured. At least one platform must have sync entities enabled.\x1b[0m'
       )
     }
 

@@ -2,28 +2,28 @@ import * as core from '@actions/core'
 import { Gitlab } from '@gitbeaker/rest'
 import { Repository, Config, IClient, BranchFilterOptions } from '../../types'
 import {
-  gitlabBranchHelper,
-  gitlabIssueHelper,
-  mergeRequestHelper,
-  gitlabReleaseHelper,
-  gitlabTagHelper,
-  gitlabPermsHelper,
-  gitlabProjectHelper
-} from './helpers'
+  BranchHelper,
+  IssueHelper,
+  PullRequestHelper,
+  ReleaseHelper,
+  TagHelper,
+  PermsHelper,
+  RepoHelper
+} from '@/src/helpers'
 import { ErrorCodes } from '@/src/utils/errorCodes'
 
 export class GitLabClient implements IClient {
   public config: Config
   public repo: Repository
   private gitlab
-  public branches: gitlabBranchHelper
-  public issues: gitlabIssueHelper
-  public mergeRequest: mergeRequestHelper
-  public release: gitlabReleaseHelper
-  public tags: gitlabTagHelper
+  public branches: BranchHelper
+  public issues: IssueHelper
+  public mergeRequest: PullRequestHelper
+  public release: ReleaseHelper
+  public tags: TagHelper
   private projectId: number | null = null
-  private perms: gitlabPermsHelper
-  private projectCreator: gitlabProjectHelper
+  private perms: PermsHelper
+  private projectCreator: RepoHelper
 
   constructor(config: Config, repo: Repository) {
     this.config = config
@@ -41,28 +41,49 @@ export class GitLabClient implements IClient {
     })
 
     // Initialize helpers with a method to get projectId
-    this.branches = new gitlabBranchHelper(this.gitlab, this.config, () =>
-      this.getProjectId()
-    )
-    this.issues = new gitlabIssueHelper(this.gitlab, this.config, () =>
-      this.getProjectId()
-    )
-    this.mergeRequest = new mergeRequestHelper(this.gitlab, this.config, () =>
-      this.getProjectId()
-    )
-    this.perms = new gitlabPermsHelper(
+    this.branches = new BranchHelper(
       this.gitlab,
+      'gitlab',
       this.repo,
       this.config,
       () => this.getProjectId()
     )
-    this.release = new gitlabReleaseHelper(this.gitlab, this.config, () =>
-      this.getProjectId()
+    this.issues = new IssueHelper(
+      this.gitlab,
+      'gitlab',
+      this.repo,
+      this.config,
+      () => this.getProjectId()
     )
-    this.tags = new gitlabTagHelper(this.gitlab, this.config, () =>
-      this.getProjectId()
+    this.mergeRequest = new PullRequestHelper(
+      this.gitlab,
+      'gitlab',
+      this.repo,
+      this.config,
+      () => this.getProjectId()
     )
-    this.projectCreator = new gitlabProjectHelper(this.gitlab, this.repo)
+    this.perms = new PermsHelper(
+      this.gitlab,
+      'gitlab',
+      this.repo,
+      this.config,
+      () => this.getProjectId()
+    )
+    this.release = new ReleaseHelper(
+      this.gitlab,
+      'gitlab',
+      this.repo,
+      this.config,
+      () => this.getProjectId()
+    )
+    this.tags = new TagHelper(
+      this.gitlab,
+      'gitlab',
+      this.repo,
+      this.config,
+      () => this.getProjectId()
+    )
+    this.projectCreator = new RepoHelper(this.gitlab, 'gitlab', this.repo)
     this.projectId = config.gitlab.projectId || null
 
     core.info(`\x1b[32m✓ GitLab client initialized successfully\x1b[0m`)
@@ -88,7 +109,11 @@ export class GitLabClient implements IClient {
       }
 
       // Try to create project if it doesn't exist, then get the project ID
-      this.projectId = await this.projectCreator.createIfNotExists()
+      const result = await this.projectCreator.createIfNotExists()
+      this.projectId = typeof result === 'number' ? result : null
+      if (!this.projectId) {
+        throw new Error('Failed to get project ID')
+      }
       core.info(`Project ID retrieved: ${this.projectId}`)
       return this.projectId
     } catch (error) {
@@ -237,8 +262,8 @@ export class GitLabClient implements IClient {
     return this.release.downloadReleaseAsset(releaseId, asset)
   }
 
-  async uploadReleaseAsset(releaseId: string, asset: any) {
-    return this.release.uploadReleaseAsset(releaseId, asset)
+  async uploadReleaseAsset(releaseId: string, asset: any, content?: Buffer) {
+    return this.release.uploadReleaseAsset(releaseId, asset, content)
   }
 
   // Delegate to tag helper

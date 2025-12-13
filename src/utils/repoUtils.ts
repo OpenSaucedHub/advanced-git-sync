@@ -1,6 +1,6 @@
 // src/utils/repository.ts
 import * as github from '@actions/github'
-import { Repository, Config } from '../types'
+import { Repository, Config } from '../../types'
 
 /**
  * Convert glob pattern to regex pattern

@@ -18,10 +18,11 @@
       "@/*": ["./*"],
       "@src/*": ["./src/*"],
       "@utils/*": ["./src/utils/*"],
-      "@handlers/*": ["./src/handlers/*"]
+      "@handlers/*": ["./src/handlers/*"],
+      "@types/*": ["./types/*"]
     },
     "typeRoots": ["node_modules/@types", "@types"]
   },
-  "include": ["src/**/*", "tests/**/*"],
+  "include": ["src/**/*", "tests/**/*", "types"],
   "exclude": ["node_modules", "dist", "coverage", "**/*.d.ts"]
 }

@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
-import { GitHubClient } from '../structures/github/GitHub'
-import { GitLabClient } from '../structures/gitlab/GitLab'
-import { Release, ReleaseConfig } from '../types'
+import { GitHubClient } from '../structures/GitHub'
+import { GitLabClient } from '../structures/GitLab'
+import { Release, ReleaseConfig } from '../../types'
 import { TimelineManager } from '@utils/timelineUtils'
 
 interface ReleaseAnalysis {

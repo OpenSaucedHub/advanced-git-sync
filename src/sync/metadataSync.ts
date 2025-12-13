@@ -1,6 +1,6 @@
 // src/sync/metadataSync.ts
-import { GitHubClient } from '@/src/structures/github/GitHub'
-import { GitLabClient } from '@/src/structures/gitlab/GitLab'
+import { GitHubClient } from '@/src/structures/GitHub'
+import { GitLabClient } from '@/src/structures/GitLab'
 
 export class MetadataSync {
   private githubClient: GitHubClient

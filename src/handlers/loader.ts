@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as fs from 'fs'
 import * as yaml from 'js-yaml'
-import { ConfigSchema, Config } from '../types'
+import { ConfigSchema, Config } from '../../types'
 import { ZodError } from 'zod'
 import { getDefaultConfig } from '@utils/defaults'
 import { getActionInput, logConfigDetails } from './inputs'

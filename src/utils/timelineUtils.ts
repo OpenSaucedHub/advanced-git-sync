@@ -3,8 +3,8 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as path from 'path'
-import { GitHubClient } from '@src/structures/github/GitHub'
-import { GitLabClient } from '@src/structures/gitlab/GitLab'
+import { GitHubClient } from '@/src/structures/GitHub'
+import { GitLabClient } from '@/src/structures/GitLab'
 
 export interface TimelineDivergence {
   hasCommonHistory: boolean

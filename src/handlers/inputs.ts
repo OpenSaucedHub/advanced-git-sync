@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { Config } from '../types'
+import { Config } from '../../types'
 
 // Helper function to get input that works with both core.getInput and process.env
 export function getActionInput(name: string, required = false): string {

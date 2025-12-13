@@ -1,9 +1,9 @@
 // src/sync/issues.ts
 import * as core from '@actions/core'
-import { GitHubClient } from '../structures/github/GitHub'
+import { GitHubClient } from '../structures/GitHub'
 
-import { IssueComparison, Issue, Comment } from '../types'
-import { GitLabClient } from '../structures/gitlab/GitLab'
+import { IssueComparison, Issue, Comment } from '../../types'
+import { GitLabClient } from '../structures/GitLab'
 import { getCommentSyncOptions, CommentFormatter } from '../utils/commentUtils'
 
 function arraysEqual(a: string[], b: string[]): boolean {
@@ -323,7 +323,7 @@ async function getExistingTargetComments(
     try {
       // Try to fetch comments directly through the issues helper
       const projectId = await (target as any).getProjectId()
-      return await target.issues.fetchIssueComments(projectId, issueNumber)
+      return await target.issues.fetchIssueComments(issueNumber, projectId)
     } catch (error) {
       core.warning(`Failed to fetch existing comments: ${error}`)
       return []

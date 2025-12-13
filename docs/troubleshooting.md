@@ -32,7 +32,7 @@ refusing to allow a Personal Access Token to create or update workflow `.github/
 
 3. **Update your workflow:**
    ```yaml
-   - uses: OpenSaucedHub/advanced-git-sync@v1.4.9
+   - uses: OpenSaucedHub/advanced-git-sync@v1.4.10
      with:
        GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
        GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -114,7 +114,7 @@ refusing to allow a Personal Access Token to create or update workflow `.github/
    ```
 
 3. **Use configuration examples:**
-   - Start with [basic examples](examples.md)
+   - Start with [basic examples](EXAMPLES.md)
    - Copy from [sync-config-example.yml](../examples/sync-config-example.yml)
 
 #### Partial Sync Not Working
@@ -563,7 +563,7 @@ curl -H "Authorization: token YOUR_GITHUB_TOKEN" \
 Include this information:
 
 ````markdown
-**Action Version:** v1.4.9
+**Action Version:** v1.4.10
 
 **Configuration:**
 
@@ -600,7 +600,7 @@ gitlab:
 
 ## Next Steps
 
-- [Configuration Guide](configuration.md) - Complete configuration reference
+- [Configuration Guide](CONFIGURATION.md) - Complete configuration reference
 - [Token Setup](token-setup.md) - Authentication setup
-- [Advanced Examples](examples.md) - Complex configuration scenarios
+- [Examples](EXAMPLES.md) - Real-world configuration examples
 ```
