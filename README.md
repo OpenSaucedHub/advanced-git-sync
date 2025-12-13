@@ -25,6 +25,11 @@ repositories. Keep your projects in sync across platforms automatically.
 - ⏱️ **Chronological sync order** - respects dependencies between operations
 - 🏗️ **Automatic repository creation** - creates missing remote repositories as private by default
 
+> [!WARNING]
+>
+> SOME ACTIONS ARE DESTRUCTIVE. Please review configuration options carefully before enabling,
+> proceed at your own risk.
+
 ## 🚀 Quick Start
 
 ### 1. Create Workflow File
@@ -73,7 +78,7 @@ Add these secrets to your GitHub repository:
 - `GH_TOKEN`: GitHub personal access token with `workflow` scope (required for syncing workflow
   files)
 
-> [!WARNING]
+> [!IMPORTANT]
 >
 > If your sync includes workflow files (`.github/workflows/`), you **must** use a Personal Access
 > Token with the `workflow` scope instead of the default `GITHUB_TOKEN`. The default token cannot

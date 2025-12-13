@@ -115,9 +115,21 @@ export class BranchHelper {
 
     const projectId = await this.getProjectId!()
     const repo = await gitlab.Projects.show(projectId)
-    if (repo.path_with_namespace) {
-      this.repoPath = decodeURIComponent(repo.path_with_namespace)
-      core.debug(`Extracted repo path: ${this.repoPath}`)
+    if (repo && repo.path_with_namespace) {
+      try {
+        const decodedPath = decodeURIComponent(repo.path_with_namespace)
+        this.repoPath = decodedPath
+        core.debug(`Extracted repo path: ${this.repoPath}`)
+      } catch (error) {
+        const errMsg = (error && (error as Error).message) || String(error)
+        core.warning(
+          `Failed to decode repository path 'path_with_namespace'. Falling back to update() repo path resolution. Error: ${errMsg}`
+        )
+      }
+    } else {
+      core.debug(
+        "GitLab project does not have 'path_with_namespace'; will use fallback repo path resolution in update()"
+      )
     }
     const branches = await gitlab.Branches.all(projectId)
 
