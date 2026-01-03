@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.5.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.0...v1.5.1) (2026-01-03)
+
+
+
+## [1.5.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.0...v1.5.1) (2026-01-03)
+
+### Bug Fixes
+
+* [skip ci] improve error handling for GitLab repository path decoding ([13617f6](https://github.com/OpenSaucedHub/advanced-git-sync/commit/13617f645c25bcd7b8fc4a83bb9286262cc0814d))
+
 # [v1.5.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.9...v1.5.0) (2025-12-13)
 
 ## [1.5.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.9...v1.5.0) (2025-12-13)
