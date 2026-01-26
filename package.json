@@ -34,7 +34,7 @@
   "homepage": "https://github.com/OpenSaucedHub/advanced-git-sync#readme",
   "dependencies": {
     "@actions/core": "^2.0.1",
-    "@actions/github": "^7.0.0",
+    "@actions/github": "^8.0.0",
     "@gitbeaker/rest": "^43.8.0",
     "@octokit/rest": "^22.0.1",
     "deepmerge": "^4.3.1",
