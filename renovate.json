@@ -1,4 +1,107 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"]
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    "schedule:daily",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "reviewers": ["iamvikshan"],
+  "assignees": ["iamvikshan"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "timezone": "UTC",
+  "minimumReleaseAge": "3 days",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"],
+    "automerge": true,
+    "labels": ["dependencies", "lockfile"]
+  },
+  "packageRules": [
+    {
+      "description": "Production dependencies - use fix: for semantic release",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["dependencies"],
+      "semanticCommitType": "fix",
+      "labels": ["dependencies", "npm", "production"]
+    },
+    {
+      "description": "Dev dependencies - use chore:",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "semanticCommitType": "chore",
+      "labels": ["dependencies", "npm", "dev"]
+    },
+    {
+      "description": "GitHub/GitBeaker core packages",
+      "matchPackagePatterns": ["^@actions/", "^@gitbeaker/", "^@octokit/"],
+      "groupName": "github-gitlab-core",
+      "semanticCommitType": "fix",
+      "labels": ["dependencies", "npm", "core"]
+    },
+    {
+      "description": "Semantic Release packages",
+      "matchPackagePatterns": ["^@semantic-release/", "^semantic-release$"],
+      "groupName": "semantic-release",
+      "labels": ["dependencies", "npm", "release"]
+    },
+    {
+      "description": "TypeScript and type definitions",
+      "matchPackagePatterns": ["^@types/", "^typescript$"],
+      "groupName": "typescript",
+      "labels": ["dependencies", "npm", "typescript"]
+    },
+    {
+      "description": "ESLint packages",
+      "matchPackagePatterns": ["^eslint", "^@eslint/", "^@typescript-eslint/", "^typescript-eslint"],
+      "groupName": "eslint",
+      "labels": ["dependencies", "npm", "linting"]
+    },
+    {
+      "description": "Prettier and formatting",
+      "matchPackagePatterns": ["^prettier"],
+      "groupName": "prettier",
+      "labels": ["dependencies", "npm", "formatting"]
+    },
+    {
+      "description": "GitHub Actions - labels for all updates",
+      "matchManagers": ["github-actions"],
+      "semanticCommitType": "chore",
+      "labels": ["dependencies", "github-actions", "ci"]
+    },
+    {
+      "description": "GitHub Actions - automerge non-major updates",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
+    },
+    {
+      "description": "Auto-merge patch updates for production deps",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "description": "Auto-merge minor and patch updates for dev deps",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
+      "description": "Major version updates require manual review",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "major"]
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
+  "osvVulnerabilityAlerts": true
 }

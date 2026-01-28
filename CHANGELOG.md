@@ -2,46 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
-
 # [v1.5.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.3...v1.5.4) (2026-01-28)
-
-
 
 ## [1.5.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.3...v1.5.4) (2026-01-28)
 
 ### Bug Fixes
 
-* **deps:** update dependency @actions/github to v9 ([#36](https://github.com/OpenSaucedHub/advanced-git-sync/issues/36)) ([fd2e972](https://github.com/OpenSaucedHub/advanced-git-sync/commit/fd2e97295d9bbde29597249d3fe37986bc29b1a0))
+- **deps:** update dependency @actions/github to v9
+  ([#36](https://github.com/OpenSaucedHub/advanced-git-sync/issues/36))
+  ([fd2e972](https://github.com/OpenSaucedHub/advanced-git-sync/commit/fd2e97295d9bbde29597249d3fe37986bc29b1a0))
 
 # [v1.5.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.2...v1.5.3) (2026-01-27)
-
-
 
 ## [1.5.3](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.2...v1.5.3) (2026-01-27)
 
 ### Bug Fixes
 
-* **deps:** update dependency @actions/github to v8 ([#35](https://github.com/OpenSaucedHub/advanced-git-sync/issues/35)) ([072a079](https://github.com/OpenSaucedHub/advanced-git-sync/commit/072a079d477a4875a823f62a4c8c35e680e8e758))
+- **deps:** update dependency @actions/github to v8
+  ([#35](https://github.com/OpenSaucedHub/advanced-git-sync/issues/35))
+  ([072a079](https://github.com/OpenSaucedHub/advanced-git-sync/commit/072a079d477a4875a823f62a4c8c35e680e8e758))
 
 # [v1.5.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.1...v1.5.2) (2026-01-15)
-
-
 
 ## [1.5.2](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.1...v1.5.2) (2026-01-15)
 
 ### Bug Fixes
 
-* **deps:** update dependency @actions/github to v7 ([#31](https://github.com/OpenSaucedHub/advanced-git-sync/issues/31)) ([dc60c3a](https://github.com/OpenSaucedHub/advanced-git-sync/commit/dc60c3a9dc15178525b6514551e621abef2c759c))
+- **deps:** update dependency @actions/github to v7
+  ([#31](https://github.com/OpenSaucedHub/advanced-git-sync/issues/31))
+  ([dc60c3a](https://github.com/OpenSaucedHub/advanced-git-sync/commit/dc60c3a9dc15178525b6514551e621abef2c759c))
 
 # [v1.5.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.0...v1.5.1) (2026-01-03)
-
-
 
 ## [1.5.1](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.0...v1.5.1) (2026-01-03)
 
 ### Bug Fixes
 
-* [skip ci] improve error handling for GitLab repository path decoding ([13617f6](https://github.com/OpenSaucedHub/advanced-git-sync/commit/13617f645c25bcd7b8fc4a83bb9286262cc0814d))
+- [skip ci] improve error handling for GitLab repository path decoding
+  ([13617f6](https://github.com/OpenSaucedHub/advanced-git-sync/commit/13617f645c25bcd7b8fc4a83bb9286262cc0814d))
 
 # [v1.5.0](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.4.9...v1.5.0) (2025-12-13)
 
