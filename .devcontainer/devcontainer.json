@@ -12,6 +12,8 @@
         "oven.bun-vscode",
         "christian-kohler.npm-intellisense",
         "WakaTime.vscode-wakatime",
+        "coderabbit.coderabbit-vscode",
+        "DeepScan.vscode-deepscan",
         "usernamehw.errorlens"
       ]
     }
@@ -28,7 +30,7 @@
   },
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "bun update",
+  "postCreateCommand": "chmod +x scripts/iamvikshan.sh && bun install && ./scripts/iamvikshan.sh",
 
   // Set `remoteUser` to `root` to connect as root.
   "remoteUser": "root"

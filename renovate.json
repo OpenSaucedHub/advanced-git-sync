@@ -14,6 +14,17 @@
   "prHourlyLimit": 2,
   "timezone": "UTC",
   "minimumReleaseAge": "3 days",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update GitHub Actions in markdown files",
+      "fileMatch": ["\\.md$"],
+      "matchStrings": ["uses:\\s*(?<depName>[\\w.-]+/[\\w.-]+)@v?(?<currentValue>[\\w.+-]+)"],
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "extractVersionTemplate": "^v?(?<version>[\\w.+-]+)$"
+    }
+  ],
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 6am on monday"],
@@ -97,6 +108,11 @@
       "matchUpdateTypes": ["major"],
       "automerge": false,
       "labels": ["dependencies", "major"]
+    },
+    {
+      "description": "Disable pinDigest updates",
+      "matchUpdateTypes": ["pinDigest"],
+      "enabled": false
     }
   ],
   "vulnerabilityAlerts": {

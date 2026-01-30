@@ -27,8 +27,8 @@ repositories. Keep your projects in sync across platforms automatically.
 
 > [!WARNING]
 >
-> SOME ACTIONS ARE DESTRUCTIVE. Please review configuration options carefully before enabling,
-> proceed at your own risk.
+> some actions applied to your repositories by this GitHub Action are DESTRUCTIVE. Please review
+> configuration options carefully before enabling, proceed at your own risk.
 
 ## 🚀 Quick Start
 

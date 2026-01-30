@@ -1,0 +1,44 @@
+#!/bin/sh
+
+# Skip in CI/CD environments (GitHub Actions, etc.)
+if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+  exit 0
+fi
+
+# Only run in Codespaces
+if [ -z "$CODESPACES" ]; then
+  exit 0
+fi
+
+# Check if git config matches expected values
+GIT_USER="iamvikshan"
+GIT_EMAIL="103361575+iamvikshan@users.noreply.github.com"
+
+CURRENT_USER=$(git config --global user.name 2>/dev/null || echo "")
+CURRENT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
+
+if [ "$CURRENT_USER" != "$GIT_USER" ] || [ "$CURRENT_EMAIL" != "$GIT_EMAIL" ]; then
+  echo "⚠️  Git config mismatch detected in Codespaces!"
+  echo "   Expected: $GIT_USER <$GIT_EMAIL>"
+  echo "   Current:  $CURRENT_USER <$CURRENT_EMAIL>"
+  echo ""
+  echo "🔧 Running iamvikshan.sh to fix attribution..."
+
+  if [ ! -x "./scripts/iamvikshan.sh" ]; then
+    echo ""
+    echo "❌ Error: ./scripts/iamvikshan.sh is not executable or does not exist."
+    echo "   Run: chmod +x scripts/iamvikshan.sh"
+    exit 1
+  fi
+
+  if ./scripts/iamvikshan.sh; then
+    echo ""
+    echo "✅ Git config updated. Please run 'git commit' again."
+    exit 1
+  else
+    echo ""
+    echo "❌ Error: iamvikshan.sh failed to update git config."
+    echo "   Please run './scripts/iamvikshan.sh' manually to debug."
+    exit 1
+  fi
+fi
