@@ -18,8 +18,10 @@
     {
       "customType": "regex",
       "description": "Update GitHub Actions in markdown files",
-      "fileMatch": ["\\.md$"],
-      "matchStrings": ["uses:\\s*(?<depName>[\\w.-]+/[\\w.-]+)@v?(?<currentValue>[\\w.+-]+)"],
+      "managerFilePatterns": ["/\\.md$/"],
+      "matchStrings": [
+        "uses:\\s*(?<depName>[\\w.-]+/[\\w.-]+)@v?(?<currentValue>[\\w.+-]+)"
+      ],
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
       "extractVersionTemplate": "^v?(?<version>[\\w.+-]+)$"
@@ -48,34 +50,39 @@
     },
     {
       "description": "GitHub/GitBeaker core packages",
-      "matchPackagePatterns": ["^@actions/", "^@gitbeaker/", "^@octokit/"],
       "groupName": "github-gitlab-core",
       "semanticCommitType": "fix",
-      "labels": ["dependencies", "npm", "core"]
+      "labels": ["dependencies", "npm", "core"],
+      "matchPackageNames": ["/^@actions//", "/^@gitbeaker//", "/^@octokit//"]
     },
     {
       "description": "Semantic Release packages",
-      "matchPackagePatterns": ["^@semantic-release/", "^semantic-release$"],
       "groupName": "semantic-release",
-      "labels": ["dependencies", "npm", "release"]
+      "labels": ["dependencies", "npm", "release"],
+      "matchPackageNames": ["/^@semantic-release//", "/^semantic-release$/"]
     },
     {
       "description": "TypeScript and type definitions",
-      "matchPackagePatterns": ["^@types/", "^typescript$"],
       "groupName": "typescript",
-      "labels": ["dependencies", "npm", "typescript"]
+      "labels": ["dependencies", "npm", "typescript"],
+      "matchPackageNames": ["/^@types//", "/^typescript$/"]
     },
     {
       "description": "ESLint packages",
-      "matchPackagePatterns": ["^eslint", "^@eslint/", "^@typescript-eslint/", "^typescript-eslint"],
       "groupName": "eslint",
-      "labels": ["dependencies", "npm", "linting"]
+      "labels": ["dependencies", "npm", "linting"],
+      "matchPackageNames": [
+        "/^eslint/",
+        "/^@eslint//",
+        "/^@typescript-eslint//",
+        "/^typescript-eslint/"
+      ]
     },
     {
       "description": "Prettier and formatting",
-      "matchPackagePatterns": ["^prettier"],
       "groupName": "prettier",
-      "labels": ["dependencies", "npm", "formatting"]
+      "labels": ["dependencies", "npm", "formatting"],
+      "matchPackageNames": ["/^prettier/"]
     },
     {
       "description": "GitHub Actions - labels for all updates",
