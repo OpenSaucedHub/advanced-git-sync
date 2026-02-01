@@ -14,7 +14,8 @@
         "WakaTime.vscode-wakatime",
         "coderabbit.coderabbit-vscode",
         "DeepScan.vscode-deepscan",
-        "usernamehw.errorlens"
+        "usernamehw.errorlens",
+        "jetbrains.qodana-code"
       ]
     }
   },
@@ -30,7 +31,7 @@
   },
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "chmod +x scripts/iamvikshan.sh && bun install && ./scripts/iamvikshan.sh",
+  "postCreateCommand": "chmod +x scripts/iamvikshan.sh && bun install",
 
   // Set `remoteUser` to `root` to connect as root.
   "remoteUser": "root"
