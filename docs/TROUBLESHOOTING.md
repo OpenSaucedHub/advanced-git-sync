@@ -32,7 +32,7 @@ refusing to allow a Personal Access Token to create or update workflow `.github/
 
 3. **Update your workflow:**
    ```yaml
-   - uses: OpenSaucedHub/advanced-git-sync@v1.5.4
+   - uses: OpenSaucedHub/advanced-git-sync@v1.5.5
      with:
        GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
        GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -563,7 +563,7 @@ curl -H "Authorization: token YOUR_GITHUB_TOKEN" \
 Include this information:
 
 ````markdown
-**Action Version:** v1.5.4
+**Action Version:** v1.5.5
 
 **Configuration:**
 

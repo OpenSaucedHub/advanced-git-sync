@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+
+# [v1.5.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.4...v1.5.5) (2026-02-17)
+
+
+
+## [1.5.5](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.4...v1.5.5) (2026-02-17)
+
+### Bug Fixes
+
+* resolve GitLab project creation for personal namespaces ([a7411cb](https://github.com/OpenSaucedHub/advanced-git-sync/commit/a7411cbf38a10b37857100b4f1c0096fe29612f1))
+
 # [v1.5.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.3...v1.5.4) (2026-01-28)
 
 ## [1.5.4](https://github.com/OpenSaucedHub/advanced-git-sync/compare/v1.5.3...v1.5.4) (2026-01-28)
