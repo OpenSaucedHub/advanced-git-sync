@@ -130,7 +130,7 @@ export class RepoHelper {
         `⚠️ Project ${this.repo.owner}/${this.repo.repo} not found. Creating it...`
       )
 
-      const namespaceId = await this.findGitLabNamespace()
+      const namespaceInfo = await this.findGitLabNamespace()
 
       const projectConfig: any = {
         name: this.repo.repo,
@@ -156,8 +156,11 @@ export class RepoHelper {
         }
       }
 
-      if (namespaceId) {
-        projectConfig.namespace_id = namespaceId
+      // Only set namespace_id for group namespaces.
+      // For personal namespaces, omit it so GitLab defaults to the
+      // authenticated user's namespace (user IDs are not valid namespace IDs).
+      if (namespaceInfo?.type === 'group') {
+        projectConfig.namespace_id = namespaceInfo.id
       }
 
       const createdProject = await gitlab.Projects.create(projectConfig)
@@ -191,36 +194,45 @@ export class RepoHelper {
     }
   }
 
-  private async findGitLabNamespace(): Promise<number | undefined> {
+  private async findGitLabNamespace(): Promise<
+    { id: number; type: 'group' } | undefined
+  > {
     try {
       const gitlab = this.client as Gitlab
+
+      // 1. Check if the owner is a group namespace
       try {
         const group = await gitlab.Groups.show(this.repo.owner)
         if (group?.id) {
-          return group.id
+          core.info(
+            `Found group namespace: ${this.repo.owner} (ID: ${group.id})`
+          )
+          return { id: group.id, type: 'group' }
         }
       } catch (error) {
-        core.debug(`${this.repo.owner} is not a group, trying as user`)
+        core.debug(
+          `${this.repo.owner} is not a group, checking personal namespace: ${error}`
+        )
       }
 
-      try {
-        const users = await gitlab.Users.all({ search: this.repo.owner })
-        const user = users.find((u: any) => u.username === this.repo.owner)
-        if (user?.id) {
-          return user.id
-        }
-      } catch (error) {
-        core.debug(`Could not find user ${this.repo.owner}`)
-      }
-
+      // 2. For personal namespaces, verify the owner matches the authenticated user.
+      //    We skip namespace_id entirely for personal namespaces because GitLab
+      //    user IDs are not valid namespace IDs — omitting it lets GitLab default
+      //    to the authenticated user's personal namespace.
       try {
         const currentUser = await gitlab.Users.showCurrentUser()
-        if (currentUser?.id) {
-          core.warning(
-            `Could not find namespace for ${this.repo.owner}, falling back to personal namespace`
-          )
-          return currentUser.id
+        if (currentUser?.username === this.repo.owner) {
+          core.info(`Using personal namespace for user: ${this.repo.owner}`)
+          return undefined
         }
+
+        // Owner doesn't match the authenticated user and isn't a group
+        throw new Error(
+          `Namespace mismatch: configured owner "${this.repo.owner}" does not match ` +
+            `the authenticated GitLab user "${currentUser?.username}" and is not a group. ` +
+            `Cannot create projects in another user's namespace. ` +
+            `Please ensure the gitlab.owner matches your GitLab username or is a group you have access to.`
+        )
       } catch (error) {
         core.debug(`Could not get current user: ${error}`)
       }
